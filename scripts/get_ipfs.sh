@@ -10,13 +10,17 @@ IPFS_VERSION=0.9.1
 ##############################
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+# Download & untar/zip Go-IPFS
 echo "INFO: Start downloading IPFS (version ${IPFS_VERSION})..."
-# Download & untar Go-IPFS
-wget --quiet "https://dist.ipfs.io/go-ipfs/v${IPFS_VERSION}/go-ipfs_v${IPFS_VERSION}_linux-amd64.tar.gz" -O "$CURRENT_DIR/go-ipfs.tar.gz"
+wget --quiet "https://dist.ipfs.io/go-ipfs/v${IPFS_VERSION}/go-ipfs_v${IPFS_VERSION}_linux-amd64.tar.gz" -O "$CURRENT_DIR/go-ipfs_linux.tar.gz"
+wget --quiet "https://dist.ipfs.io/go-ipfs/v${IPFS_VERSION}/go-ipfs_v${IPFS_VERSION}_windows-amd64.zip" -O "$CURRENT_DIR/go-ipfs_windows.zip"
 
-echo "INFO: Extracting Go IPFS..."
 # Extract on root level of the git repo
-tar -xvzf "$CURRENT_DIR/go-ipfs.tar.gz" -C "$CURRENT_DIR/../"
-echo "INFO: Clean up"
+echo "INFO: Extracting Go IPFS..."
+tar -xzf "$CURRENT_DIR/go-ipfs_linux.tar.gz" -C "$CURRENT_DIR/../"
+unzip -q -o "$CURRENT_DIR/go-ipfs_windows.zip" -d "$CURRENT_DIR/../"
+
 # Clean-up
-rm -rf "$CURRENT_DIR/go-ipfs.tar.gz"
+echo "INFO: Clean up"
+rm -rf "$CURRENT_DIR/go-ipfs_linux.tar.gz"
+rm -rf "$CURRENT_DIR/go-ipfs_windows.zip"
