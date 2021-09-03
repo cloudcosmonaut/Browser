@@ -72,9 +72,10 @@ For the Linux build you need at least:
 
 For the cross-compiling to Windows (under Linux), you need at least:
 
-* Mingw-w64 (`mingw-w64` and `mingw-w64-tools`)
-* 
-
+* Mingw-w64 (`mingw-w64` and `mingw-w64-tools`, atleast needing: `x86_64-w64-mingw32`)
+* [Gtk3 Mingw bundle for Windows 64-bit](https://gitlab.melroy.org/melroy/gtk-3-bundle-for-windows/-/tree/main) (Contains: GTK, Gtkmm, Cairo, Pango, Glib, ... + Curl)
+* CMake
+* Ninja build system
 ### Developer Docs
 
 See latest [Developer Docs](https://gitlab.melroy.org/libreweb/browser/-/jobs/artifacts/master/file/build/docs/html/index.html?job=doxygen).
