@@ -4,8 +4,11 @@
 # Build usage: cmake -DCMAKE_TOOLCHAIN_FILE=cmake/crosscompile_mingw32.cmake
 
 set(CMAKE_SYSTEM_NAME Windows)
+
+# Newer mingw packages available via PPA packport: https://launchpad.net/~noasakurajin/+archive/ubuntu/sid-ubuntu-ports
 set(TOOLCHAIN_PREFIX x86_64-w64-mingw32)
 # Win64 toolchain bundle location
+# Using bundle: https://gitlab.melroy.org/melroy/gtk-3-bundle-for-windows/-/tree/main
 set(WINDOWS_TOOLCHAIN_PATH /home/melroy/Documents/gtk3_bundle_3.24.30_win64)
 
 # which compilers to use for C and C++
@@ -14,16 +17,6 @@ set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)
 set(CMAKE_RC_COMPILER ${TOOLCHAIN_PREFIX}-windres)
 
 # Where is the target environment
-# It contains mingw32 as well as curl
-# Linux Curl (v7.68) is 2 years old, the only Windows curl I can download is v7.78:
-# Make cmake search for Windows curl in .. /home/melroy/Documents/curl-7.78.0-win64-mingw/
-# And what about Gtk? Gtk bundler is very out-dated.. Any update? http://www.tarnyko.net/dl/gtk.htm
-# Curl downloaded from: https://curl.se/download.html#Win64
-# Fontconfig? https://packages.msys2.org/package/mingw-w64-x86_64-fontconfig?repo=mingw64
-
-# Maybe I should install a newer mingw-w64-tools? Hence the error with: x86_64-w64-mingw32-pkg-config fontconfig --cflags --libs
-# Install newer mingw packages via PPA packport: https://launchpad.net/~noasakurajin/+archive/ubuntu/sid-ubuntu-ports
-
 set(CMAKE_FIND_ROOT_PATH
   /usr/${TOOLCHAIN_PREFIX}
   ${WINDOWS_TOOLCHAIN_PATH}
