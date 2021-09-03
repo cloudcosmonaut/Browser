@@ -50,6 +50,7 @@ include_directories(BEFORE
   ${WINDOWS_TOOLCHAIN_PATH}/include/gio-win32-2.0
 )
 
+
 # adjust the default behaviour of the FIND_XXX() commands:
 # search headers and libraries in the target environment, search 
 # programs in the host environment
@@ -57,5 +58,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static -Os")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -Os")
+
+# Supprese warnings via -Wno-attributes (see also: https://github.com/Beep6581/RawTherapee/issues/6105)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static -Os -Wno-attributes")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static -Os -Wno-attributes")
