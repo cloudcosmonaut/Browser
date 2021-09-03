@@ -60,13 +60,20 @@ I'm using VSCodium editor, with the following extensions installed: `C/C++`, `CM
 
 ### Build Dependencies
 
-For the build you need at least:
+For the Linux build you need at least:
 
 * GCC 9 or higher (`build-essential`, `g++-9`)
 * CMake (Package: `cmake`)
 * Ninja build system (Package: `ninja-build`)
 * GTK & Pango (including C++ bindings):
   * Package: `libgtkmm-3.0-dev` under Debian based distros
+
+#### Cross-compiling
+
+For the cross-compiling to Windows (under Linux), you need at least:
+
+* Mingw-w64 (`mingw-w64` and `mingw-w64-tools`)
+* 
 
 ### Developer Docs
 

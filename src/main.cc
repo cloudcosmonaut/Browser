@@ -6,6 +6,8 @@
 #include <gtkmm/application.h>
 #include <iomanip>
 #include <iostream>
+#include <sys/types.h>
+#include <unistd.h>
 
 /**
  * \brief Entry point of the app
