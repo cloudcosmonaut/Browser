@@ -1,5 +1,4 @@
 # Cross-compile on Linux to a native Windows binary
-# Install?: https://www.gtk.org/docs/installations/windows/
 #
 # Build usage: cmake -DCMAKE_TOOLCHAIN_FILE=cmake/crosscompile_mingw32.cmake
 
