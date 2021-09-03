@@ -11,8 +11,9 @@ set(TOOLCHAIN_PREFIX x86_64-w64-mingw32)
 set(WINDOWS_TOOLCHAIN_PATH /home/melroy/Documents/gtk3_bundle_3.24.30_win64)
 
 # which compilers to use for C and C++
-set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
-set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)
+# Switch to Posix compiles to get std::thread working (insto win32)
+set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc-posix)
+set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++-posix)
 set(CMAKE_RC_COMPILER ${TOOLCHAIN_PREFIX}-windres)
 
 # Where is the target environment
@@ -23,11 +24,13 @@ set(CMAKE_FIND_ROOT_PATH
 
 # Add the includes directory of the Windows target system
 foreach(PATH IN LISTS CMAKE_FIND_ROOT_PATH)
-  include_directories(BEFORE ${PATH}/include)
+  include_directories(SYSTEM ${PATH}/include)
 endforeach()
 
+# TODO: Change to CMAKE_PREFIX_PATH: https://github.com/Beep6581/RawTherapee/blob/dev/CMakeLists.txt#L165  ?
+
 # Add includes manually for win64, why doesn't Cmake just recognize those include paths..?
-include_directories(BEFORE 
+include_directories(SYSTEM 
   ${WINDOWS_TOOLCHAIN_PATH}/include/gtkmm-3.0
   ${WINDOWS_TOOLCHAIN_PATH}/include/gdkmm-3.0
   ${WINDOWS_TOOLCHAIN_PATH}/lib/gdkmm-3.0/include

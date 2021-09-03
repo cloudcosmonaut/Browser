@@ -1,5 +1,5 @@
 # TODO: Maybe move this CMake file to cmake folder and include it in the top-level Cmake file?
-set (CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -7,8 +7,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
 
-set (CMAKE_CXX_STANDARD 20)
-set (CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(NOT CYGWIN)
   set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
@@ -21,9 +21,15 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 # Find required dependencies
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK REQUIRED gtk+-3.0)
 pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
 pkg_check_modules(GLIB REQUIRED glib-2.0)
+pkg_check_modules(GLIBMM REQUIRED glibmm-2.4)
 pkg_check_modules(CAIRO REQUIRED cairo)
+pkg_check_modules(GIO REQUIRED gio-2.0)
+pkg_check_modules(GIOMM REQUIRED giomm-2.4)
+pkg_check_modules(GOBJECT REQUIRED gobject-2.0)
+pkg_check_modules(SIGC REQUIRED sigc++-2.0)
 
 add_definitions(${GTKMM_CFLAGS_OTHER} ${CAIRO_CFLAGS_OTHER})
 

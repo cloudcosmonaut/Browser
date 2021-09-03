@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.11.0)
+cmake_minimum_required (VERSION 3.16.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -9,8 +9,8 @@ project (libreweb-browser
   DESCRIPTION "LibreWeb Browser - Decentralized Web-Browser"
   LANGUAGES C CXX)
 
-message("CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
-message("PROJECT_VERSION = ${PROJECT_VERSION}")
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+message(STATUS "PROJECT_VERSION: ${PROJECT_VERSION}")
 
 # Production build
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
