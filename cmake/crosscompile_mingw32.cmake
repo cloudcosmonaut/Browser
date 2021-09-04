@@ -22,15 +22,10 @@ set(CMAKE_FIND_ROOT_PATH
   ${WINDOWS_TOOLCHAIN_PATH}
 )
 
-# Add the includes directory of the Windows target system
-foreach(PATH IN LISTS CMAKE_FIND_ROOT_PATH)
-  include_directories(SYSTEM ${PATH}/include)
-endforeach()
-
-# TODO: Change to CMAKE_PREFIX_PATH: https://github.com/Beep6581/RawTherapee/blob/dev/CMakeLists.txt#L165  ?
-
 # Add includes manually for win64, why doesn't Cmake just recognize those include paths..?
-include_directories(SYSTEM 
+set(SYSTEM_INCLUDES 
+  /usr/${TOOLCHAIN_PREFIX}/include
+  ${WINDOWS_TOOLCHAIN_PATH}/include
   ${WINDOWS_TOOLCHAIN_PATH}/include/gtkmm-3.0
   ${WINDOWS_TOOLCHAIN_PATH}/include/gdkmm-3.0
   ${WINDOWS_TOOLCHAIN_PATH}/lib/gdkmm-3.0/include
@@ -53,6 +48,7 @@ include_directories(SYSTEM
   ${WINDOWS_TOOLCHAIN_PATH}/include/gio-win32-2.0
 )
 
+include_directories(BEFORE ${SYSTEM_INCLUDES})
 
 # adjust the default behaviour of the FIND_XXX() commands:
 # search headers and libraries in the target environment, search 
@@ -60,7 +56,7 @@ include_directories(SYSTEM
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 # Supprese warnings via -Wno-attributes (see also: https://github.com/Beep6581/RawTherapee/issues/6105)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static -Os -Wno-attributes")
