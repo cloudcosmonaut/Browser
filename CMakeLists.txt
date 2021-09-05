@@ -25,6 +25,7 @@ set (DISABLE_INSTALL ON CACHE BOOL "Disable Install" FORCE)
 add_subdirectory (lib/commonmarker/src)
 add_subdirectory (lib/commonmarker/extensions)
 add_subdirectory (lib/ipfs-http-client)
+add_subdirectory (lib/whereami)
 add_subdirectory (src)
 
 # Additional install files

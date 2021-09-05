@@ -21,6 +21,7 @@
 #include <iostream>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <whereami.h>
 
 MainWindow::MainWindow(const std::string &timeout)
     : m_accelGroup(Gtk::AccelGroup::create()),
@@ -1642,10 +1643,7 @@ bool MainWindow::isInstalled()
         // If current binary path starts with the install prefix, it's installed
         return (strncmp(pathbuf, INSTALL_PREFIX, strlen(INSTALL_PREFIX)) == 0);
     }
-    else
-    {
-        return true; // fallback; always installed
-    }
+    return true; // fallback; always installed
 }
 
 /**

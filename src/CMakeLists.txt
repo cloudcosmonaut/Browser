@@ -21,6 +21,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 # Find required dependencies
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
+# find_package(whereami REQUIRED)
 pkg_check_modules(GTK REQUIRED gtk+-3.0)
 pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
 pkg_check_modules(GLIB REQUIRED glib-2.0)
@@ -145,7 +146,6 @@ target_include_directories(${PROJECT_TARGET} PRIVATE
     ${CMAKE_EXTENSIONS_BINARY_DIR}
     ${GTKMM_INCLUDE_DIRS}
     ${CAIRO_INCLUDE_DIRS}
-    ${PROJECT_SOURCE_DIR}/lib/ipfs-http-client/include
 )
 
 target_link_directories(${PROJECT_TARGET} PRIVATE
@@ -153,7 +153,7 @@ target_link_directories(${PROJECT_TARGET} PRIVATE
   ${CAIRO_LIBRARIES}
 )
 
-target_link_libraries(${PROJECT_TARGET} PRIVATE LibCommonMarker LibCommonMarkerExtensions ipfs-http-client Threads::Threads ${CXX_FILESYSTEM_LIBRARIES} ${GTKMM_LIBRARIES} nlohmann_json::nlohmann_json)
+target_link_libraries(${PROJECT_TARGET} PRIVATE LibCommonMarker LibCommonMarkerExtensions ipfs-http-client whereami Threads::Threads ${CXX_FILESYSTEM_LIBRARIES} ${GTKMM_LIBRARIES} nlohmann_json::nlohmann_json)
 
 # Install browser binary
 install(TARGETS ${PROJECT_TARGET} RUNTIME DESTINATION bin)
