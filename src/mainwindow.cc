@@ -1636,14 +1636,24 @@ void MainWindow::refresh()
  */
 bool MainWindow::isInstalled()
 {
-    char pathbuf[1024];
-    memset(pathbuf, 0, sizeof(pathbuf));
-    if (readlink("/proc/self/exe", pathbuf, sizeof(pathbuf) - 1) > 0)
+    char* path = NULL;
+    int length;
+    length = wai_getExecutablePath(NULL, 0, NULL);
+    if (length > 0)
     {
-        // If current binary path starts with the install prefix, it's installed
-        return (strncmp(pathbuf, INSTALL_PREFIX, strlen(INSTALL_PREFIX)) == 0);
+        path = (char*)malloc(length + 1);
+        if (!path) {
+            std::cerr << "ERROR: Couldn't create path." << std::endl;
+        } else {
+            wai_getExecutablePath(path, length, NULL);
+            path[length] = '\0';
+            // Does the executable path starts with /usr/local?
+            bool isInstalled = (strncmp(path, INSTALL_PREFIX, strlen(INSTALL_PREFIX)) == 0);
+            free(path);
+            return isInstalled;
+        }
     }
-    return true; // fallback; always installed
+    return true; // fallback; assume always installed
 }
 
 /**
