@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ipfs-process.h"
-#include "project_config.h"
 #include "option-group.h"
+#include "project_config.h"
 
 #include <gtkmm/application.h>
 #include <iomanip>
