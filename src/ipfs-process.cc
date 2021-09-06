@@ -120,10 +120,7 @@ bool IPFSProcess::shouldProcessTerminated(pid_t pid)
         return (strncmp(pathbuf, beginPath, strlen(beginPath)) != 0);
         // TODO: Compare IPFS version as well (via: "ipfs version" command), maybe?
     }
-    else
-    {
-        return true; // error fall-back also kill
-    }
+    return true; // error fall-back also kill
 }
 
 /**

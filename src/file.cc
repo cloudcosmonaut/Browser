@@ -57,5 +57,5 @@ void File::write(const std::string &path, const std::string &content)
  */
 std::string const File::getFilename(const std::string &path)
 {
-    return n_fs::path(path).filename();
+    return n_fs::path(path).filename().string();
 }
