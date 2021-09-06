@@ -21,7 +21,6 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 # Find required dependencies
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
-# find_package(whereami REQUIRED)
 pkg_check_modules(GTK REQUIRED gtk+-3.0)
 pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
 pkg_check_modules(GLIB REQUIRED glib-2.0)
@@ -84,7 +83,6 @@ set(HEADERS
     about.h
     draw.h
     file.h
-    ipfs-process.h
     ipfs.h
     mainwindow.h
     md-parser.h
@@ -97,7 +95,6 @@ set(SOURCES
   about.cc
   draw.cc
   file.cc
-  ipfs-process.cc
   ipfs.cc
   mainwindow.cc
   md-parser.cc

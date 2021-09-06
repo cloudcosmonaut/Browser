@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include "ipfs-process.h"
 #include "option-group.h"
 #include "project_config.h"
 
