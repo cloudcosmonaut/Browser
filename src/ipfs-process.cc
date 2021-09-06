@@ -52,10 +52,10 @@ int IPFSProcess::startIPFSDaemon()
         if (n_fs::exists(executable))
         {
             /// open /dev/null for writing
-            int fd = open("/dev/null", O_WRONLY);
+            /*int fd = open("/dev/null", O_WRONLY);
             dup2(fd, 1); // make stdout a copy of fd (> /dev/null)
             dup2(fd, 2); // ..and same with stderr
-            close(fd);   // close fd
+            close(fd);   // close fd*/
             // stdout and stderr now write to /dev/null
 
             // Ready to call exec to start IPFS Daemon

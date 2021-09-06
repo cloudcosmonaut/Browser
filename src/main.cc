@@ -23,9 +23,9 @@ int main(int argc, char *argv[])
     auto app = Gtk::Application::create();
     app->set_flags(Gio::ApplicationFlags::APPLICATION_NON_UNIQUE);
     
+    // Parse the context
     try
     {
-        // Parse the content
         context.parse(argc, argv);
         if (group.m_version)
         {
@@ -38,6 +38,17 @@ int main(int argc, char *argv[])
         std::cerr << "ERROR: Parse failure: " << error.what() << std::endl;
         exit(EXIT_FAILURE);
     }
+
+    // Run the GTK window in the main thread
+    MainWindow window(group.m_timeout);
+    return app->run(window);
+}
+
+/*
+
+TODO: Start IPFS process outside this application via installation?
+
+Unix Fork code:
 
     pid_t child_pid = fork();
     if (child_pid == 0)
@@ -61,4 +72,4 @@ int main(int argc, char *argv[])
         printf("ERROR: fork failed.\n");
         return EXIT_FAILURE;
     }
-}
+*/
