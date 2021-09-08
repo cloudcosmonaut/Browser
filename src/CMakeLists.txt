@@ -21,17 +21,9 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 # Find required dependencies
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(GTK REQUIRED gtk+-3.0)
 pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
-pkg_check_modules(GLIB REQUIRED glib-2.0)
-pkg_check_modules(GLIBMM REQUIRED glibmm-2.4)
-pkg_check_modules(CAIRO REQUIRED cairo)
-pkg_check_modules(GIO REQUIRED gio-2.0)
-pkg_check_modules(GIOMM REQUIRED giomm-2.4)
-pkg_check_modules(GOBJECT REQUIRED gobject-2.0)
-pkg_check_modules(SIGC REQUIRED sigc++-2.0)
 
-add_definitions(${GTKMM_CFLAGS_OTHER} ${CAIRO_CFLAGS_OTHER})
+add_definitions(${GTKMM_CFLAGS_OTHER})
 
 # Add JSON Parser via CMake Fetch Content feature
 include(FetchContent)
@@ -141,16 +133,11 @@ get_property(CMAKE_EXTENSIONS_BINARY_DIR GLOBAL PROPERTY COMMONMARKER_EXTENSIONS
 target_include_directories(${PROJECT_TARGET} PRIVATE
     ${CMAKE_BINARY_DIR}
     ${CMAKE_EXTENSIONS_BINARY_DIR}
-    ${GTK_INCLUDE_DIRS}
     ${GTKMM_INCLUDE_DIRS}
-    ${CAIRO_INCLUDE_DIRS}
 )
 
 target_link_directories(${PROJECT_TARGET} PRIVATE
-  ${GTK_LIBRARY_DIRS}
   ${GTKMM_LIBRARY_DIRS}
-  ${GLIBMM_LIBRARY_DIRS}
-  ${CAIRO_LIBRARIES}
 )
 
 target_link_libraries(${PROJECT_TARGET} PRIVATE LibCommonMarker LibCommonMarkerExtensions ipfs-http-client whereami Threads::Threads ${CXX_FILESYSTEM_LIBRARIES} ${GTKMM_LIBRARIES} nlohmann_json::nlohmann_json)
