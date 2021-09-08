@@ -22,15 +22,27 @@ set(CMAKE_FIND_ROOT_PATH
   ${WINDOWS_TOOLCHAIN_PATH}
 )
 
+# Set the mingw pkg-config executable
+set(PKG_CONFIG_EXECUTABLE /usr/bin/${TOOLCHAIN_PREFIX}-pkg-config CACHE PATH "pkg-config executable")
+
+# Change the environment variables to find the target pkgconfig files
+set(ENV{PKG_CONFIG_LIBDIR} /usr/${TOOLCHAIN_PREFIX}lib/pkgconfig:${WINDOWS_TOOLCHAIN_PATH}/lib/pkgconfig)
+set(ENV{PKG_CONFIG_PATH} /usr/${TOOLCHAIN_PREFIX}/lib/pkgconfig:${WINDOWS_TOOLCHAIN_PATH}/lib/pkgconfig)
+
 # Add includes manually for win64, why doesn't Cmake just recognize those include paths..?
 set(SYSTEM_INCLUDES 
   /usr/${TOOLCHAIN_PREFIX}/include
   ${WINDOWS_TOOLCHAIN_PATH}/include
+  ${WINDOWS_TOOLCHAIN_PATH}/include/atk-1.0
   ${WINDOWS_TOOLCHAIN_PATH}/include/gtkmm-3.0
+  ${WINDOWS_TOOLCHAIN_PATH}/lib/gtkmm-3.0/include
+  ${WINDOWS_TOOLCHAIN_PATH}/include/harfbuzz
   ${WINDOWS_TOOLCHAIN_PATH}/include/gdkmm-3.0
   ${WINDOWS_TOOLCHAIN_PATH}/lib/gdkmm-3.0/include
+  ${WINDOWS_TOOLCHAIN_PATH}/include/pango-1.0
   ${WINDOWS_TOOLCHAIN_PATH}/include/pangomm-1.4
   ${WINDOWS_TOOLCHAIN_PATH}/lib/pangomm-1.4/include
+  ${WINDOWS_TOOLCHAIN_PATH}/include/cairo
   ${WINDOWS_TOOLCHAIN_PATH}/include/cairomm-1.0
   ${WINDOWS_TOOLCHAIN_PATH}/lib/cairomm-1.0/include
   ${WINDOWS_TOOLCHAIN_PATH}/include/glibmm-2.4
@@ -39,6 +51,7 @@ set(SYSTEM_INCLUDES
   ${WINDOWS_TOOLCHAIN_PATH}/lib/atkmm-1.6/include
   ${WINDOWS_TOOLCHAIN_PATH}/include/sigc++-2.0
   ${WINDOWS_TOOLCHAIN_PATH}/lib/sigc++-2.0/include
+  ${WINDOWS_TOOLCHAIN_PATH}/include/freetype2
   ${WINDOWS_TOOLCHAIN_PATH}/include/giomm-2.4
   ${WINDOWS_TOOLCHAIN_PATH}/lib/giomm-2.4/include
   ${WINDOWS_TOOLCHAIN_PATH}/include/gtk-3.0
