@@ -21,6 +21,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 # Find required dependencies
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK REQUIRED gtk+-3.0)
 pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
 
 add_definitions(${GTKMM_CFLAGS_OTHER})
@@ -133,11 +134,13 @@ get_property(CMAKE_EXTENSIONS_BINARY_DIR GLOBAL PROPERTY COMMONMARKER_EXTENSIONS
 target_include_directories(${PROJECT_TARGET} PRIVATE
     ${CMAKE_BINARY_DIR}
     ${CMAKE_EXTENSIONS_BINARY_DIR}
+    ${GTK_INCLUDE_DIRS}
     ${GTKMM_INCLUDE_DIRS}
 )
 
 target_link_directories(${PROJECT_TARGET} PRIVATE
-  ${GTKMM_LIBRARY_DIRS}
+    ${GTK_LIBRARY_DIRS}
+    ${GTKMM_LIBRARY_DIRS}
 )
 
 target_link_libraries(${PROJECT_TARGET} PRIVATE LibCommonMarker LibCommonMarkerExtensions ipfs-http-client whereami Threads::Threads ${CXX_FILESYSTEM_LIBRARIES} ${GTKMM_LIBRARIES} nlohmann_json::nlohmann_json)
