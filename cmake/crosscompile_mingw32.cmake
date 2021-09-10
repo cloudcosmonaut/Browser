@@ -19,7 +19,6 @@ set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc-posix)
 set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++-posix)
 set(CMAKE_RC_COMPILER ${TOOLCHAIN_PREFIX}-windres)
 
-
 # Ensure that FIND_PACKAGE() functions and friends look in the rootfs for the target environment
 set(CMAKE_FIND_ROOT_PATH
   /usr/${TOOLCHAIN_PREFIX}
