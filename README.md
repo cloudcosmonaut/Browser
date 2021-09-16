@@ -72,10 +72,28 @@ For the Linux build you need at least:
 
 For the cross-compiling to Windows (under Linux), you need at least:
 
-* Mingw-w64 (`mingw-w64` and `mingw-w64-tools`, atleast needing: `x86_64-w64-mingw32`)
-* [Gtk3 Mingw bundle for Windows 64-bit](https://gitlab.melroy.org/melroy/gtk-3-bundle-for-windows/-/tree/main) (Contains: GTK, Gtkmm, Cairo, Pango, Glib, ... + Curl)
+* [MXE](https://mxe.cc)
 * CMake
 * Ninja build system
+* Menson build
+
+Instead of installing the pre-packaged versions of MXE, which are too out-dated. We compiled a full GTK from source code with up to date GTK version, as well as all the dependencies (GLib, Atk, Pango, Cairo, and much more). Also we are using GCC9, to the MXE compile command would be on my [updated GTK branch](https://github.com/danger89/mxe/tree/update_gtk):
+
+```sh
+sudo make gtk3 -j 16 MXE_TARGETS='x86_64-w64-mingw32.static.posix' MXE_PLUGIN_DIRS='plugins/gcc9'
+```
+
+Assuming you ran the command above from `/opt/mxe` directory, you can enable your MXE environment via Bash by adding the following line to the end of the `~/.bashrc` file:
+
+```bash
+export PATH="/opt/mxe/usr/bin:$PATH"
+```
+
+##### Cross-compile build
+
+If you meet all the requirements (see above), we can actually start cross-compiling LibreWeb itself towards Windows 64-bit.
+
+You can use the provided script to build the Windows binary: `./scripts/build_win_prod.sh`
 
 ### Developer Docs
 
