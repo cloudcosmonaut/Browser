@@ -10,6 +10,7 @@
 #include <giomm/file.h>
 #include <giomm/notification.h>
 #include <giomm/themedicon.h>
+#include <giomm/settingsschemasource.h>
 #include <glibmm/fileutils.h>
 #include <glibmm/miscutils.h>
 #include <glibmm/main.h>
@@ -61,6 +62,9 @@ MainWindow::MainWindow(const std::string &timeout)
       m_iconTheme("flat"),             // default is flat theme
       m_useCurrentGTKIconTheme(false), // Use our built-in icon theme or the GTK icons
       m_iconSize(18),
+      m_fontFamily("Sans"),
+      m_defaultFontSize(10),
+      m_currentFontSize(10),
       m_fontSpacing(0),
       m_requestThread(nullptr),
       currentHistoryIndex(0),
@@ -173,29 +177,49 @@ void MainWindow::loadStoredSettings()
         std::cout << "INFO: Use settings from: " << schemaDir << std::endl;
         Glib::setenv("GSETTINGS_SCHEMA_DIR", schemaDir);
     }
+
     // Load schema settings file
-    m_settings = Gio::Settings::create("org.libreweb.browser");
-    // Apply global settings
-    set_default_size(m_settings->get_int("width"), m_settings->get_int("height"));
-    if (m_settings->get_boolean("maximized"))
-        this->maximize();
-    
-    this->m_fontFamily = m_settings->get_string("font-family");
-    this->m_currentFontSize = this->m_defaultFontSize = m_settings->get_int("font-size");
-    this->m_fontButton.set_font_name(this->m_fontFamily + " " + std::to_string(this->m_currentFontSize));
+    auto schemaSource = Gio::SettingsSchemaSource::get_default()->lookup("org.libreweb.browser", true);
+    if (schemaSource)
+    {
+        m_settings = Gio::Settings::create("org.libreweb.browser");
+        // Apply global settings
+        set_default_size(m_settings->get_int("width"), m_settings->get_int("height"));
+        if (m_settings->get_boolean("maximized"))
+            this->maximize();
 
-    m_fontSpacing = m_settings->get_int("spacing");
-    int margins = m_settings->get_int("margins");
-    int indent = m_settings->get_int("indent");
-    this->m_spacingAdjustment->set_value(m_fontSpacing);
-    this->m_marginsAdjustment->set_value(margins);
-    this->m_indentAdjustment->set_value(indent);
-    this->m_draw_main.set_left_margin(margins);
-    this->m_draw_main.set_right_margin(margins);
-    this->m_draw_main.set_indent(indent);
+        this->m_fontFamily = m_settings->get_string("font-family");
+        this->m_currentFontSize = this->m_defaultFontSize = m_settings->get_int("font-size");
+        this->m_fontButton.set_font_name(this->m_fontFamily + " " + std::to_string(this->m_currentFontSize));
 
-    this->m_iconTheme = m_settings->get_string("icon-theme");
-    this->m_useCurrentGTKIconTheme = m_settings->get_boolean("icon-gtk-theme");
+        m_fontSpacing = m_settings->get_int("spacing");
+        int margins = m_settings->get_int("margins");
+        int indent = m_settings->get_int("indent");
+        this->m_spacingAdjustment->set_value(m_fontSpacing);
+        this->m_marginsAdjustment->set_value(margins);
+        this->m_indentAdjustment->set_value(indent);
+        this->m_draw_main.set_left_margin(margins);
+        this->m_draw_main.set_right_margin(margins);
+        this->m_draw_main.set_indent(indent);
+
+        this->m_iconTheme = m_settings->get_string("icon-theme");
+        this->m_useCurrentGTKIconTheme = m_settings->get_boolean("icon-gtk-theme");
+    }
+    else
+    {
+        std::cerr << "ERROR: Gsettings schema file could not be found!" << std::endl;
+        // Fallback settings if schema isn't found,
+        // for adjustment controls
+        int margins = 20;
+        int indent = 0;
+        this->m_spacingAdjustment->set_value(0);
+        this->m_marginsAdjustment->set_value(margins);
+        this->m_indentAdjustment->set_value(indent);
+        // For drawing
+        this->m_draw_main.set_left_margin(margins);
+        this->m_draw_main.set_right_margin(margins);
+        this->m_draw_main.set_indent(indent);
+    }
 }
 
 /**
@@ -287,19 +311,28 @@ std::size_t MainWindow::loadStatusIcon(bool reload)
     {
         if (m_useCurrentGTKIconTheme)
         {
-            if (nrPeers > 0) {
+            if (nrPeers > 0)
+            {
                 m_statusIcon.set_from_icon_name("network-wired-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-            } else {
+            }
+            else
+            {
                 m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
             }
-        } else { 
-            if (reload) {
+        }
+        else
+        {
+            if (reload)
+            {
                 m_statusOfflineIcon = Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("network_disconnected", "network"), m_iconSize, m_iconSize);
                 m_statusOnlineIcon = Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("network_connected", "network"), m_iconSize, m_iconSize);
             }
-            if (nrPeers > 0) {
+            if (nrPeers > 0)
+            {
                 m_statusIcon.set(m_statusOnlineIcon);
-            } else {
+            }
+            else
+            {
                 m_statusIcon.set(m_statusOfflineIcon);
             }
         }
@@ -446,7 +479,7 @@ void MainWindow::initButtons()
     m_searchButton.add(m_searchIcon);
     m_statusButton.add(m_statusIcon);
     m_settingsButton.add(m_settingsIcon);
-    
+
     // Add spinning CSS class to refresh icon
     auto cssProvider = Gtk::CssProvider::create();
     auto screen = Gdk::Screen::get_default();
@@ -564,7 +597,7 @@ void MainWindow::initStatusPopover()
     m_activityStatusGrid.set_margin_bottom(6);
     m_activityStatusGrid.set_margin_end(6);
     m_activityStatusGrid.set_row_spacing(10);
-    m_activityStatusGrid.set_column_spacing(6);    
+    m_activityStatusGrid.set_column_spacing(6);
     m_activityStatusGrid.attach(m_networkIncomingLabel, 1, 0);
     m_activityStatusGrid.attach(m_networkOutcomingLabel, 2, 0);
     m_activityStatusGrid.attach(m_networkKiloBytesLabel, 0, 1);
@@ -702,7 +735,7 @@ void MainWindow::initSettingsPopover()
     m_vboxIconTheme.add(m_iconThemeListScrolledWindow);
     // TODO: Some strange sliding animation happens the first time I collapse the settings popover
     m_settingsPopover.add(m_vboxIconTheme);
-    
+
     m_settingsPopover.child_property_submenu(m_vboxIconTheme) = "icon-theme";
 
     // Add all to vbox / pop-over
@@ -863,25 +896,27 @@ void MainWindow::doRequest(const std::string &path, bool isSetAddressBar, bool i
  */
 bool MainWindow::delete_window(GdkEventAny *any_event __attribute__((unused)))
 {
-    // Save the schema settings
-    m_settings->set_int("width", this->get_width());
-    m_settings->set_int("height", this->get_height());
-    m_settings->set_boolean("maximized", this->is_maximized());
-    // Only store a divider value bigger than zero,
-    // because the secondary draw window is hidden by default, resulting into a zero value.
-    if (this->m_paned.get_position() > 0)
-        m_settings->set_int("position-divider", this->m_paned.get_position());
+    if (m_settings) {
+        // Save the schema settings
+        m_settings->set_int("width", this->get_width());
+        m_settings->set_int("height", this->get_height());
+        m_settings->set_boolean("maximized", this->is_maximized());
+        // Only store a divider value bigger than zero,
+        // because the secondary draw window is hidden by default, resulting into a zero value.
+        if (this->m_paned.get_position() > 0)
+            m_settings->set_int("position-divider", this->m_paned.get_position());
 
-    // Fullscreen will be availible with gtkmm-4.0
-    //m_settings->set_boolean("fullscreen", this->is_fullscreen());
+        // Fullscreen will be availible with gtkmm-4.0
+        //m_settings->set_boolean("fullscreen", this->is_fullscreen());
 
-    m_settings->set_string("font-family", this->m_fontFamily);
-    m_settings->set_int("font-size", this->m_currentFontSize);
-    m_settings->set_int("spacing", this->m_spacingSpinButton.get_value_as_int());
-    m_settings->set_int("margins", this->m_marginsSpinButton.get_value_as_int());
-    m_settings->set_int("indent", this->m_indentSpinButton.get_value_as_int());
-    m_settings->set_string("icon-theme", this->m_iconTheme);
-    m_settings->set_boolean("icon-gtk-theme", this->m_useCurrentGTKIconTheme);    
+        m_settings->set_string("font-family", this->m_fontFamily);
+        m_settings->set_int("font-size", this->m_currentFontSize);
+        m_settings->set_int("spacing", this->m_spacingSpinButton.get_value_as_int());
+        m_settings->set_int("margins", this->m_marginsSpinButton.get_value_as_int());
+        m_settings->set_int("indent", this->m_indentSpinButton.get_value_as_int());
+        m_settings->set_string("icon-theme", this->m_iconTheme);
+        m_settings->set_boolean("icon-gtk-theme", this->m_useCurrentGTKIconTheme);
+    }
     return false;
 }
 
@@ -1477,11 +1512,13 @@ void MainWindow::go_home()
  */
 void MainWindow::copy_client_id()
 {
-    if (!this->m_ipfsClientID.empty()) {
+    if (!this->m_ipfsClientID.empty())
+    {
         get_clipboard("CLIPBOARD")->set_text(this->m_ipfsClientID);
         this->showNotification("Copied to clipboard", "Your client ID is now copied to your clipboard.");
     }
-    else {
+    else
+    {
         std::cerr << "WARNING: IPFS client ID has not been set yet. Skip clipboard action." << std::endl;
     }
 }
@@ -1491,11 +1528,13 @@ void MainWindow::copy_client_id()
  */
 void MainWindow::copy_client_public_key()
 {
-    if (!this->m_ipfsClientPublicKey.empty()) {
+    if (!this->m_ipfsClientPublicKey.empty())
+    {
         get_clipboard("CLIPBOARD")->set_text(this->m_ipfsClientPublicKey);
         this->showNotification("Copied to clipboard", "Your client public key is now copied to your clipboard.");
     }
-    else {
+    else
+    {
         std::cerr << "WARNING: IPFS client public key has not been set yet. Skip clipboard action." << std::endl;
     }
 }
@@ -1644,15 +1683,18 @@ void MainWindow::refresh()
  */
 bool MainWindow::isInstalled()
 {
-    char* path = NULL;
+    char *path = NULL;
     int length;
     length = wai_getExecutablePath(NULL, 0, NULL);
     if (length > 0)
     {
-        path = (char*)malloc(length + 1);
-        if (!path) {
+        path = (char *)malloc(length + 1);
+        if (!path)
+        {
             std::cerr << "ERROR: Couldn't create path." << std::endl;
-        } else {
+        }
+        else
+        {
             wai_getExecutablePath(path, length, NULL);
             path[length] = '\0';
             // Does the executable path starts with /usr/local?
@@ -1676,7 +1718,9 @@ void MainWindow::enableEdit()
     this->m_hboxFormattingEditorToolbar.show();
     // Determine position of divider between the primary and secondary windows
     int location = 0;
-    int positionSettings = m_settings->get_int("position-divider");
+    int positionSettings = 42;
+    if (m_settings)
+        positionSettings = m_settings->get_int("position-divider");
     int currentWidth, _ = 0;
     this->get_size(currentWidth, _);
     // If position from settings is still default (42) or too big,
@@ -1884,7 +1928,7 @@ void MainWindow::openFromDisk(bool isParseContent)
     }
     catch (const std::runtime_error &error)
     {
-        std::cerr << "ERROR: File request failed, with message: " << error.what() << std::endl;
+        std::cerr << "ERROR: File request failed, file: " << finalRequestPath << ". Message: " << error.what() << std::endl;
         m_draw_main.showMessage("🎂 File not found", "Message: " + std::string(error.what()));
     }
     // Stop spinning
@@ -1930,10 +1974,13 @@ std::string MainWindow::getIconImageFromTheme(const std::string &iconName, const
 void MainWindow::updateCSS()
 {
     m_drawCSSProvider->load_from_data("textview { "
-                                      "font-family: \"" +  m_fontFamily + "\";"
-                                      "font-size: " + std::to_string(m_currentFontSize) + "pt;"
-                                      "letter-spacing: " + std::to_string(m_fontSpacing) + "px;"
-                                      "}");
+                                      "font-family: \"" +
+                                      m_fontFamily + "\";"
+                                                     "font-size: " +
+                                      std::to_string(m_currentFontSize) + "pt;"
+                                                                          "letter-spacing: " +
+                                      std::to_string(m_fontSpacing) + "px;"
+                                                                      "}");
 }
 
 /**
@@ -2058,10 +2105,13 @@ void MainWindow::on_indent_changed()
 void MainWindow::on_icon_theme_activated(Gtk::ListBoxRow *row)
 {
     std::string themeName = static_cast<char *>(row->get_data("value"));
-    if (themeName != "none") {
+    if (themeName != "none")
+    {
         this->m_iconTheme = themeName;
         this->m_useCurrentGTKIconTheme = false;
-    } else {
+    }
+    else
+    {
         this->m_useCurrentGTKIconTheme = true;
     }
     // Reload images
