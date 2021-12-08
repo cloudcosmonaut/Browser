@@ -60,7 +60,8 @@ std::string About::getLogoImage()
 
     // Try local path if the images are not installed (yet)
     // When working directory is in the build/bin folder (relative path)
-    std::string file_path = Glib::build_filename("../../images", "browser_logo_small.png");
+    std::vector<std::string> path_builder{"..", "..", "images", "browser_logo_small.png"};
+    std::string file_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
     if (Glib::file_test(file_path, Glib::FileTest::FILE_TEST_IS_REGULAR))
     {
         return file_path;
