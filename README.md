@@ -73,18 +73,21 @@ For the Linux build you need at least:
 
 For the cross-compiling to Windows (under Linux), you need at least:
 
-* [MXE](https://mxe.cc)
+* [MXE GTK3 / Gtkmm3 / Curl Binary packages](mxe.cc) (static build using Meson build with GCC10)
 * CMake
-* Ninja build system
-* Menson build
+* Ninja
 
-Instead of installing the pre-packaged versions of MXE, which are too out-dated. We compiled a full GTK from source code with up to date GTK version, as well as all the dependencies (GLib, Atk, Pango, Cairo, and much more). Also we are using GCC9, to the MXE compile command would be on my [updated GTK branch](https://github.com/danger89/mxe/tree/update_gtk):
+For more information and the latest GTK3 Windows MXE download, please [visit this other GitLab project](https://gitlab.melroy.org/melroy/gtk-3-bundle-for-windows).
+
+*Note:* We're currently busy trying to upgrade the [whole GTK stack](https://github.com/danger89/mxe/tree/update_gtk).
+
+We used the following build command to get the Windows dependencies and MXE cross-compilation toolset:
 
 ```sh
-sudo make gtk3 -j 16 MXE_TARGETS='x86_64-w64-mingw32.static.posix' MXE_PLUGIN_DIRS='plugins/gcc9'
+make gtkmm3 curl -j 16 MXE_TARGETS='x86_64-w64-mingw32.static' MXE_PLUGIN_DIRS='plugins/gcc10'
 ```
 
-Assuming you ran the command above from `/opt/mxe` directory, you can enable your MXE environment via Bash by adding the following line to the end of the `~/.bashrc` file:
+Add the following line to the end of the `~/.bashrc` file:
 
 ```bash
 export PATH="/opt/mxe/usr/bin:$PATH"
