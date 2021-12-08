@@ -262,7 +262,11 @@ void MainWindow::loadIcons()
     }
     catch (const Glib::FileError &error)
     {
-        std::cerr << "ERROR: Icon could not be loaded: " << error.what() << ".\nContinue nevertheless..." << std::endl;
+        std::cerr << "ERROR: Icon could not be loaded, file error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
+    }
+    catch (const Gdk::PixbufError &error)
+    {
+        std::cerr << "ERROR: Icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
     }
 
     // Load toolbar status icon image separately
@@ -302,7 +306,11 @@ std::size_t MainWindow::loadStatusIcon(bool reload)
     }
     catch (const Glib::FileError &error)
     {
-        std::cerr << "ERROR: Status icon could not be loaded: " << error.what() << ".\nContinue nevertheless..." << std::endl;
+        std::cerr << "ERROR: Status icon could not be loaded, file error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
+    }
+    catch (const Gdk::PixbufError &error)
+    {
+        std::cerr << "ERROR: Status icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
     }
     return nrPeers;
 }
@@ -1902,9 +1910,10 @@ std::string MainWindow::getIconImageFromTheme(const std::string &iconName, const
         }
     }
 
-    // Try local path if the images are not installed (yet)
+    // Try local path if the images are not (yet) installed
     // When working directory is in the build/bin folder (relative path)
-    std::string file_path = Glib::build_filename("../../images/icons", m_iconTheme, typeofIcon, iconName + ".svg");
+    std::vector<std::string> path_builder{"..", "..", "images", "icons", m_iconTheme, typeofIcon, iconName + ".svg"};
+    std::string file_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
     if (Glib::file_test(file_path, Glib::FileTest::FILE_TEST_IS_REGULAR))
     {
         return file_path;
