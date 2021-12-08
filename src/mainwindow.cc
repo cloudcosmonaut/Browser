@@ -1893,16 +1893,16 @@ void MainWindow::openFromDisk(bool isParseContent)
 
 /**
  * Retrieve image path from icon theme location
- * @param iconName Icon name (.svg is added default)
+ * @param iconName Icon name (.png is added default)
  * @param typeofIcon Type of the icon is the sub-folder within the icons directory (eg. "editor", "arrows" or "basic")
- * @return full path of the icon SVG image
+ * @return full path of the icon PNG image
  */
 std::string MainWindow::getIconImageFromTheme(const std::string &iconName, const std::string &typeofIcon)
 {
     // Try absolute path first
     for (std::string data_dir : Glib::get_system_data_dirs())
     {
-        std::vector<std::string> path_builder{data_dir, "libreweb-browser", "images", "icons", m_iconTheme, typeofIcon, iconName + ".svg"};
+        std::vector<std::string> path_builder{data_dir, "libreweb-browser", "images", "icons", m_iconTheme, typeofIcon, iconName + ".png"};
         std::string file_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
         if (Glib::file_test(file_path, Glib::FileTest::FILE_TEST_IS_REGULAR))
         {
@@ -1912,7 +1912,7 @@ std::string MainWindow::getIconImageFromTheme(const std::string &iconName, const
 
     // Try local path if the images are not (yet) installed
     // When working directory is in the build/bin folder (relative path)
-    std::vector<std::string> path_builder{"..", "..", "images", "icons", m_iconTheme, typeofIcon, iconName + ".svg"};
+    std::vector<std::string> path_builder{"..", "..", "images", "icons", m_iconTheme, typeofIcon, iconName + ".png"};
     std::string file_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
     if (Glib::file_test(file_path, Glib::FileTest::FILE_TEST_IS_REGULAR))
     {
