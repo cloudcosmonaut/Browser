@@ -170,11 +170,13 @@ MainWindow::MainWindow(const std::string &timeout)
  */
 void MainWindow::loadStoredSettings()
 {
-    // Change schema directory when browser is not installed
+    // Set additional schema directory, when browser is not yet installed
     if (!this->isInstalled())
     {
-        std::string schemaDir = std::string(BINARY_DIR) + "/gsettings";
-        std::cout << "INFO: Use settings from: " << schemaDir << std::endl;
+        // Relative to the binary path
+        std::vector<std::string> relativePath{"..", "src", "gsettings"};
+        std::string schemaDir = Glib::build_path(G_DIR_SEPARATOR_S, relativePath);
+        std::cout << "INFO: Try to find the schema file using the following directory first: " << schemaDir << std::endl;
         Glib::setenv("GSETTINGS_SCHEMA_DIR", schemaDir);
     }
 
