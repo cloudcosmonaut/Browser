@@ -1819,7 +1819,6 @@ void MainWindow::processRequest(const std::string &path, bool isParseContent)
     // Handle homepage
     else if (requestPath.compare("about:home") == 0)
     {
-        std::cout << "Showing the homepage." << std::endl;
         m_draw_main.showStartPage();
         m_refreshIcon.get_style_context()->remove_class("spinning");
     }
