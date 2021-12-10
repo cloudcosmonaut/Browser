@@ -70,6 +70,7 @@ MainWindow::MainWindow(const std::string &timeout)
       currentHistoryIndex(0),
       m_waitPageVisible(false),
       m_ipfsNetworkStatus("Disconnected"),
+      m_ipfsNumberOfPeers(0),
       m_ipfsRepoSize(0),
       m_ipfsIncomingRate("0.0"),
       m_ipfsOutcomingRate("0.0"),
@@ -153,7 +154,8 @@ MainWindow::MainWindow(const std::string &timeout)
 
     // First time manually trigger the status update once,
     // timer will do the updates later
-    this->update_connection_status();
+    // TODO: Fix under Windows. It causes hang.
+    //this->update_connection_status();
 
 // Show homepage if debugging is disabled
 #ifdef NDEBUG
@@ -308,6 +310,7 @@ void MainWindow::loadIcons()
  */
 std::size_t MainWindow::loadStatusIcon(bool reload)
 {
+    // TODO: This call is causing hangs under Windows at the moment (blocking call? too high time-outs)
     std::size_t nrPeers = ipfs.getNrPeers();
     try
     {
@@ -781,7 +784,8 @@ void MainWindow::updateStatusPopover()
 void MainWindow::initSignals()
 {
     // Timeouts
-    this->statusTimerHandler = Glib::signal_timeout().connect(sigc::mem_fun(this, &MainWindow::update_connection_status), 3000);
+    // TODO: Fix under Windows. It causes hang.
+    //this->statusTimerHandler = Glib::signal_timeout().connect(sigc::mem_fun(this, &MainWindow::update_connection_status), 3000);
 
     // Window signals
     this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::delete_window));
@@ -1813,6 +1817,7 @@ void MainWindow::processRequest(const std::string &path, bool isParseContent)
     // Handle homepage
     else if (requestPath.compare("about:home") == 0)
     {
+        std::cout << "Showing the homepage." << std::endl;
         m_draw_main.showStartPage();
         m_refreshIcon.get_style_context()->remove_class("spinning");
     }
