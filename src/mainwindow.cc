@@ -932,6 +932,8 @@ bool MainWindow::delete_window(GdkEventAny *any_event __attribute__((unused)))
 bool MainWindow::update_connection_status()
 {
     // Try to set the client ID & Public key and version
+    // TODO: ipfs.getClientID() can also be the first cause.. and ipfs.getClientPublicKey() .. next
+    // why the performance are bad under Windows.
     if (this->m_ipfsClientID.empty())
         this->m_ipfsClientID = ipfs.getClientID();
     if (this->m_ipfsClientPublicKey.empty())
