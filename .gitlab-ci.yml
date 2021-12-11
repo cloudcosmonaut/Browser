@@ -34,7 +34,7 @@ build:
 
 static_code_analysis:
   stage: build
-  script: ./check.sh
+  script: ./scripts/check.sh
 
 #unit_test:
 #  stage: test
