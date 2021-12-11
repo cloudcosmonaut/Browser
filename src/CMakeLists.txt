@@ -62,11 +62,17 @@ execute_process(
         _glib_compile_schemas
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-
 # Set glib schema compiler command
 set(glib_schema_compiler ${_glib_compile_schemas} CACHE INTERNAL "")
 
-set(SCHEMA_FILE ${CMAKE_CURRENT_SOURCE_DIR}/org.libreweb.browser.gschema.xml)
+# Schema files
+set(MY_SCHEMA_FILE org.libreweb.browser.gschema.xml)
+set(WINDOWS_SCHEMA_FILES 
+    org.gtk.Settings.ColorChooser.gschema.xml
+    org.gtk.Settings.Debug.gschema.xml
+    org.gtk.Settings.EmojiChooser.gschema.xml
+    org.gtk.Settings.FileChooser.gschema.xml
+)
 
 # Source code
 set(HEADERS
@@ -98,13 +104,28 @@ add_executable(${PROJECT_TARGET} ${SOURCES})
 
 # Copy gschema.xml file to build directory
 set(SCHEMA_DIR ${CMAKE_CURRENT_BINARY_DIR}/gsettings)
+
+# Copy my own libreweb schema file to the build directory
 add_custom_command(
     TARGET ${PROJECT_TARGET} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
-            ${SCHEMA_FILE}
-            ${SCHEMA_DIR}/org.libreweb.browser.gschema.xml
+            "${CMAKE_CURRENT_SOURCE_DIR}/schemas/${MY_SCHEMA_FILE}"
+            "${SCHEMA_DIR}/${MY_SCHEMA_FILE}"
 )
 
+# Copy remaining schema files for Windows only to the build directory
+if(WIN32)
+foreach(FILENAME ${WINDOWS_SCHEMA_FILES})
+    add_custom_command(
+        TARGET ${PROJECT_TARGET} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+            "${CMAKE_CURRENT_SOURCE_DIR}/schemas/${FILENAME}"
+            "${SCHEMA_DIR}/${FILENAME}"
+    )
+endforeach(FILENAME)
+endif()
+
+# Compile the schema files
 add_custom_command(
     TARGET ${PROJECT_TARGET} POST_BUILD
     COMMAND ${glib_schema_compiler} ${SCHEMA_DIR}
