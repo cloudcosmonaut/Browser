@@ -168,6 +168,22 @@ MainWindow::MainWindow(const std::string &timeout)
 }
 
 /**
+ * Destructor
+ */
+MainWindow::~MainWindow()
+{
+    if (m_requestThread)
+    {
+        if (m_requestThread->joinable())
+        {
+            pthread_cancel(m_requestThread->native_handle());
+            m_requestThread->join();
+            delete m_requestThread;
+        }
+    }
+}
+
+/**
  * Load stored settings from GSettings scheme file
  */
 void MainWindow::loadStoredSettings()
@@ -902,7 +918,8 @@ void MainWindow::doRequest(const std::string &path, bool isSetAddressBar, bool i
  */
 bool MainWindow::delete_window(GdkEventAny *any_event __attribute__((unused)))
 {
-    if (m_settings) {
+    if (m_settings)
+    {
         // Save the schema settings
         m_settings->set_int("width", this->get_width());
         m_settings->set_int("height", this->get_height());
