@@ -7,6 +7,7 @@
 #include <gtkmm/menuitem.h>
 #include <gtkmm/image.h>
 #include <gtkmm/listboxrow.h>
+#include <gtkmm/settings.h>
 #include <giomm/file.h>
 #include <giomm/notification.h>
 #include <giomm/themedicon.h>
@@ -57,7 +58,8 @@ MainWindow::MainWindow(const std::string &timeout)
       m_spacingLabel("Spacing"),
       m_marginsLabel("Margins"),
       m_indentLabel("Indent"),
-      m_iconThemeLabel("Active theme"),
+      m_themeLabel("Dark Theme"),
+      m_iconThemeLabel("Active Theme"),
       m_appName("LibreWeb Browser"),
       m_iconTheme("flat"),             // default is flat theme
       m_useCurrentGTKIconTheme(false), // Use our built-in icon theme or the GTK icons
@@ -698,10 +700,12 @@ void MainWindow::initSettingsPopover()
     m_spacingLabel.set_xalign(1);
     m_marginsLabel.set_xalign(1);
     m_indentLabel.set_xalign(1);
+    m_themeLabel.set_xalign(1);
     m_fontLabel.get_style_context()->add_class("dim-label");
     m_spacingLabel.get_style_context()->add_class("dim-label");
     m_marginsLabel.get_style_context()->add_class("dim-label");
     m_indentLabel.get_style_context()->add_class("dim-label");
+    m_themeLabel.get_style_context()->add_class("dim-label");
     m_settingsGrid.set_margin_start(6);
     m_settingsGrid.set_margin_top(6);
     m_settingsGrid.set_margin_bottom(6);
@@ -715,6 +719,8 @@ void MainWindow::initSettingsPopover()
     m_settingsGrid.attach(m_marginsSpinButton, 1, 2);
     m_settingsGrid.attach(m_indentLabel, 0, 3);
     m_settingsGrid.attach(m_indentSpinButton, 1, 3);
+    m_settingsGrid.attach(m_themeLabel, 0, 4);
+    m_settingsGrid.attach(m_themeSwitch, 1, 4);
 
     // Icon theme (+ submenu)
     m_iconThemeButton.set_label("Icon Theme");
@@ -878,6 +884,7 @@ void MainWindow::initSignals()
     m_spacingSpinButton.signal_value_changed().connect(sigc::mem_fun(this, &MainWindow::on_spacing_changed));
     m_marginsSpinButton.signal_value_changed().connect(sigc::mem_fun(this, &MainWindow::on_margins_changed));
     m_indentSpinButton.signal_value_changed().connect(sigc::mem_fun(this, &MainWindow::on_indent_changed));
+    m_themeSwitch.property_active().signal_changed().connect(sigc::mem_fun(this, &MainWindow::on_theme_changed));
     m_iconThemeListBox.signal_row_activated().connect(sigc::mem_fun(this, &MainWindow::on_icon_theme_activated));
     m_aboutButton.signal_clicked().connect(sigc::mem_fun(m_about, &About::show_about));
 }
@@ -2125,6 +2132,14 @@ void MainWindow::on_margins_changed()
 void MainWindow::on_indent_changed()
 {
     this->m_draw_main.set_indent(m_indentSpinButton.get_value_as_int());
+}
+
+void MainWindow::on_theme_changed()
+{
+    // TODO: better testing and store to settings (between restarts)
+    bool isActive = m_themeSwitch.get_active();
+    auto settings = Gtk::Settings::get_default();
+    settings->property_gtk_application_prefer_dark_theme().set_value(isActive);
 }
 
 void MainWindow::on_icon_theme_activated(Gtk::ListBoxRow *row)

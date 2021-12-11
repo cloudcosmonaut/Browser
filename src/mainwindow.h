@@ -16,6 +16,7 @@
 #include <gtkmm/button.h>
 #include <gtkmm/menubutton.h>
 #include <gtkmm/togglebutton.h>
+#include <gtkmm/switch.h>
 #include <gtkmm/spinbutton.h>
 #include <gtkmm/modelbutton.h>
 #include <gtkmm/fontbutton.h>
@@ -89,6 +90,7 @@ protected:
     void on_spacing_changed();
     void on_margins_changed();
     void on_indent_changed();
+    void on_theme_changed();
     void on_icon_theme_activated(Gtk::ListBoxRow *row);
 
     Glib::RefPtr<Gtk::AccelGroup> m_accelGroup; /*!< Accelerator group, used for keyboard shortcut bindings */
@@ -206,6 +208,7 @@ protected:
     Gtk::PopoverMenu m_settingsPopover;
     Gtk::Button m_copyIDButton;
     Gtk::Button m_copyPublicKeyButton;
+    Gtk::Switch m_themeSwitch;
     Gtk::Label m_networkHeadingLabel;
     Gtk::Label m_networkRateHeadingLabel;
     Gtk::Label m_connectivityLabel;
@@ -227,6 +230,7 @@ protected:
     Gtk::Label m_spacingLabel;
     Gtk::Label m_marginsLabel;
     Gtk::Label m_indentLabel;
+    Gtk::Label m_themeLabel;
     Gtk::Label m_iconThemeLabel;
     std::unique_ptr<Gtk::MessageDialog> m_contentPublishedDialog;
     Gtk::ScrolledWindow m_scrolledWindowMain;
