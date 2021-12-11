@@ -3,15 +3,11 @@
 #include "syntax_extension.h"
 #include "strikethrough.h"
 #include "mainwindow.h"
-#include <gdk/gdkthreads.h>
-#include <gdk/gdkselection.h>
 #include <gtkmm/textiter.h>
-#include <gtkmm/texttag.h>
 #include <gdkmm/window.h>
 #include <glibmm.h>
 #include <iostream>
 #include <regex>
-#include <algorithm>
 #include <stdexcept>
 
 Draw::Draw(MainWindow &mainWindow)
