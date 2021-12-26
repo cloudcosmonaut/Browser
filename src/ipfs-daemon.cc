@@ -113,7 +113,8 @@ std::string IPFSDaemon::locateIPFSBinary()
 #ifdef _WIN32
     binaryName += ".exe";
 #endif
-    // Try absolute path first
+#ifdef __linux__
+    // Try data directory first, when Linux package is installed
     for (std::string data_dir : Glib::get_system_data_dirs())
     {
         std::vector<std::string> path_builder{data_dir, "libreweb-browser", "go-ipfs", binaryName};
@@ -123,14 +124,19 @@ std::string IPFSDaemon::locateIPFSBinary()
             return ipfs_binary_path;
         }
     }
-
-    // Try local path if the images are not installed (yet)
-    // When working directory is in the build/bin folder (relative path)
+#endif
     std::string currentPath = n_fs::current_path().string();
-    std::string ipfs_binary_path = Glib::build_filename(currentPath, "../..", "go-ipfs", binaryName);
-    if (Glib::file_test(ipfs_binary_path, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
+    // When working directory is the current folder (for Windows)
+    std::string ipfs_binary_path1 = Glib::build_filename(currentPath, binaryName);
+    // When working directory is the build/bin folder (relative path), during the build (when package is not installed yet)
+    std::string ipfs_binary_path2 = Glib::build_filename(currentPath, "../..", "go-ipfs", binaryName);
+    if (Glib::file_test(ipfs_binary_path1, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
     {
-        return ipfs_binary_path;
+        return ipfs_binary_path1;
+    }
+    else if (Glib::file_test(ipfs_binary_path2, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
+    {
+        return ipfs_binary_path2;
     }
     else
     {
