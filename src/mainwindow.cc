@@ -157,7 +157,7 @@ MainWindow::MainWindow(const std::string &timeout)
     // First time manually trigger the status update once,
     // timer will do the updates later
     // TODO: Fix under Windows. It causes hang.
-    //this->update_connection_status();
+    this->update_connection_status();
 
 // Show homepage if debugging is disabled
 #ifdef NDEBUG
@@ -955,9 +955,16 @@ bool MainWindow::delete_window(GdkEventAny *any_event __attribute__((unused)))
  */
 bool MainWindow::update_connection_status()
 {
+#include <chrono>
+    using namespace std::chrono;
+
     // Try to set the client ID & Public key and version
     // TODO: ipfs.getClientID() can also be the first cause.. and ipfs.getClientPublicKey() .. next
     // why the performance are bad under Windows.
+
+    std::cout << "update_connection_status() started." << std::endl;
+    auto start = high_resolution_clock::now();
+
     if (this->m_ipfsClientID.empty())
         this->m_ipfsClientID = ipfs.getClientID();
     if (this->m_ipfsClientPublicKey.empty())
@@ -993,6 +1000,11 @@ bool MainWindow::update_connection_status()
 
     // Trigger update of all status fields
     this->updateStatusPopover();
+
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start);
+
+    std::cout << "update_connection_status() finished. Took: " << duration.count() << " ms" << std::endl;
 
     // Keep going (never disconnect the timer)
     return true;
@@ -2005,14 +2017,19 @@ std::string MainWindow::getIconImageFromTheme(const std::string &iconName, const
  */
 void MainWindow::updateCSS()
 {
-    m_drawCSSProvider->load_from_data("textview { "
-                                      "font-family: \"" +
-                                      m_fontFamily + "\";"
-                                                     "font-size: " +
-                                      std::to_string(m_currentFontSize) + "pt;"
-                                                                          "letter-spacing: " +
-                                      std::to_string(m_fontSpacing) + "px;"
-                                                                      "}");
+    try
+    {
+        m_drawCSSProvider->load_from_data("textview { "
+                                          "font-family: \"" +
+                                          m_fontFamily + "\";"
+                                                         "font-size: " +
+                                          std::to_string(m_currentFontSize) + "pt; }" +
+                                          "textview text { letter-spacing: " + std::to_string(m_fontSpacing) + "px; }");
+    }
+    catch (const Gtk::CssProviderError &error)
+    {
+        std::cerr << "ERROR: Could not apply CSS format, error: " << error.what() << std::endl;
+    }
 }
 
 /**
