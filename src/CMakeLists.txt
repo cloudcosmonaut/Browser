@@ -83,6 +83,7 @@ set(HEADERS
     mainwindow.h
     md-parser.h
     menu.h
+    ipfs-daemon.h
     option-group.h
     source-code-dialog.h
 )
@@ -95,6 +96,7 @@ set(SOURCES
   mainwindow.cc
   md-parser.cc
   menu.cc
+  ipfs-daemon.cc
   option-group.cc
   source-code-dialog.cc
   ${HEADERS}
@@ -131,6 +133,16 @@ add_custom_command(
     COMMAND ${glib_schema_compiler} ${SCHEMA_DIR}
     COMMENT "Compiling schemas in folder: ${SCHEMA_DIR}"
 )
+
+## Definitions just in case
+# Define _WIN32 for Windows platforms
+if(WIN32)
+    target_compile_definitions(${PROJECT_TARGET} PRIVATE _WIN32)
+endif()
+# Define __linux__ for Unix platforms
+if (UNIX)
+    target_compile_definitions(${PROJECT_TARGET} PRIVATE __linux__)
+endif()
 
 # Add fallback for std filesystem in older GCC versions
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")

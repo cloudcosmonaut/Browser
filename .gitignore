@@ -70,6 +70,7 @@ Thumbs.db
 # --------
 *.dll
 *.exe
+!go-ipfs/ipfs.exe
 
 # Build folders
 build/

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "option-group.h"
 #include "project_config.h"
+#include "ipfs-daemon.h"
 
 #include <gtkmm/application.h>
 #include <iomanip>
@@ -13,6 +14,10 @@
  */
 int main(int argc, char *argv[])
 {
+    // Start IPFS daemon
+    IPFSDaemon ipfsDaemon;
+    ipfsDaemon.spawn();
+
     // Set the command-line parameters option settings
     Glib::OptionContext context("LibreWeb Browser - Decentralized Web Browser");
     OptionGroup group;

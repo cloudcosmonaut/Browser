@@ -3,7 +3,7 @@
 #
 # Provide the IPFS version below
 
-IPFS_VERSION=0.9.1
+IPFS_VERSION=0.11.0
 
 ##############################
 # Leave the code alone below #
