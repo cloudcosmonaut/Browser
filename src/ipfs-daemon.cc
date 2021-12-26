@@ -40,12 +40,15 @@ void IPFSDaemon::spawn()
             try
             {
                 // IPFS command
-                Glib::ArrayHandle<std::string> argv = Glib::shell_parse_argv(command + " daemon --init --migrate");
+                std::vector<std::string> argv;
+                argv.push_back(command);
+                argv.push_back("daemon");
+                argv.push_back("--init");
+                argv.push_back("--migrate");
 
                 // Spawn flags
                 // Disable stdout/stderr to default terminal. Don't reaped the child automatically
-                // We could add "Glib::SPAWN_SEARCH_PATH", if you want to search the binary in the PATH
-                Glib::SpawnFlags flags = Glib::SPAWN_STDOUT_TO_DEV_NULL | Glib::SPAWN_STDERR_TO_DEV_NULL | Glib::SPAWN_DO_NOT_REAP_CHILD;
+                Glib::SpawnFlags flags = Glib::SPAWN_STDOUT_TO_DEV_NULL | Glib::SPAWN_STDERR_TO_DEV_NULL | Glib::SPAWN_DO_NOT_REAP_CHILD | Glib::SPAWN_SEARCH_PATH;
 
                 // Start IPFS, using spawn_async,
                 // optionally we can use spawn_async_with_pipes(), to retrieve stdout & stderr to specified output buffers
