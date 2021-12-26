@@ -27,7 +27,7 @@ private:
     sigc::connection childWatchHandler;
     
     static std::string locateIPFSBinary();    
-    static int getRunningDaemonPID();
+    static int getExistingPID();
     // bool shouldProcessTerminated();
 };
 #endif

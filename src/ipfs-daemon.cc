@@ -25,7 +25,7 @@ namespace n_fs = ::std::filesystem;
 void IPFSDaemon::spawn()
 {
     // Check for PID under UNIX
-    int daemonPID = IPFSDaemon::getRunningDaemonPID();
+    int daemonPID = IPFSDaemon::getExistingPID();
     // Is IPFS Daemon already running?
     if (daemonPID > 0)
     {
@@ -36,23 +36,35 @@ void IPFSDaemon::spawn()
         std::string command = IPFSDaemon::locateIPFSBinary();
         if (n_fs::exists(command))
         {
-            // IPFS command
-            Glib::ArrayHandle<std::string> argv = Glib::shell_parse_argv(command + " daemon --init --migrate");
+            std::cout << "INFO: Starting IPFS Daemon: " << command << "..." << std::endl;
+            try
+            {
+                // IPFS command
+                Glib::ArrayHandle<std::string> argv = Glib::shell_parse_argv(command + " daemon --init --migrate");
 
-            // Spawn flags
-            // Disable stdout/stderr to default terminal. Don't reaped the child automatically
-            // We could add "Glib::SPAWN_SEARCH_PATH", if you want to search the binary in the PATH
-            Glib::SpawnFlags flags = Glib::SPAWN_STDOUT_TO_DEV_NULL | Glib::SPAWN_STDERR_TO_DEV_NULL | Glib::SPAWN_DO_NOT_REAP_CHILD;
+                // Spawn flags
+                // Disable stdout/stderr to default terminal. Don't reaped the child automatically
+                // We could add "Glib::SPAWN_SEARCH_PATH", if you want to search the binary in the PATH
+                Glib::SpawnFlags flags = Glib::SPAWN_STDOUT_TO_DEV_NULL | Glib::SPAWN_STDERR_TO_DEV_NULL | Glib::SPAWN_DO_NOT_REAP_CHILD;
 
-            // Start IPFS, using spawn_async,
-            // optionally we can use spawn_async_with_pipes(), to retrieve stdout & stderr to specified output buffers
-            Glib::spawn_async(this->workingDir, argv, flags, Glib::SlotSpawnChildSetup(), &this->pid);
-            this->isRunning = true;
-            this->childWatchHandler = Glib::signal_child_watch().connect(sigc::mem_fun(*this, &IPFSDaemon::child_watch_exit), this->pid);
+                // Start IPFS, using spawn_async,
+                // optionally we can use spawn_async_with_pipes(), to retrieve stdout & stderr to specified output buffers
+                Glib::spawn_async(this->workingDir, argv, flags, Glib::SlotSpawnChildSetup(), &this->pid);
+                this->isRunning = true;
+                this->childWatchHandler = Glib::signal_child_watch().connect(sigc::mem_fun(*this, &IPFSDaemon::child_watch_exit), this->pid);
+            }
+            catch (Glib::SpawnError &error)
+            {
+                std::cerr << "ERROR: IPFS process could not be started. Reason: " << error.what() << std::endl;
+            }
+            catch (Glib::ShellError &error)
+            {
+                std::cerr << "ERROR: IPFS process could not be started. Reason: " << error.what() << std::endl;
+            }
         }
         else
         {
-            std::cerr << "Error: IPFS Daemon is not found. IPFS will not work!" << std::endl;
+            std::cerr << "ERROR: IPFS Daemon is not found. IPFS will not work!" << std::endl;
         }
     }
 }
@@ -145,25 +157,35 @@ std::string IPFSDaemon::locateIPFSBinary()
 }
 
 /**
- * \brief Retrieve IPFS Daemon PID for **UNIX only** (zero if non-existent)
+ * \brief Retrieve existing running IPFS PID for **UNIX only** (zero if non-existent)
  * \return Process ID (0 of non-existent)
  */
-int IPFSDaemon::getRunningDaemonPID()
+int IPFSDaemon::getExistingPID()
 {
     int pid = 0;
 #ifdef __linux__
     int exitCode = -3;
     std::string stdout;
-    Glib::spawn_command_line_sync("pidof -s ipfs", &stdout, nullptr, &exitCode);
-    // Process exists
-    if (exitCode == 0)
+    try
     {
-        pid = std::stoi(stdout);
+        Glib::spawn_command_line_sync("pidof -s ipfs", &stdout, nullptr, &exitCode);
+        // Process exists
+        if (exitCode == 0)
+        {
+            pid = std::stoi(stdout);
+        }
+    }
+    catch (Glib::SpawnError &error)
+    {
+        std::cerr << "ERROR: Could not check of running IPFS process. Reason: " << error.what() << std::endl;
+    }
+    catch (Glib::ShellError &error)
+    {
+        std::cerr << "ERROR: Could not check of running IPFS process. Reason: " << error.what() << std::endl;
     }
 #endif
     return pid;
 }
-
 
 /**
  * \brief Determine if we need to kill any running IPFS process (UNIX only)
@@ -185,13 +207,23 @@ bool IPFSDaemon::shouldProcessTerminated()
         bool shouldKill = (strncmp(pathbuf, beginPath, strlen(beginPath)) != 0);
 
         // Also check the IPFS version
-        std::string expectedString = "version 0.11.0";
-        std::string stdout;
-        Glib::spawn_command_line_sync(path + " version", &stdout);
-        // Current running IPFS version matches our IPFS version, keep process running afterall
-        if (stdout.find(expectedString) != std::string::npos)
+        try {
+            std::string expectedString = "version 0.11.0";
+            std::string stdout;
+            Glib::spawn_command_line_sync(path + " version", &stdout);
+            // Current running IPFS version matches our IPFS version, keep process running afterall
+            if (stdout.find(expectedString) != std::string::npos)
+            {
+                shouldKill = false;
+            }
+        }
+        catch (Glib::SpawnError &error)
         {
-            shouldKill = false;
+            std::cerr << "ERROR: Could not check IPFS version. Reason: " << error.what() << std::endl;
+        }
+        catch (Glib::ShellError &error)
+        {
+            std::cerr << "ERROR: Could not check IPFS version. Reason: " << error.what() << std::endl;
         }
         return shouldKill;
     }
