@@ -28,6 +28,6 @@ private:
     
     static std::string locateIPFSBinary();    
     static int getRunningDaemonPID();
-    bool shouldProcessTerminated();
+    // bool shouldProcessTerminated();
 };
 #endif

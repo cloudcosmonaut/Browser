@@ -164,10 +164,13 @@ int IPFSDaemon::getRunningDaemonPID()
     return pid;
 }
 
+
 /**
  * \brief Determine if we need to kill any running IPFS process (UNIX only)
  * \return true if it needs to be terminated, otherwise false
  */
+// Currently used:
+/*
 bool IPFSDaemon::shouldProcessTerminated()
 {
 #ifdef __linux__
@@ -194,4 +197,4 @@ bool IPFSDaemon::shouldProcessTerminated()
     }
 #endif
     return false; // fallback; do not kill
-}
+}*/
