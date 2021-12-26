@@ -73,13 +73,13 @@ For the Linux build you need at least:
 
 For the cross-compiling to Windows (under Linux), you need at least:
 
-* [MXE GTK3 / Gtkmm3 / Curl Binary packages](mxe.cc) (static build using Meson build with GCC10)
-* CMake
-* Ninja
+* [MXE Gtkmm3 / Curl Binary packages](mxe.cc) (static build using Meson build with GCC10, see below for more info)
+* CMake (Package: `cmake`)
+* Ninja (Package: `ninja-build`)
 
-For more information and the latest GTK3 Windows MXE download, please [visit this other GitLab project](https://gitlab.melroy.org/melroy/gtk-3-bundle-for-windows).
+For more information and the latest GTK3 Windows MXE download, please [visit my other GitLab project](https://gitlab.melroy.org/melroy/gtk-3-bundle-for-windows).
 
-*Note:* We're currently busy trying to upgrade the [whole GTK stack](https://github.com/danger89/mxe/tree/update_gtk).
+**Note:** We're currently busy trying to upgrade the [whole GTK stack](https://github.com/danger89/mxe/tree/update_gtk).
 
 We used the following build command to get the Windows dependencies and MXE cross-compilation toolset:
 
@@ -93,13 +93,13 @@ Add the following line to the end of the `~/.bashrc` file:
 export PATH="/opt/mxe/usr/bin:$PATH"
 ```
 
-##### Cross-compile build
+##### Cross-compile Build
 
 If you meet all the requirements (see above), we can actually start cross-compiling LibreWeb itself towards Windows 64-bit.
 
-You can use the provided script to build the Windows binary: `./scripts/build_win_prod.sh`
+Just execute the following script: `./scripts/build_win_prod.sh`
 
-### Developer Docs
+### Developer Documentation
 
 See latest [Developer Docs](https://gitlab.melroy.org/libreweb/browser/-/jobs/artifacts/master/file/build/docs/html/index.html?job=doxygen).
 
