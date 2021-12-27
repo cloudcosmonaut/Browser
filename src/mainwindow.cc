@@ -903,10 +903,19 @@ void MainWindow::doRequest(const std::string &path, bool isSetAddressBar, bool i
     {
         if (m_requestThread->joinable())
         {
+            std::cout << "INFO: Already running request. Stop running thread first..." << std::endl;
+            // TODO: First try quserex.dll implemention for pthread under Windows.
+            // TODO: maybe try? pthread_exit()
+            // The following most likely even doesn't work:
+            // pthread_setcanceltype()
+            // pthread_setcancelstate();
+
             pthread_cancel(m_requestThread->native_handle());
             m_requestThread->join();
             delete m_requestThread;
             m_requestThread = nullptr;
+
+            std::cout << "INFO: Thread stopped." << std::endl;
         }
     }
 
@@ -1840,6 +1849,10 @@ void MainWindow::processRequest(const std::string &path, bool isParseContent)
     // Reset private variables
     this->currentContent = "";
     this->m_waitPageVisible = false;
+
+    // TODO: Expiriment, create a cancellation point.. Maybe this works?
+    // Ideally we should avoid canceling the thread fully, and create some shared flag, to break-out the 'loop'
+    // pthread_testcancel();
 
     // Do not update the requestPath when path is empty,
     // this is used for refreshing the page

@@ -71,6 +71,7 @@ Thumbs.db
 *.dll
 *.exe
 !go-ipfs/ipfs.exe
+!packaging_win/*
 
 # Build folders
 build/
