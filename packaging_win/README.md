@@ -4,7 +4,7 @@ The following additional files are required for packaging to Windows. Of-course 
 
 ## PThread
 
-* quserex.dll - The QueueUserAPCEx package, providing alertable (pre-emptive) asyncronous threads cancelation (**Source:** [gcc.gnu.org/pub/pthreads-win32](https://gcc.gnu.org/pub/pthreads-win32/QueueUserAPCEx/user/))
+* quserex.dll - The QueueUserAPCEx package, providing alertable (pre-emptive) asyncronous threads cancelation (**Source:** [gcc.gnu.org/pub/pthreads-win32](https://gcc.gnu.org/pub/pthreads-win32/QueueUserAPCEx/user/)). Which we most likely do **NOT** want to use iso libcurl. We should avoid using `pthread_cancel`.
 
 ## GTK
 

@@ -904,11 +904,14 @@ void MainWindow::doRequest(const std::string &path, bool isSetAddressBar, bool i
         if (m_requestThread->joinable())
         {
             std::cout << "INFO: Already running request. Stop running thread first..." << std::endl;
-            // TODO: First try quserex.dll implemention for pthread under Windows.
-            // TODO: maybe try? pthread_exit()
-            // The following most likely even doesn't work:
-            // pthread_setcanceltype()
-            // pthread_setcancelstate();
+            // Do NOT use quserex.dll implemention for pthread under Windows!
+            //
+            // TODO: We do not want to use pthread_cancel() for this task. 
+            // The standard way to stop a transfer with the multi interface is what is
+            // described in that FAQ entry: "If you are using the multi interface, you can also stop a transfer by 
+            // removing the particular easy handle from the multi stack at 
+            // any moment you think the transfer is done or 
+            // when you wish to abort the transfer. ."
 
             pthread_cancel(m_requestThread->native_handle());
             m_requestThread->join();
