@@ -904,14 +904,7 @@ void MainWindow::doRequest(const std::string &path, bool isSetAddressBar, bool i
         if (m_requestThread->joinable())
         {
             std::cout << "INFO: Already running request. Stop running thread first..." << std::endl;
-            // Do NOT use quserex.dll implemention for pthread under Windows!
-            //
-            // TODO: We do not want to use pthread_cancel() for this task. 
-            // The standard way to stop a transfer with the multi interface is what is
-            // described in that FAQ entry: "If you are using the multi interface, you can also stop a transfer by 
-            // removing the particular easy handle from the multi stack at 
-            // any moment you think the transfer is done or 
-            // when you wish to abort the transfer. ."
+            // TODO: Let's implement a thread-safe C++ ipfs client using the cURL multi API, with a atomic boolean to stop the thread.
 
             pthread_cancel(m_requestThread->native_handle());
             m_requestThread->join();
@@ -1852,10 +1845,6 @@ void MainWindow::processRequest(const std::string &path, bool isParseContent)
     // Reset private variables
     this->currentContent = "";
     this->m_waitPageVisible = false;
-
-    // TODO: Expiriment, create a cancellation point.. Maybe this works?
-    // Ideally we should avoid canceling the thread fully, and create some shared flag, to break-out the 'loop'
-    // pthread_testcancel();
 
     // Do not update the requestPath when path is empty,
     // this is used for refreshing the page
