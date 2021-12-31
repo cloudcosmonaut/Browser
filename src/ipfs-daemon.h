@@ -1,8 +1,8 @@
 #ifndef IPFS_DAEMON_H
 #define IPFS_DAEMON_H
 
-#include <string>
 #include <glibmm/spawn.h>
+#include <string>
 
 /**
  * \class IPFS Daemon Process
@@ -22,11 +22,11 @@ protected:
 
 private:
     std::string workingDir = ""; // cwd
-    Glib::Pid pid = 0;    
+    Glib::Pid pid = 0;
     bool isRunning = false;
     sigc::connection childWatchHandler;
-    
-    static std::string locateIPFSBinary();    
+
+    static std::string locateIPFSBinary();
     static int getExistingPID();
     // bool shouldProcessTerminated();
 };

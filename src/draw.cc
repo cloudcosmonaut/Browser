@@ -1,16 +1,16 @@
 #include "draw.h"
-#include "node.h"
-#include "syntax_extension.h"
-#include "strikethrough.h"
 #include "mainwindow.h"
-#include <gtkmm/textiter.h>
+#include "node.h"
+#include "strikethrough.h"
+#include "syntax_extension.h"
 #include <gdkmm/window.h>
 #include <glibmm.h>
+#include <gtkmm/textiter.h>
 #include <iostream>
 #include <regex>
 #include <stdexcept>
 
-Draw::Draw(MainWindow &mainWindow)
+Draw::Draw(MainWindow& mainWindow)
     : mainWindow(mainWindow),
       buffer(Glib::unwrap(this->get_buffer())),
       addViewSourceMenuItem(true),
@@ -32,7 +32,7 @@ Draw::Draw(MainWindow &mainWindow)
 {
     this->disableEdit();
     set_top_margin(12);
-    set_left_margin(10); // fallback
+    set_left_margin(10);  // fallback
     set_right_margin(10); // fallback
     set_bottom_margin(0);
     set_monospace(false);
@@ -124,7 +124,7 @@ void Draw::addTags()
 /**
  * Links can be activated by clicking or touching the screen.
  */
-void Draw::event_after(GdkEvent *ev)
+void Draw::event_after(GdkEvent* ev)
 {
     gdouble ex, ey;
     Gtk::TextBuffer::iterator iter;
@@ -132,8 +132,8 @@ void Draw::event_after(GdkEvent *ev)
 
     if (ev->type == GDK_BUTTON_RELEASE)
     {
-        GdkEventButton *event;
-        event = (GdkEventButton *)ev;
+        GdkEventButton* event;
+        event = (GdkEventButton*)ev;
         if (event->button != GDK_BUTTON_PRIMARY)
             return;
         ex = event->x;
@@ -141,8 +141,8 @@ void Draw::event_after(GdkEvent *ev)
     }
     else if (ev->type == GDK_TOUCH_END)
     {
-        GdkEventTouch *event;
-        event = (GdkEventTouch *)ev;
+        GdkEventTouch* event;
+        event = (GdkEventTouch*)ev;
         ex = event->x;
         ey = event->y;
     }
@@ -159,7 +159,7 @@ void Draw::event_after(GdkEvent *ev)
 /**
  * Update the cursor whenever there is a link
  */
-bool Draw::motion_notify_event(GdkEventMotion *motion_event)
+bool Draw::motion_notify_event(GdkEventMotion* motion_event)
 {
     int x, y;
     window_to_buffer_coords(Gtk::TextWindowType::TEXT_WINDOW_WIDGET, motion_event->x, motion_event->y, x, y);
@@ -170,12 +170,12 @@ bool Draw::motion_notify_event(GdkEventMotion *motion_event)
 /**
  * Adapt right-click menu in textview
  */
-void Draw::populate_popup(Gtk::Menu *menu)
+void Draw::populate_popup(Gtk::Menu* menu)
 {
     auto items = menu->get_children();
-    for (auto *item : items)
+    for (auto* item : items)
     {
-        Gtk::MenuItem *menuItem = static_cast<Gtk::MenuItem *>(item);
+        Gtk::MenuItem* menuItem = static_cast<Gtk::MenuItem*>(item);
         Glib::ustring name = menuItem->get_label();
         if (name.compare("Cu_t") == 0)
         {
@@ -204,7 +204,7 @@ void Draw::populate_popup(Gtk::Menu *menu)
     }
     if (this->addViewSourceMenuItem)
     {
-        Gtk::MenuItem *sourceCodeMenuItem = Gtk::manage(new Gtk::MenuItem("View Source", true));
+        Gtk::MenuItem* sourceCodeMenuItem = Gtk::manage(new Gtk::MenuItem("View Source", true));
         sourceCodeMenuItem->signal_activate().connect(source_code);
         sourceCodeMenuItem->show();
         menu->append(*sourceCodeMenuItem);
@@ -216,7 +216,7 @@ void Draw::populate_popup(Gtk::Menu *menu)
  * \param message Headliner
  * \param detailed_info Additional text info
  */
-void Draw::showMessage(const Glib::ustring &message, const Glib::ustring &detailed_info)
+void Draw::showMessage(const Glib::ustring& message, const Glib::ustring& detailed_info)
 {
     if (get_editable())
         this->disableEdit();
@@ -242,7 +242,8 @@ void Draw::showStartPage()
     this->insertText("🚀🌍 Welcome to the Decentralized Web (DWeb)");
     this->headingLevel = 0;
     this->insertMarkupText("\n\n");
-    this->insertText("You can surf the web as intended via LibreWeb, by using IPFS as a decentralized solution. This is also the fastest browser in the world.\n\n\
+    this->insertText(
+        "You can surf the web as intended via LibreWeb, by using IPFS as a decentralized solution. This is also the fastest browser in the world.\n\n\
 The content is fully written in markdown format, allowing you to easily publish your own site, blog article or e-book.\n\
 This browser has even a built-in editor. Check it out in the menu: File->New Document!\n\n");
     this->insertText("See an example page hosted on IPFS: ");
@@ -253,7 +254,7 @@ This browser has even a built-in editor. Check it out in the menu: File->New Doc
  * \brief Process AST document (markdown format) and draw the text in the GTK TextView
  * \param root_node Markdown AST tree that will be displayed on screen
  */
-void Draw::processDocument(cmark_node *root_node)
+void Draw::processDocument(cmark_node* root_node)
 {
     if (get_editable())
         this->disableEdit();
@@ -261,15 +262,15 @@ void Draw::processDocument(cmark_node *root_node)
 
     // Loop over AST nodes
     cmark_event_type ev_type;
-    cmark_iter *iter = cmark_iter_new(root_node);
+    cmark_iter* iter = cmark_iter_new(root_node);
     while ((ev_type = cmark_iter_next(iter)) != CMARK_EVENT_DONE)
     {
-        cmark_node *cur = cmark_iter_get_node(iter);
+        cmark_node* cur = cmark_iter_get_node(iter);
         try
         {
             processNode(cur, ev_type);
         }
-        catch (const std::runtime_error &error)
+        catch (const std::runtime_error& error)
         {
             std::cerr << "ERROR: Processing node failed, with message: " << error.what() << std::endl;
             // Continue nevertheless
@@ -277,10 +278,7 @@ void Draw::processDocument(cmark_node *root_node)
     }
 }
 
-void Draw::setViewSourceMenuItem(bool isEnabled)
-{
-    this->addViewSourceMenuItem = isEnabled;
-}
+void Draw::setViewSourceMenuItem(bool isEnabled) { this->addViewSourceMenuItem = isEnabled; }
 
 /**
  * \brief Prepare for new document
@@ -298,16 +296,13 @@ void Draw::newDocument()
 /**
  * \brief Retrieve the current text buffer (not thread-safe)
  */
-Glib::ustring Draw::getText()
-{
-    return get_buffer().get()->get_text();
-}
+Glib::ustring Draw::getText() { return get_buffer().get()->get_text(); }
 
 /**
  * \brief Set text in text buffer (for example plain text) - thead-safe
  * \param content Content string that needs to be set as buffer text
  */
-void Draw::setText(const Glib::ustring &content)
+void Draw::setText(const Glib::ustring& content)
 {
     Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::insertPlainTextIdle), content));
 }
@@ -733,7 +728,8 @@ void Draw::insert_bullet_list()
         {
             Gtk::TextBuffer::iterator end_current_line_iter, prev_lines_iter;
             // Get the end of the line iter
-            end_current_line_iter = buffer->get_iter_at_line_offset(curLineNumber, begin_current_line_iter.get_chars_in_line());
+            end_current_line_iter =
+                buffer->get_iter_at_line_offset(curLineNumber, begin_current_line_iter.get_chars_in_line());
             std::string currentLineText = begin_current_line_iter.get_text(end_current_line_iter);
             // Get previous line (if possible)
             prev_lines_iter = buffer->get_iter_at_line(start.get_line() - 1);
@@ -751,7 +747,8 @@ void Draw::insert_bullet_list()
                     // We're still on the current line, new-line is required
                     int insertCharOffset = end_current_line_iter.get_offset();
                     buffer->insert(end_current_line_iter, "\n* ");
-                    Gtk::TextBuffer::iterator insert_iter = buffer->get_iter_at_offset(insertCharOffset + 3); // add 3 additional chars
+                    Gtk::TextBuffer::iterator insert_iter =
+                        buffer->get_iter_at_offset(insertCharOffset + 3); // add 3 additional chars
                     buffer->place_cursor(insert_iter);
                 }
                 else if (prevLineText.starts_with("* "))
@@ -826,7 +823,8 @@ void Draw::insert_numbered_list()
         {
             Gtk::TextBuffer::iterator end_current_line_iter, prev_lines_iter;
             // Get the end of the line iter
-            end_current_line_iter = buffer->get_iter_at_line_offset(curLineNumber, begin_current_line_iter.get_chars_in_line());
+            end_current_line_iter =
+                buffer->get_iter_at_line_offset(curLineNumber, begin_current_line_iter.get_chars_in_line());
             std::string currentLineText = begin_current_line_iter.get_text(end_current_line_iter);
             // Get previous line (if possible)
             prev_lines_iter = buffer->get_iter_at_line(start.get_line() - 1);
@@ -849,15 +847,17 @@ void Draw::insert_numbered_list()
                         int insertCharOffset = end_current_line_iter.get_offset();
                         // We're still on the current line, new-line is required
                         buffer->insert(end_current_line_iter, "\n" + newNumber + ". ");
-                        Gtk::TextBuffer::iterator insert_iter = buffer->get_iter_at_offset(insertCharOffset + 3 + newNumber.length()); // add 3 additional chars + number
+                        Gtk::TextBuffer::iterator insert_iter = buffer->get_iter_at_offset(
+                            insertCharOffset + 3 + newNumber.length()); // add 3 additional chars + number
                         buffer->place_cursor(insert_iter);
                     }
-                    catch (std::invalid_argument &error)
+                    catch (std::invalid_argument& error)
                     {
                         // Fall-back
                         int insertCharOffset = end_current_line_iter.get_offset();
                         buffer->insert(end_current_line_iter, "\n1. ");
-                        Gtk::TextBuffer::iterator insert_iter = buffer->get_iter_at_offset(insertCharOffset + 3); // add 3 additional chars + number
+                        Gtk::TextBuffer::iterator insert_iter =
+                            buffer->get_iter_at_offset(insertCharOffset + 3); // add 3 additional chars + number
                         buffer->place_cursor(insert_iter);
                         // Give warning
                         std::cerr << "WARN: Couldn't convert heading to a number?" << std::endl;
@@ -871,7 +871,7 @@ void Draw::insert_numbered_list()
                         std::string newNumber = std::to_string(++number);
                         buffer->insert(begin_current_line_iter, newNumber + ". ");
                     }
-                    catch (std::invalid_argument &error)
+                    catch (std::invalid_argument& error)
                     {
                         // Fall-back
                         buffer->insert(begin_current_line_iter, "1. ");
@@ -928,20 +928,14 @@ void Draw::make_highlight()
     buffer->end_user_action();
 }
 
-void Draw::begin_user_action()
-{
-    this->isUserAction = true;
-}
+void Draw::begin_user_action() { this->isUserAction = true; }
 
-void Draw::end_user_action()
-{
-    this->isUserAction = false;
-}
+void Draw::end_user_action() { this->isUserAction = false; }
 
 /**
  * Triggered when text gets inserted
  */
-void Draw::on_insert(const Gtk::TextBuffer::iterator &pos, const Glib::ustring &text, int bytes __attribute__((unused)))
+void Draw::on_insert(const Gtk::TextBuffer::iterator& pos, const Glib::ustring& text, int bytes __attribute__((unused)))
 {
     if (this->isUserAction)
     {
@@ -958,7 +952,7 @@ void Draw::on_insert(const Gtk::TextBuffer::iterator &pos, const Glib::ustring &
 /**
  * Triggered when text gets deleted/removed
  */
-void Draw::on_delete(const Gtk::TextBuffer::iterator &range_start, const Gtk::TextBuffer::iterator &range_end)
+void Draw::on_delete(const Gtk::TextBuffer::iterator& range_start, const Gtk::TextBuffer::iterator& range_end)
 {
     if (this->isUserAction)
     {
@@ -981,8 +975,10 @@ void Draw::enableEdit()
     set_editable(true);
     set_cursor_visible(true);
     auto buffer = get_buffer();
-    this->beginUserActionSignalHandler = buffer->signal_begin_user_action().connect(sigc::mem_fun(this, &Draw::begin_user_action), false);
-    this->endUserActionSignalHandler = buffer->signal_end_user_action().connect(sigc::mem_fun(this, &Draw::end_user_action), false);
+    this->beginUserActionSignalHandler =
+        buffer->signal_begin_user_action().connect(sigc::mem_fun(this, &Draw::begin_user_action), false);
+    this->endUserActionSignalHandler =
+        buffer->signal_end_user_action().connect(sigc::mem_fun(this, &Draw::end_user_action), false);
     this->insertTextSignalHandler = buffer->signal_insert().connect(sigc::mem_fun(this, &Draw::on_insert), false);
     this->deleteTextSignalHandler = buffer->signal_erase().connect(sigc::mem_fun(this, &Draw::on_delete), false);
 }
@@ -1001,12 +997,12 @@ void Draw::disableEdit()
 /**
  * Search for links
  */
-void Draw::followLink(Gtk::TextBuffer::iterator &iter)
+void Draw::followLink(Gtk::TextBuffer::iterator& iter)
 {
     auto tags = iter.get_tags();
-    for (auto const &tag : tags)
+    for (auto const& tag : tags)
     {
-        char *url = static_cast<char *>(tag->get_data("url"));
+        char* url = static_cast<char*>(tag->get_data("url"));
         if (url != 0 && (strlen(url) > 0))
         {
             // Get the URL
@@ -1019,7 +1015,7 @@ void Draw::followLink(Gtk::TextBuffer::iterator &iter)
 /**
  * Process and parse each node in the AST
  */
-void Draw::processNode(cmark_node *node, cmark_event_type ev_type)
+void Draw::processNode(cmark_node* node, cmark_event_type ev_type)
 {
     bool entering = (ev_type == CMARK_EVENT_ENTER);
 
@@ -1187,7 +1183,7 @@ void Draw::processNode(cmark_node *node, cmark_event_type ev_type)
     {
         Glib::ustring code = cmark_node_get_literal(node);
         Glib::ustring newline = (isQuote) ? "" : "\n";
-        this->insertText(code + newline, "", CodeTypeEnum::CODE_BLOCK);
+        this->insertText(code + newline, "", CodeTypeEnum::CODE_TYPE_CODE_BLOCK);
     }
     break;
 
@@ -1200,7 +1196,8 @@ void Draw::processNode(cmark_node *node, cmark_event_type ev_type)
     case CMARK_NODE_THEMATIC_BREAK:
     {
         this->isBold = true;
-        this->insertText("\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\n\n");
+        this->insertText("\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015"
+                         "\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\u2015\n\n");
         this->isBold = false;
     }
     break;
@@ -1257,7 +1254,7 @@ void Draw::processNode(cmark_node *node, cmark_event_type ev_type)
     case CMARK_NODE_CODE:
     {
         Glib::ustring code = cmark_node_get_literal(node);
-        this->insertText(code, "", CodeTypeEnum::INLINE_CODE);
+        this->insertText(code, "", CodeTypeEnum::CODE_TYPE_INLINE_CODE);
     }
     break;
 
@@ -1304,7 +1301,7 @@ void Draw::processNode(cmark_node *node, cmark_event_type ev_type)
  * Encode text string (eg. ampersand-character)
  * @param[in/out] string
  */
-void Draw::encodeText(std::string &string)
+void Draw::encodeText(std::string& string)
 {
     std::string buffer;
     buffer.reserve(string.size() + 5);
@@ -1326,7 +1323,7 @@ void Draw::encodeText(std::string &string)
 /**
  * Insert markup text - thread safe
  */
-void Draw::insertText(std::string text, const Glib::ustring &url, CodeTypeEnum codeType)
+void Draw::insertText(std::string text, const Glib::ustring& url, CodeTypeEnum codeType)
 {
     std::vector<Glib::ustring> tagNames;
 
@@ -1358,7 +1355,7 @@ void Draw::insertText(std::string text, const Glib::ustring &url, CodeTypeEnum c
     {
         tagNames.push_back("highlight");
     }
-    if (codeType != Draw::CodeTypeEnum::NONE)
+    if (codeType != Draw::CodeTypeEnum::CODE_TYPE_NONE)
     {
         tagNames.push_back("code");
     }
@@ -1402,7 +1399,7 @@ void Draw::insertText(std::string text, const Glib::ustring &url, CodeTypeEnum c
     else
     {
         // Special case for code blocks within quote
-        if ((codeType == Draw::CodeTypeEnum::CODE_BLOCK) && isQuote)
+        if ((codeType == Draw::CodeTypeEnum::CODE_TYPE_CODE_BLOCK) && isQuote)
         {
             std::istringstream iss(text);
             std::string line;
@@ -1431,7 +1428,7 @@ void Draw::insertText(std::string text, const Glib::ustring &url, CodeTypeEnum c
 /**
  * Insert pango text with tags - thread safe
  */
-void Draw::insertTagText(const Glib::ustring &text, std::vector<Glib::ustring> const &tagNames)
+void Draw::insertTagText(const Glib::ustring& text, std::vector<Glib::ustring> const& tagNames)
 {
     Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::insertTagTextIdle), text, tagNames));
 }
@@ -1439,7 +1436,7 @@ void Draw::insertTagText(const Glib::ustring &text, std::vector<Glib::ustring> c
 /**
  * Insert pango text with a single tag name - thread safe
  */
-void Draw::insertTagText(const Glib::ustring &text, const Glib::ustring &tagName)
+void Draw::insertTagText(const Glib::ustring& text, const Glib::ustring& tagName)
 {
     Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::insertSingleTagTextIdle), text, tagName));
 }
@@ -1447,7 +1444,7 @@ void Draw::insertTagText(const Glib::ustring &text, const Glib::ustring &tagName
 /**
  * Insert markup pango text - thread safe
  */
-void Draw::insertMarkupText(const Glib::ustring &text)
+void Draw::insertMarkupText(const Glib::ustring& text)
 {
     Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::insertMarupTextIdle), text));
 }
@@ -1455,7 +1452,7 @@ void Draw::insertMarkupText(const Glib::ustring &text)
 /**
  * Insert url link - thread safe
  */
-void Draw::insertLink(const Glib::ustring &text, const Glib::ustring &url)
+void Draw::insertLink(const Glib::ustring& text, const Glib::ustring& url)
 {
     Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::insertLinkIdle), text, url));
 }
@@ -1471,11 +1468,7 @@ void Draw::truncateText(int charsTruncated)
 /**
  * Clear buffer - thread-safe
  */
-void Draw::clearOnThread()
-{
-
-    Glib::signal_idle().connect_once(sigc::mem_fun(*this, &Draw::clearBufferIdle));
-}
+void Draw::clearOnThread() { Glib::signal_idle().connect_once(sigc::mem_fun(*this, &Draw::clearBufferIdle)); }
 
 /**
  *  Looks at all tags covering the position (x, y) in the text view,
@@ -1489,9 +1482,9 @@ void Draw::changeCursor(int x, int y)
 
     get_iter_at_location(iter, x, y);
     auto tags = iter.get_tags();
-    for (auto &tag : tags)
+    for (auto& tag : tags)
     {
-        char *url = static_cast<char *>(tag->get_data("url"));
+        char* url = static_cast<char*>(tag->get_data("url"));
         if (url != 0 && (strlen(url) > 0))
         {
             // Link
@@ -1515,7 +1508,7 @@ void Draw::changeCursor(int x, int y)
  * Insert text with tags on signal idle
  */
 
-void Draw::insertTagTextIdle(const Glib::ustring &text, std::vector<Glib::ustring> const &tagNames)
+void Draw::insertTagTextIdle(const Glib::ustring& text, std::vector<Glib::ustring> const& tagNames)
 {
     auto buffer = get_buffer();
     auto endIter = buffer->end();
@@ -1526,7 +1519,7 @@ void Draw::insertTagTextIdle(const Glib::ustring &text, std::vector<Glib::ustrin
  * Insert text with a single tag name on signal idle
  */
 
-void Draw::insertSingleTagTextIdle(const Glib::ustring &text, const Glib::ustring &tagName)
+void Draw::insertSingleTagTextIdle(const Glib::ustring& text, const Glib::ustring& tagName)
 {
     auto buffer = get_buffer();
     auto endIter = buffer->end();
@@ -1536,7 +1529,7 @@ void Draw::insertSingleTagTextIdle(const Glib::ustring &text, const Glib::ustrin
 /**
  * Insert markup text on signal idle
  */
-void Draw::insertMarupTextIdle(const Glib::ustring &text)
+void Draw::insertMarupTextIdle(const Glib::ustring& text)
 {
     auto buffer = get_buffer();
     auto endIter = buffer->end();
@@ -1546,15 +1539,12 @@ void Draw::insertMarupTextIdle(const Glib::ustring &text)
 /**
  * Insert plain text on signal idle
  */
-void Draw::insertPlainTextIdle(const Glib::ustring &text)
-{
-    get_buffer()->set_text(text);
-}
+void Draw::insertPlainTextIdle(const Glib::ustring& text) { get_buffer()->set_text(text); }
 
 /**
  * Insert link url on signal idle
  */
-void Draw::insertLinkIdle(const Glib::ustring &text, const Glib::ustring &url)
+void Draw::insertLinkIdle(const Glib::ustring& text, const Glib::ustring& url)
 {
     auto buffer = get_buffer();
     auto endIter = buffer->end();

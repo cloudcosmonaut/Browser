@@ -13,7 +13,7 @@ SourceCodeDialog::SourceCodeDialog() : accelGroup(Gtk::AccelGroup::create())
     m_sourceCode.set_editable(false);
     m_scrolledWindow.add(m_sourceCode);
     m_scrolledWindow.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
-    
+
     auto vbox = get_content_area();
     vbox->pack_start(m_scrolledWindow, true, true, 0);
     vbox->pack_start(m_closeButton, false, false, 0);
@@ -26,7 +26,7 @@ SourceCodeDialog::~SourceCodeDialog() {}
  * \brief Set multi-line code source
  * \param[in] text Source code text
  */
-void SourceCodeDialog::setText(const std::string &text)
+void SourceCodeDialog::setText(const std::string& text)
 {
     Glib::RefPtr<Gtk::TextBuffer> buffer = m_sourceCode.get_buffer();
     buffer->set_text(text);
@@ -35,7 +35,4 @@ void SourceCodeDialog::setText(const std::string &text)
 /**
  * \brief Hide the code source dialog
  */
-void SourceCodeDialog::hide_dialog(__attribute__((unused)) int response)
-{
-    hide();
-}
+void SourceCodeDialog::hide_dialog(__attribute__((unused)) int response) { hide(); }

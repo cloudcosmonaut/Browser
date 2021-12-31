@@ -1,11 +1,11 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include <signal.h>
-#include <gtkmm/menubar.h>
 #include <gtkmm/menu.h>
+#include <gtkmm/menubar.h>
 #include <gtkmm/menuitem.h>
 #include <gtkmm/separatormenuitem.h>
+#include <signal.h>
 
 /**
  * \class Menu
@@ -38,7 +38,7 @@ public:
     sigc::signal<void> source_code;
     sigc::signal<void> about;
 
-    explicit Menu(const Glib::RefPtr<Gtk::AccelGroup> &accelgroup);
+    explicit Menu(const Glib::RefPtr<Gtk::AccelGroup>& accelgroup);
     virtual ~Menu();
     void setBackMenuSensitive(bool sensitive);
     void setForwardMenuSensitive(bool sensitive);
@@ -64,10 +64,10 @@ protected:
     Gtk::SeparatorMenuItem m_separator7;
 
 private:
-    Gtk::MenuItem *createMenuItem(const Glib::ustring &label_text);
-    Gtk::MenuItem *backMenuItem;
-    Gtk::MenuItem *forwardMenuItem;
-    Gtk::MenuItem *publishMenuItem;
-    Gtk::MenuItem *editMenuItem;
+    Gtk::MenuItem* createMenuItem(const Glib::ustring& label_text);
+    Gtk::MenuItem* backMenuItem;
+    Gtk::MenuItem* forwardMenuItem;
+    Gtk::MenuItem* publishMenuItem;
+    Gtk::MenuItem* editMenuItem;
 };
 #endif

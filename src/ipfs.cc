@@ -7,11 +7,13 @@
  * \param port IPFS port number (5001)
  * \param timeout IPFS time-out (which is a string, eg. "6s" for 6 seconds)
  */
-IPFS::IPFS(const std::string &host, int port, const std::string &timeout)
+IPFS::IPFS(const std::string& host, int port, const std::string& timeout)
     : host(host),
       port(port),
       timeout(timeout),
-      client(this->host, this->port, this->timeout) {}
+      client(this->host, this->port, this->timeout)
+{
+}
 
 /**
  * \brief Get the number of IPFS peers
@@ -25,7 +27,7 @@ std::size_t IPFS::getNrPeers()
         client.SwarmPeers(&peers);
         return peers["Peers"].size();
     }
-    catch (const std::runtime_error &error)
+    catch (const std::runtime_error& error)
     {
         // ignore connection issues
     }
@@ -44,7 +46,7 @@ std::string const IPFS::getClientID()
         client.Id(&id);
         return id["ID"];
     }
-    catch (const std::runtime_error &error)
+    catch (const std::runtime_error& error)
     {
         // ignore connection issues
     }
@@ -63,7 +65,7 @@ std::string const IPFS::getClientPublicKey()
         client.Id(&id);
         return id["PublicKey"];
     }
-    catch (const std::runtime_error &error)
+    catch (const std::runtime_error& error)
     {
         // ignore connection issues
     }
@@ -82,7 +84,7 @@ std::string const IPFS::getVersion()
         client.Version(&version);
         return version["Version"];
     }
-    catch (const std::runtime_error &error)
+    catch (const std::runtime_error& error)
     {
         // ignore connection issues
     }
@@ -105,7 +107,7 @@ std::map<std::string, float> IPFS::getBandwidthRates()
         bandwidthRates.insert(std::pair<std::string, float>("in", in));
         bandwidthRates.insert(std::pair<std::string, float>("out", out));
     }
-    catch (const std::runtime_error &error)
+    catch (const std::runtime_error& error)
     {
         // ignore connection issues
     }
@@ -123,12 +125,12 @@ std::map<std::string, std::variant<int, std::string>> IPFS::getRepoStats()
     {
         ipfs::Json repo_stats;
         client.StatsRepo(&repo_stats);
-        int repoSize = (int) repo_stats["RepoSize"] / 1000000; // Convert from bytes to MB
+        int repoSize = (int)repo_stats["RepoSize"] / 1000000; // Convert from bytes to MB
         std::string repoPath = repo_stats["RepoPath"];
         repoStats.insert(std::pair<std::string, int>("total_size", repoSize));
         repoStats.insert(std::pair<std::string, std::string>("path", repoPath));
     }
-    catch (const std::runtime_error &error)
+    catch (const std::runtime_error& error)
     {
         // ignore connection issues
     }
@@ -141,7 +143,7 @@ std::map<std::string, std::variant<int, std::string>> IPFS::getRepoStats()
  * \throw std::runtime_error when there is a connection-time/something goes wrong while trying to get the file
  * \return content as string
  */
-std::string const IPFS::fetch(const std::string &path)
+std::string const IPFS::fetch(const std::string& path)
 {
     // Create new client each time for thread-safety
     ipfs::Client client(this->host, this->port, this->timeout);
@@ -157,14 +159,14 @@ std::string const IPFS::fetch(const std::string &path)
  * \throw std::runtime_error when there is a connection-time/something goes wrong while trying to get the file
  * \return IPFS content-addressed identifier (CID) hash
  */
-std::string const IPFS::add(const std::string &path, const std::string &content)
+std::string const IPFS::add(const std::string& path, const std::string& content)
 {
     ipfs::Json result;
     // Publish a single file
     client.FilesAdd({{path, ipfs::http::FileUpload::Type::kFileContents, content}}, &result);
     if (result.is_array())
     {
-        for (const auto &files : result.items())
+        for (const auto& files : result.items())
         {
             return files.value()["hash"];
         }

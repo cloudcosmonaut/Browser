@@ -1,7 +1,7 @@
+#include "ipfs-daemon.h"
 #include "mainwindow.h"
 #include "option-group.h"
 #include "project_config.h"
-#include "ipfs-daemon.h"
 
 #include <gtkmm/application.h>
 #include <iomanip>
@@ -12,7 +12,7 @@
 /**
  * \brief Entry point of the app
  */
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     // Start IPFS daemon
     IPFSDaemon ipfsDaemon;
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     // Create the GTK application
     auto app = Gtk::Application::create();
     app->set_flags(Gio::ApplicationFlags::APPLICATION_NON_UNIQUE);
-    
+
     // Parse the context
     try
     {
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
             exit(EXIT_SUCCESS);
         }
     }
-    catch (const Glib::Error &error)
+    catch (const Glib::Error& error)
     {
         std::cerr << "ERROR: Parse failure: " << error.what() << std::endl;
         exit(EXIT_FAILURE);

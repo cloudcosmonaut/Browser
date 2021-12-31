@@ -1,31 +1,30 @@
 #include "mainwindow.h"
 
-#include "project_config.h"
+#include "file.h"
 #include "md-parser.h"
 #include "menu.h"
-#include "file.h"
-#include <gtkmm/menuitem.h>
-#include <gtkmm/image.h>
-#include <gtkmm/listboxrow.h>
-#include <gtkmm/settings.h>
+#include "project_config.h"
+#include <cmark-gfm.h>
+#include <fstream>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include <giomm/file.h>
 #include <giomm/notification.h>
-#include <giomm/themedicon.h>
 #include <giomm/settingsschemasource.h>
-#include <glibmm/fileutils.h>
-#include <glibmm/miscutils.h>
-#include <glibmm/main.h>
+#include <giomm/themedicon.h>
 #include <glibmm/convert.h>
+#include <glibmm/fileutils.h>
+#include <glibmm/main.h>
 #include <glibmm/miscutils.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
-#include <cmark-gfm.h>
-#include <pthread.h>
+#include <gtkmm/image.h>
+#include <gtkmm/listboxrow.h>
+#include <gtkmm/menuitem.h>
+#include <gtkmm/settings.h>
 #include <iostream>
-#include <fstream>
 #include <nlohmann/json.hpp>
+#include <pthread.h>
 #include <whereami.h>
 
-MainWindow::MainWindow(const std::string &timeout)
+MainWindow::MainWindow(const std::string& timeout)
     : m_accelGroup(Gtk::AccelGroup::create()),
       m_settings(),
       m_brightnessAdjustment(Gtk::Adjustment::create(1.0, 0.5, 1.5, 0.05, 0.1)),
@@ -60,28 +59,28 @@ MainWindow::MainWindow(const std::string &timeout)
       m_indentLabel("Indent"),
       m_themeLabel("Dark Theme"),
       m_iconThemeLabel("Active Theme"),
-      m_appName("LibreWeb Browser"),
-      m_iconTheme("flat"),             // default is flat theme
-      m_useCurrentGTKIconTheme(false), // Use our built-in icon theme or the GTK icons
-      m_iconSize(18),
-      m_fontFamily("Sans"),
-      m_defaultFontSize(10),
-      m_currentFontSize(10),
-      m_fontSpacing(0),
-      m_requestThread(nullptr),
-      currentHistoryIndex(0),
-      m_waitPageVisible(false),
-      m_ipfsNetworkStatus("Disconnected"),
-      m_ipfsNumberOfPeers(0),
-      m_ipfsRepoSize(0),
-      m_ipfsIncomingRate("0.0"),
-      m_ipfsOutcomingRate("0.0"),
-      ipfsHost("localhost"),
-      ipfsPort(5001),
-      ipfsTimeout(timeout),
-      ipfs(ipfsHost, ipfsPort, ipfsTimeout) // Create IPFS object
+      appName_("LibreWeb Browser"),
+      iconTheme_("flat"),             // default is flat theme
+      useCurrentGTKIconTheme_(false), // Use our built-in icon theme or the GTK icons
+      iconSize_(18),
+      fontFamily_("Sans"),
+      defaultFontSize_(10),
+      currentFontSize_(10),
+      fontSpacing_(0),
+      requestThread_(nullptr),
+      currentHistoryIndex_(0),
+      waitPageVisible_(false),
+      ipfsNetworkStatus_("Disconnected"),
+      ipfsNumberOfPeers_(0),
+      ipfsRepoSize_(0),
+      ipfsIncomingRate_("0.0"),
+      ipfsOutcomingRate_("0.0"),
+      ipfsHost_("localhost"),
+      ipfsPort_(5001),
+      ipfsTimeout_(timeout),
+      ipfs_(ipfsHost_, ipfsPort_, ipfsTimeout_) // Create IPFS object
 {
-    set_title(m_appName);
+    set_title(appName_);
     set_default_size(1000, 800);
     set_position(Gtk::WIN_POS_CENTER);
     add_accel_group(m_accelGroup);
@@ -174,13 +173,13 @@ MainWindow::MainWindow(const std::string &timeout)
  */
 MainWindow::~MainWindow()
 {
-    if (m_requestThread)
+    if (requestThread_)
     {
-        if (m_requestThread->joinable())
+        if (requestThread_->joinable())
         {
-            pthread_cancel(m_requestThread->native_handle());
-            m_requestThread->join();
-            delete m_requestThread;
+            pthread_cancel(requestThread_->native_handle());
+            requestThread_->join();
+            delete requestThread_;
         }
     }
 }
@@ -196,7 +195,8 @@ void MainWindow::loadStoredSettings()
         // Relative to the binary path
         std::vector<std::string> relativePath{"..", "src", "gsettings"};
         std::string schemaDir = Glib::build_path(G_DIR_SEPARATOR_S, relativePath);
-        std::cout << "INFO: Try to find the schema file using the following directory first: " << schemaDir << std::endl;
+        std::cout << "INFO: Try to find the schema file using the following directory first: " << schemaDir
+                  << std::endl;
         Glib::setenv("GSETTINGS_SCHEMA_DIR", schemaDir);
     }
 
@@ -210,22 +210,22 @@ void MainWindow::loadStoredSettings()
         if (m_settings->get_boolean("maximized"))
             this->maximize();
 
-        this->m_fontFamily = m_settings->get_string("font-family");
-        this->m_currentFontSize = this->m_defaultFontSize = m_settings->get_int("font-size");
-        this->m_fontButton.set_font_name(this->m_fontFamily + " " + std::to_string(this->m_currentFontSize));
+        this->fontFamily_ = m_settings->get_string("font-family");
+        this->currentFontSize_ = this->defaultFontSize_ = m_settings->get_int("font-size");
+        this->m_fontButton.set_font_name(this->fontFamily_ + " " + std::to_string(this->currentFontSize_));
 
-        m_fontSpacing = m_settings->get_int("spacing");
+        fontSpacing_ = m_settings->get_int("spacing");
         int margins = m_settings->get_int("margins");
         int indent = m_settings->get_int("indent");
-        this->m_spacingAdjustment->set_value(m_fontSpacing);
+        this->m_spacingAdjustment->set_value(fontSpacing_);
         this->m_marginsAdjustment->set_value(margins);
         this->m_indentAdjustment->set_value(indent);
         this->m_draw_main.set_left_margin(margins);
         this->m_draw_main.set_right_margin(margins);
         this->m_draw_main.set_indent(indent);
 
-        this->m_iconTheme = m_settings->get_string("icon-theme");
-        this->m_useCurrentGTKIconTheme = m_settings->get_boolean("icon-gtk-theme");
+        this->iconTheme_ = m_settings->get_string("icon-theme");
+        this->useCurrentGTKIconTheme_ = m_settings->get_boolean("icon-gtk-theme");
     }
     else
     {
@@ -253,29 +253,50 @@ void MainWindow::loadIcons()
     try
     {
         // Editor buttons
-        m_openIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("open_folder", "folders"), m_iconSize, m_iconSize));
-        m_saveIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("floppy_disk", "basic"), m_iconSize, m_iconSize));
-        m_publishIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("upload", "basic"), m_iconSize, m_iconSize));
-        m_cutIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("cut", "editor"), m_iconSize, m_iconSize));
-        m_copyIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("copy", "editor"), m_iconSize, m_iconSize));
-        m_pasteIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("clipboard", "editor"), m_iconSize, m_iconSize));
-        m_undoIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("undo", "editor"), m_iconSize, m_iconSize));
-        m_redoIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("redo", "editor"), m_iconSize, m_iconSize));
-        m_boldIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("bold", "editor"), m_iconSize, m_iconSize));
-        m_italicIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("italic", "editor"), m_iconSize, m_iconSize));
-        m_strikethroughIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("strikethrough", "editor"), m_iconSize, m_iconSize));
-        m_superIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("superscript", "editor"), m_iconSize, m_iconSize));
-        m_subIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("subscript", "editor"), m_iconSize, m_iconSize));
-        m_linkIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("link", "editor"), m_iconSize, m_iconSize));
-        m_imageIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("shapes", "editor"), m_iconSize, m_iconSize));
-        m_emojiIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("smile", "smiley"), m_iconSize, m_iconSize));
-        m_quoteIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("quote", "editor"), m_iconSize, m_iconSize));
-        m_codeIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("code", "editor"), m_iconSize, m_iconSize));
-        m_bulletListIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("bullet_list", "editor"), m_iconSize, m_iconSize));
-        m_numberedListIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("number_list", "editor"), m_iconSize, m_iconSize));
-        m_hightlightIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("highlighter", "editor"), m_iconSize, m_iconSize));
+        m_openIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("open_folder", "folders"), iconSize_, iconSize_));
+        m_saveIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("floppy_disk", "basic"), iconSize_, iconSize_));
+        m_publishIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("upload", "basic"), iconSize_, iconSize_));
+        m_cutIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("cut", "editor"), iconSize_, iconSize_));
+        m_copyIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("copy", "editor"), iconSize_, iconSize_));
+        m_pasteIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("clipboard", "editor"), iconSize_, iconSize_));
+        m_undoIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("undo", "editor"), iconSize_, iconSize_));
+        m_redoIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("redo", "editor"), iconSize_, iconSize_));
+        m_boldIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("bold", "editor"), iconSize_, iconSize_));
+        m_italicIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("italic", "editor"), iconSize_, iconSize_));
+        m_strikethroughIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("strikethrough", "editor"),
+                                                              iconSize_, iconSize_));
+        m_superIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("superscript", "editor"), iconSize_, iconSize_));
+        m_subIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("subscript", "editor"), iconSize_, iconSize_));
+        m_linkIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("link", "editor"), iconSize_, iconSize_));
+        m_imageIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("shapes", "editor"), iconSize_, iconSize_));
+        m_emojiIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("smile", "smiley"), iconSize_, iconSize_));
+        m_quoteIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("quote", "editor"), iconSize_, iconSize_));
+        m_codeIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("code", "editor"), iconSize_, iconSize_));
+        m_bulletListIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("bullet_list", "editor"), iconSize_, iconSize_));
+        m_numberedListIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("number_list", "editor"), iconSize_, iconSize_));
+        m_hightlightIcon.set(
+            Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("highlighter", "editor"), iconSize_, iconSize_));
 
-        if (m_useCurrentGTKIconTheme)
+        if (useCurrentGTKIconTheme_)
         {
             // Toolbox buttons
             m_backIcon.set_from_icon_name("go-previous", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
@@ -293,26 +314,38 @@ void MainWindow::loadIcons()
         else
         {
             // Toolbox buttons
-            m_backIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("right_arrow_1", "arrows"), m_iconSize, m_iconSize)->flip());
-            m_forwardIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("right_arrow_1", "arrows"), m_iconSize, m_iconSize));
-            m_refreshIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("reload_centered", "arrows"), m_iconSize * 1.13, m_iconSize));
-            m_homeIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("home", "basic"), m_iconSize, m_iconSize));
-            m_searchIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("search", "basic"), m_iconSize, m_iconSize));
-            m_settingsIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("menu", "basic"), m_iconSize, m_iconSize));
+            m_backIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("right_arrow_1", "arrows"),
+                                                         iconSize_, iconSize_)
+                               ->flip());
+            m_forwardIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("right_arrow_1", "arrows"),
+                                                            iconSize_, iconSize_));
+            m_refreshIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("reload_centered", "arrows"),
+                                                            iconSize_ * 1.13, iconSize_));
+            m_homeIcon.set(
+                Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("home", "basic"), iconSize_, iconSize_));
+            m_searchIcon.set(
+                Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("search", "basic"), iconSize_, iconSize_));
+            m_settingsIcon.set(
+                Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("menu", "basic"), iconSize_, iconSize_));
 
             // Settings pop-over buttons
-            m_zoomOutImage.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("zoom_out", "basic"), m_iconSize, m_iconSize));
-            m_zoomInImage.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("zoom_in", "basic"), m_iconSize, m_iconSize));
-            m_brightnessImage.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("brightness", "basic"), m_iconSize, m_iconSize));
+            m_zoomOutImage.set(
+                Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("zoom_out", "basic"), iconSize_, iconSize_));
+            m_zoomInImage.set(
+                Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("zoom_in", "basic"), iconSize_, iconSize_));
+            m_brightnessImage.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("brightness", "basic"),
+                                                                iconSize_, iconSize_));
         }
     }
-    catch (const Glib::FileError &error)
+    catch (const Glib::FileError& error)
     {
-        std::cerr << "ERROR: Icon could not be loaded, file error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
+        std::cerr << "ERROR: Icon could not be loaded, file error: " << error.what() << ".\nContinue nevertheless..."
+                  << std::endl;
     }
-    catch (const Gdk::PixbufError &error)
+    catch (const Gdk::PixbufError& error)
     {
-        std::cerr << "ERROR: Icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
+        std::cerr << "ERROR: Icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless..."
+                  << std::endl;
     }
 
     // Load toolbar status icon image separately
@@ -322,17 +355,17 @@ void MainWindow::loadIcons()
 /**
  * Dedicated function for loading the status icon in the toolbar.
  * Because it will require some additional logic. It also returns the number of IPFS peers connected to.
- * 
+ *
  * @param reload Reloading pix buffer from disk again (only needed when the theme has changed)
  * @return Number of IPFS peers
  */
 std::size_t MainWindow::loadStatusIcon(bool reload)
 {
     // TODO: This call is causing hangs under Windows at the moment (blocking call? too high time-outs)
-    std::size_t nrPeers = ipfs.getNrPeers();
+    std::size_t nrPeers = ipfs_.getNrPeers();
     try
     {
-        if (m_useCurrentGTKIconTheme)
+        if (useCurrentGTKIconTheme_)
         {
             if (nrPeers > 0)
             {
@@ -340,15 +373,18 @@ std::size_t MainWindow::loadStatusIcon(bool reload)
             }
             else
             {
-                m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+                m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic",
+                                                Gtk::IconSize(Gtk::ICON_SIZE_MENU));
             }
         }
         else
         {
             if (reload)
             {
-                m_statusOfflineIcon = Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("network_disconnected", "network"), m_iconSize, m_iconSize);
-                m_statusOnlineIcon = Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("network_connected", "network"), m_iconSize, m_iconSize);
+                m_statusOfflineIcon = Gdk::Pixbuf::create_from_file(
+                    this->getIconImageFromTheme("network_disconnected", "network"), iconSize_, iconSize_);
+                m_statusOnlineIcon = Gdk::Pixbuf::create_from_file(
+                    this->getIconImageFromTheme("network_connected", "network"), iconSize_, iconSize_);
             }
             if (nrPeers > 0)
             {
@@ -360,13 +396,15 @@ std::size_t MainWindow::loadStatusIcon(bool reload)
             }
         }
     }
-    catch (const Glib::FileError &error)
+    catch (const Glib::FileError& error)
     {
-        std::cerr << "ERROR: Status icon could not be loaded, file error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
+        std::cerr << "ERROR: Status icon could not be loaded, file error: " << error.what()
+                  << ".\nContinue nevertheless..." << std::endl;
     }
-    catch (const Gdk::PixbufError &error)
+    catch (const Gdk::PixbufError& error)
     {
-        std::cerr << "ERROR: Status icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
+        std::cerr << "ERROR: Status icon could not be loaded, pixbuf error: " << error.what()
+                  << ".\nContinue nevertheless..." << std::endl;
     }
     return nrPeers;
 }
@@ -506,7 +544,9 @@ void MainWindow::initButtons()
     // Add spinning CSS class to refresh icon
     auto cssProvider = Gtk::CssProvider::create();
     auto screen = Gdk::Screen::get_default();
-    std::string spinningCSS = "@keyframes spin {  to { -gtk-icon-transform: rotate(1turn); }} .spinning { animation-name: spin;  animation-duration: 1s;  animation-timing-function: linear;  animation-iteration-count: infinite;}";
+    std::string spinningCSS =
+        "@keyframes spin {  to { -gtk-icon-transform: rotate(1turn); }} .spinning { animation-name: spin;  "
+        "animation-duration: 1s;  animation-timing-function: linear;  animation-iteration-count: infinite;}";
     if (!cssProvider->load_from_data(spinningCSS))
     {
         std::cerr << "ERROR: CSS data parsing went wrong." << std::endl;
@@ -527,7 +567,7 @@ void MainWindow::initButtons()
     m_backButton.set_sensitive(false);
     m_forwardButton.set_sensitive(false);
 
-    /* 
+    /*
      * Adding the buttons to the boxes
      */
     // Browser Toolbar
@@ -726,9 +766,9 @@ void MainWindow::initSettingsPopover()
     m_iconThemeButton.set_label("Icon Theme");
     m_iconThemeButton.property_menu_name() = "icon-theme";
     m_aboutButton.set_label("About LibreWeb");
-    Gtk::Label *iconThemeButtonlabel = dynamic_cast<Gtk::Label *>(m_iconThemeButton.get_child());
+    Gtk::Label* iconThemeButtonlabel = dynamic_cast<Gtk::Label*>(m_iconThemeButton.get_child());
     iconThemeButtonlabel->set_xalign(0.0);
-    Gtk::Label *aboutButtonLabel = dynamic_cast<Gtk::Label *>(m_aboutButton.get_child());
+    Gtk::Label* aboutButtonLabel = dynamic_cast<Gtk::Label*>(m_aboutButton.get_child());
     iconThemeButtonlabel->set_xalign(0.0);
     aboutButtonLabel->set_xalign(0.0);
 
@@ -737,18 +777,18 @@ void MainWindow::initSettingsPopover()
     m_iconThemeBackButton.property_menu_name() = "main";
     m_iconThemeBackButton.property_inverted() = true;
     // List box
-    Gtk::Label *iconTheme1 = Gtk::manage(new Gtk::Label("Flat theme"));
-    Gtk::ListBoxRow *row1 = Gtk::manage(new Gtk::ListBoxRow());
+    Gtk::Label* iconTheme1 = Gtk::manage(new Gtk::Label("Flat theme"));
+    Gtk::ListBoxRow* row1 = Gtk::manage(new Gtk::ListBoxRow());
     row1->add(*iconTheme1);
-    row1->set_data("value", (void *)"flat");
-    Gtk::Label *iconTheme2 = Gtk::manage(new Gtk::Label("Filled theme"));
-    Gtk::ListBoxRow *row2 = Gtk::manage(new Gtk::ListBoxRow());
+    row1->set_data("value", (void*)"flat");
+    Gtk::Label* iconTheme2 = Gtk::manage(new Gtk::Label("Filled theme"));
+    Gtk::ListBoxRow* row2 = Gtk::manage(new Gtk::ListBoxRow());
     row2->add(*iconTheme2);
-    row2->set_data("value", (void *)"filled");
-    Gtk::Label *iconTheme3 = Gtk::manage(new Gtk::Label("Gtk default theme"));
-    Gtk::ListBoxRow *row3 = Gtk::manage(new Gtk::ListBoxRow());
+    row2->set_data("value", (void*)"filled");
+    Gtk::Label* iconTheme3 = Gtk::manage(new Gtk::Label("Gtk default theme"));
+    Gtk::ListBoxRow* row3 = Gtk::manage(new Gtk::ListBoxRow());
     row3->add(*iconTheme3);
-    row3->set_data("value", (void *)"none");
+    row3->set_data("value", (void*)"none");
     m_iconThemeListBox.add(*row1);
     m_iconThemeListBox.add(*row2);
     m_iconThemeListBox.add(*row3);
@@ -791,13 +831,13 @@ void MainWindow::initSettingsPopover()
  */
 void MainWindow::updateStatusPopover()
 {
-    m_connectivityStatusLabel.set_markup("<b>" + m_ipfsNetworkStatus + "</b>");
-    m_peersStatusLabel.set_text(std::to_string(m_ipfsNumberOfPeers));
-    m_repoSizeStatusLabel.set_text(std::to_string(m_ipfsRepoSize) + " MB");
-    m_repoPathStatusLabel.set_text(m_ipfsRepoPath);
-    m_ipfsVersionStatusLabel.set_text(m_ipfsVersion);
-    m_networkIncomingStatusLabel.set_text(m_ipfsIncomingRate);
-    m_networkOutcomingStatusLabel.set_text(m_ipfsOutcomingRate);
+    m_connectivityStatusLabel.set_markup("<b>" + ipfsNetworkStatus_ + "</b>");
+    m_peersStatusLabel.set_text(std::to_string(ipfsNumberOfPeers_));
+    m_repoSizeStatusLabel.set_text(std::to_string(ipfsRepoSize_) + " MB");
+    m_repoPathStatusLabel.set_text(ipfsRepoPath_);
+    m_ipfsVersionStatusLabel.set_text(ipfsVersion_);
+    m_networkIncomingStatusLabel.set_text(ipfsIncomingRate_);
+    m_networkOutcomingStatusLabel.set_text(ipfsOutcomingRate_);
 }
 
 /**
@@ -807,46 +847,57 @@ void MainWindow::initSignals()
 {
     // Timeouts
     // TODO: Fix under Windows. It causes hang.
-    //this->statusTimerHandler = Glib::signal_timeout().connect(sigc::mem_fun(this, &MainWindow::update_connection_status), 3000);
+    // this->statusTimerHandler_ = Glib::signal_timeout().connect(sigc::mem_fun(this,
+    // &MainWindow::update_connection_status), 3000);
 
     // Window signals
     this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::delete_window));
 
     // Menu & toolbar signals
-    m_menu.new_doc.connect(sigc::mem_fun(this, &MainWindow::new_doc));                                               /*!< Menu item for new document */
-    m_menu.open.connect(sigc::mem_fun(this, &MainWindow::open));                                                     /*!< Menu item for opening existing document */
-    m_menu.open_edit.connect(sigc::mem_fun(this, &MainWindow::open_and_edit));                                       /*!< Menu item for opening & editing existing document */
-    m_menu.edit.connect(sigc::mem_fun(this, &MainWindow::edit));                                                     /*!< Menu item for editing current open document */
-    m_menu.save.connect(sigc::mem_fun(this, &MainWindow::save));                                                     /*!< Menu item for save document */
-    m_menu.save_as.connect(sigc::mem_fun(this, &MainWindow::save_as));                                               /*!< Menu item for save document as */
-    m_menu.publish.connect(sigc::mem_fun(this, &MainWindow::publish));                                               /*!< Menu item for publishing */
-    m_menu.quit.connect(sigc::mem_fun(this, &MainWindow::close));                                                    /*!< close main window and therefor closes the app */
-    m_menu.undo.connect(sigc::mem_fun(m_draw_main, &Draw::undo));                                                    /*!< Menu item for undo text */
-    m_menu.redo.connect(sigc::mem_fun(m_draw_main, &Draw::redo));                                                    /*!< Menu item for redo text */
-    m_menu.cut.connect(sigc::mem_fun(this, &MainWindow::cut));                                                       /*!< Menu item for cut text */
-    m_menu.copy.connect(sigc::mem_fun(this, &MainWindow::copy));                                                     /*!< Menu item for copy text */
-    m_menu.paste.connect(sigc::mem_fun(this, &MainWindow::paste));                                                   /*!< Menu item for paste text */
-    m_menu.del.connect(sigc::mem_fun(this, &MainWindow::del));                                                       /*!< Menu item for deleting selected text */
-    m_menu.select_all.connect(sigc::mem_fun(this, &MainWindow::selectAll));                                          /*!< Menu item for selecting all text */
-    m_menu.find.connect(sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false));                           /*!< Menu item for finding text */
-    m_menu.replace.connect(sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), true));                         /*!< Menu item for replacing text */
-    m_menu.back.connect(sigc::mem_fun(this, &MainWindow::back));                                                     /*!< Menu item for previous page */
-    m_menu.forward.connect(sigc::mem_fun(this, &MainWindow::forward));                                               /*!< Menu item for next page */
-    m_menu.reload.connect(sigc::mem_fun(this, &MainWindow::refresh));                                                /*!< Menu item for reloading the page */
-    m_menu.home.connect(sigc::mem_fun(this, &MainWindow::go_home));                                                  /*!< Menu item for home page */
-    m_menu.source_code.connect(sigc::mem_fun(this, &MainWindow::show_source_code_dialog));                           /*!< Source code dialog */
-    m_sourceCodeDialog.signal_response().connect(sigc::mem_fun(m_sourceCodeDialog, &SourceCodeDialog::hide_dialog)); /*!< Close source code dialog */
-    m_menu.about.connect(sigc::mem_fun(m_about, &About::show_about));                                                /*!< Display about dialog */
-    m_draw_main.source_code.connect(sigc::mem_fun(this, &MainWindow::show_source_code_dialog));                      /*!< Open source code dialog */
-    m_about.signal_response().connect(sigc::mem_fun(m_about, &About::hide_about));                                   /*!< Close about dialog */
-    m_addressBar.signal_activate().connect(sigc::mem_fun(this, &MainWindow::address_bar_activate));                  /*!< User pressed enter the address bar */
-    m_backButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::back));                                   /*!< Button for previous page */
-    m_forwardButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::forward));                             /*!< Button for next page */
-    m_refreshButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::refresh));                             /*!< Button for reloading the page */
-    m_homeButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::go_home));                                /*!< Button for home page */
-    m_searchButton.signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false));       /*!< Button for finding text */
-    m_searchEntry.signal_activate().connect(sigc::mem_fun(this, &MainWindow::on_search));                            /*!< Execute the text search */
-    m_searchReplaceEntry.signal_activate().connect(sigc::mem_fun(this, &MainWindow::on_replace));                    /*!< Execute the text replace */
+    m_menu.new_doc.connect(sigc::mem_fun(this, &MainWindow::new_doc)); /*!< Menu item for new document */
+    m_menu.open.connect(sigc::mem_fun(this, &MainWindow::open));       /*!< Menu item for opening existing document */
+    m_menu.open_edit.connect(
+        sigc::mem_fun(this, &MainWindow::open_and_edit)); /*!< Menu item for opening & editing existing document */
+    m_menu.edit.connect(sigc::mem_fun(this, &MainWindow::edit)); /*!< Menu item for editing current open document */
+    m_menu.save.connect(sigc::mem_fun(this, &MainWindow::save)); /*!< Menu item for save document */
+    m_menu.save_as.connect(sigc::mem_fun(this, &MainWindow::save_as)); /*!< Menu item for save document as */
+    m_menu.publish.connect(sigc::mem_fun(this, &MainWindow::publish)); /*!< Menu item for publishing */
+    m_menu.quit.connect(sigc::mem_fun(this, &MainWindow::close));  /*!< close main window and therefor closes the app */
+    m_menu.undo.connect(sigc::mem_fun(m_draw_main, &Draw::undo));  /*!< Menu item for undo text */
+    m_menu.redo.connect(sigc::mem_fun(m_draw_main, &Draw::redo));  /*!< Menu item for redo text */
+    m_menu.cut.connect(sigc::mem_fun(this, &MainWindow::cut));     /*!< Menu item for cut text */
+    m_menu.copy.connect(sigc::mem_fun(this, &MainWindow::copy));   /*!< Menu item for copy text */
+    m_menu.paste.connect(sigc::mem_fun(this, &MainWindow::paste)); /*!< Menu item for paste text */
+    m_menu.del.connect(sigc::mem_fun(this, &MainWindow::del));     /*!< Menu item for deleting selected text */
+    m_menu.select_all.connect(sigc::mem_fun(this, &MainWindow::selectAll)); /*!< Menu item for selecting all text */
+    m_menu.find.connect(
+        sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false)); /*!< Menu item for finding text */
+    m_menu.replace.connect(
+        sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), true)); /*!< Menu item for replacing text */
+    m_menu.back.connect(sigc::mem_fun(this, &MainWindow::back));          /*!< Menu item for previous page */
+    m_menu.forward.connect(sigc::mem_fun(this, &MainWindow::forward));    /*!< Menu item for next page */
+    m_menu.reload.connect(sigc::mem_fun(this, &MainWindow::refresh));     /*!< Menu item for reloading the page */
+    m_menu.home.connect(sigc::mem_fun(this, &MainWindow::go_home));       /*!< Menu item for home page */
+    m_menu.source_code.connect(sigc::mem_fun(this, &MainWindow::show_source_code_dialog)); /*!< Source code dialog */
+    m_sourceCodeDialog.signal_response().connect(
+        sigc::mem_fun(m_sourceCodeDialog, &SourceCodeDialog::hide_dialog)); /*!< Close source code dialog */
+    m_menu.about.connect(sigc::mem_fun(m_about, &About::show_about));       /*!< Display about dialog */
+    m_draw_main.source_code.connect(
+        sigc::mem_fun(this, &MainWindow::show_source_code_dialog));                /*!< Open source code dialog */
+    m_about.signal_response().connect(sigc::mem_fun(m_about, &About::hide_about)); /*!< Close about dialog */
+    m_addressBar.signal_activate().connect(
+        sigc::mem_fun(this, &MainWindow::address_bar_activate)); /*!< User pressed enter the address bar */
+    m_backButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::back)); /*!< Button for previous page */
+    m_forwardButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::forward)); /*!< Button for next page */
+    m_refreshButton.signal_clicked().connect(
+        sigc::mem_fun(this, &MainWindow::refresh)); /*!< Button for reloading the page */
+    m_homeButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::go_home)); /*!< Button for home page */
+    m_searchButton.signal_clicked().connect(
+        sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false)); /*!< Button for finding text */
+    m_searchEntry.signal_activate().connect(
+        sigc::mem_fun(this, &MainWindow::on_search)); /*!< Execute the text search */
+    m_searchReplaceEntry.signal_activate().connect(
+        sigc::mem_fun(this, &MainWindow::on_replace)); /*!< Execute the text replace */
 
     // Editor buttons
     m_openButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::open_and_edit));
@@ -895,32 +946,35 @@ void MainWindow::initSignals()
  * \param isSetAddressBar If true change update the address bar with the file path (default: true)
  * \param isHistoryRequest Set to true if this is an history request call: back/forward (default: false)
  * \param isDisableEditor If true the editor will be disabled if needed (default: true)
- * \param isParseContext If true the content received will be parsed and displayed as markdown syntax (default: true), set to false if you want to editor the content
+ * \param isParseContext If true the content received will be parsed and displayed as markdown syntax (default: true),
+ * set to false if you want to editor the content
  */
-void MainWindow::doRequest(const std::string &path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor, bool isParseContent)
+void MainWindow::doRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor,
+                           bool isParseContent)
 {
-    if (m_requestThread)
+    if (requestThread_)
     {
-        if (m_requestThread->joinable())
+        if (requestThread_->joinable())
         {
             std::cout << "INFO: Already running request. Stop running thread first..." << std::endl;
-            // TODO: Let's implement a thread-safe C++ ipfs client using the cURL multi API, with a atomic boolean to stop the thread.
+            // TODO: Let's implement a thread-safe C++ ipfs client using the cURL multi API, with a atomic boolean to
+            // stop the thread.
 
-            pthread_cancel(m_requestThread->native_handle());
-            m_requestThread->join();
-            delete m_requestThread;
-            m_requestThread = nullptr;
+            pthread_cancel(requestThread_->native_handle());
+            requestThread_->join();
+            delete requestThread_;
+            requestThread_ = nullptr;
 
             std::cout << "INFO: Thread stopped." << std::endl;
         }
     }
 
-    if (m_requestThread == nullptr)
+    if (requestThread_ == nullptr)
     {
         // Show spinning icon
         m_refreshIcon.get_style_context()->add_class("spinning");
         // Start thread
-        m_requestThread = new std::thread(&MainWindow::processRequest, this, path, isParseContent);
+        requestThread_ = new std::thread(&MainWindow::processRequest, this, path, isParseContent);
         this->postDoRequest(path, isSetAddressBar, isHistoryRequest, isDisableEditor);
     }
 }
@@ -928,7 +982,7 @@ void MainWindow::doRequest(const std::string &path, bool isSetAddressBar, bool i
 /**
  * \brief Called when Window is closed/exited
  */
-bool MainWindow::delete_window(GdkEventAny *any_event __attribute__((unused)))
+bool MainWindow::delete_window(GdkEventAny* any_event __attribute__((unused)))
 {
     if (m_settings)
     {
@@ -942,15 +996,15 @@ bool MainWindow::delete_window(GdkEventAny *any_event __attribute__((unused)))
             m_settings->set_int("position-divider", this->m_paned.get_position());
 
         // Fullscreen will be availible with gtkmm-4.0
-        //m_settings->set_boolean("fullscreen", this->is_fullscreen());
+        // m_settings->set_boolean("fullscreen", this->is_fullscreen());
 
-        m_settings->set_string("font-family", this->m_fontFamily);
-        m_settings->set_int("font-size", this->m_currentFontSize);
+        m_settings->set_string("font-family", this->fontFamily_);
+        m_settings->set_int("font-size", this->currentFontSize_);
         m_settings->set_int("spacing", this->m_spacingSpinButton.get_value_as_int());
         m_settings->set_int("margins", this->m_marginsSpinButton.get_value_as_int());
         m_settings->set_int("indent", this->m_indentSpinButton.get_value_as_int());
-        m_settings->set_string("icon-theme", this->m_iconTheme);
-        m_settings->set_boolean("icon-gtk-theme", this->m_useCurrentGTKIconTheme);
+        m_settings->set_string("icon-theme", this->iconTheme_);
+        m_settings->set_boolean("icon-gtk-theme", this->useCurrentGTKIconTheme_);
     }
     return false;
 }
@@ -970,37 +1024,37 @@ bool MainWindow::update_connection_status()
     std::cout << "update_connection_status() started." << std::endl;
     auto start = high_resolution_clock::now();
 
-    if (this->m_ipfsClientID.empty())
-        this->m_ipfsClientID = ipfs.getClientID();
-    if (this->m_ipfsClientPublicKey.empty())
-        this->m_ipfsClientPublicKey = ipfs.getClientPublicKey();
-    if (this->m_ipfsVersion.empty())
-        this->m_ipfsVersion = ipfs.getVersion();
+    if (this->ipfsClientID_.empty())
+        this->ipfsClientID_ = ipfs_.getClientID();
+    if (this->ipfsClientPublicKey_.empty())
+        this->ipfsClientPublicKey_ = ipfs_.getClientPublicKey();
+    if (this->ipfsVersion_.empty())
+        this->ipfsVersion_ = ipfs_.getVersion();
 
-    this->m_ipfsNumberOfPeers = loadStatusIcon(false); // No reloading of the image required
-    if (this->m_ipfsNumberOfPeers > 0)
+    this->ipfsNumberOfPeers_ = loadStatusIcon(false); // No reloading of the image required
+    if (this->ipfsNumberOfPeers_ > 0)
     {
         // Auto-refresh page if needed (when 'Please wait' page is shown)
-        if (this->m_waitPageVisible)
+        if (this->waitPageVisible_)
             this->refresh();
 
-        this->m_ipfsNetworkStatus = "Connected";
-        std::map<std::string, std::variant<int, std::string>> repoStats = ipfs.getRepoStats();
-        this->m_ipfsRepoSize = std::get<int>(repoStats.at("total_size"));
-        this->m_ipfsRepoPath = std::get<std::string>(repoStats.at("path"));
+        this->ipfsNetworkStatus_ = "Connected";
+        std::map<std::string, std::variant<int, std::string>> repoStats = ipfs_.getRepoStats();
+        this->ipfsRepoSize_ = std::get<int>(repoStats.at("total_size"));
+        this->ipfsRepoPath_ = std::get<std::string>(repoStats.at("path"));
 
-        std::map<std::string, float> rates = ipfs.getBandwidthRates();
+        std::map<std::string, float> rates = ipfs_.getBandwidthRates();
         char buf[32];
-        this->m_ipfsIncomingRate = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("in") / 1000.0));
-        this->m_ipfsOutcomingRate = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("out") / 1000.0));
+        this->ipfsIncomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("in") / 1000.0));
+        this->ipfsOutcomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("out") / 1000.0));
     }
     else
     {
-        this->m_ipfsNetworkStatus = "Disconnected";
-        this->m_ipfsRepoSize = 0;
-        this->m_ipfsRepoPath = "";
-        this->m_ipfsIncomingRate = "0.0";
-        this->m_ipfsOutcomingRate = "0.0";
+        this->ipfsNetworkStatus_ = "Disconnected";
+        this->ipfsRepoSize_ = 0;
+        this->ipfsRepoPath_ = "";
+        this->ipfsIncomingRate_ = "0.0";
+        this->ipfsOutcomingRate_ = "0.0";
     }
 
     // Trigger update of all status fields
@@ -1170,16 +1224,16 @@ void MainWindow::selectAll()
  */
 void MainWindow::new_doc()
 {
-    // Clear content & requestPath
-    this->currentContent = "";
-    this->requestPath = "";
+    // Clear content & requestPath_
+    this->currentContent_ = "";
+    this->requestPath_ = "";
 
     // Enable editing mode
     this->enableEdit();
     // Change address bar
     this->m_addressBar.set_text("file://unsaved");
     // Set new title
-    this->set_title("Untitled * - " + m_appName);
+    this->set_title("Untitled * - " + appName_);
 }
 
 /**
@@ -1216,7 +1270,8 @@ void MainWindow::open_and_edit()
     auto dialog = new Gtk::FileChooserDialog("Open & Edit", Gtk::FILE_CHOOSER_ACTION_OPEN);
     dialog->set_transient_for(*this);
     dialog->set_modal(true);
-    dialog->signal_response().connect(sigc::bind(sigc::mem_fun(*this, &MainWindow::on_open_edit_dialog_response), dialog));
+    dialog->signal_response().connect(
+        sigc::bind(sigc::mem_fun(*this, &MainWindow::on_open_edit_dialog_response), dialog));
     dialog->add_button("_Cancel", Gtk::ResponseType::RESPONSE_CANCEL);
     dialog->add_button("_Open", Gtk::ResponseType::RESPONSE_OK);
 
@@ -1237,7 +1292,7 @@ void MainWindow::open_and_edit()
 /**
  * \brief Signal response when 'open' dialog is closed
  */
-void MainWindow::on_open_dialog_response(int response_id, Gtk::FileChooserDialog *dialog)
+void MainWindow::on_open_dialog_response(int response_id, Gtk::FileChooserDialog* dialog)
 {
     switch (response_id)
     {
@@ -1249,7 +1304,7 @@ void MainWindow::on_open_dialog_response(int response_id, Gtk::FileChooserDialog
 
         // Set new title
         std::string fileName = File::getFilename(filePath);
-        this->set_title(fileName + " - " + m_appName);
+        this->set_title(fileName + " - " + appName_);
         break;
     }
     case Gtk::ResponseType::RESPONSE_CANCEL:
@@ -1268,7 +1323,7 @@ void MainWindow::on_open_dialog_response(int response_id, Gtk::FileChooserDialog
 /**
  * \brief Signal response when 'open & edit' dialog is closed
  */
-void MainWindow::on_open_edit_dialog_response(int response_id, Gtk::FileChooserDialog *dialog)
+void MainWindow::on_open_edit_dialog_response(int response_id, Gtk::FileChooserDialog* dialog)
 {
     switch (response_id)
     {
@@ -1287,9 +1342,9 @@ void MainWindow::on_open_edit_dialog_response(int response_id, Gtk::FileChooserD
         this->m_addressBar.set_text(path);
         // Set new title
         std::string fileName = File::getFilename(filePath);
-        this->set_title(fileName + " - " + m_appName);
+        this->set_title(fileName + " - " + appName_);
         // Set current file path for saving feature
-        this->currentFileSavedPath = filePath;
+        this->currentFileSavedPath_ = filePath;
         break;
     }
     case Gtk::ResponseType::RESPONSE_CANCEL:
@@ -1313,9 +1368,9 @@ void MainWindow::edit()
     if (!this->isEditorEnabled())
         this->enableEdit();
 
-    m_draw_main.setText(this->currentContent);
+    m_draw_main.setText(this->currentContent_);
     // Set title
-    this->set_title("Untitled * - " + m_appName);
+    this->set_title("Untitled * - " + appName_);
 }
 
 /**
@@ -1323,7 +1378,7 @@ void MainWindow::edit()
  */
 void MainWindow::save()
 {
-    if (currentFileSavedPath.empty())
+    if (currentFileSavedPath_.empty())
     {
         this->save_as();
     }
@@ -1333,16 +1388,18 @@ void MainWindow::save()
         {
             try
             {
-                File::write(currentFileSavedPath, this->currentContent);
+                File::write(currentFileSavedPath_, this->currentContent_);
             }
-            catch (std::ios_base::failure &error)
+            catch (std::ios_base::failure& error)
             {
-                std::cerr << "ERROR: Could not write file: " << currentFileSavedPath << ". Message: " << error.what() << ".\nError code: " << error.code() << std::endl;
+                std::cerr << "ERROR: Could not write file: " << currentFileSavedPath_ << ". Message: " << error.what()
+                          << ".\nError code: " << error.code() << std::endl;
             }
         }
         else
         {
-            std::cerr << "ERROR: Saving while \"file saved path\" is filled and editor is disabled should not happen!?" << std::endl;
+            std::cerr << "ERROR: Saving while \"file saved path\" is filled and editor is disabled should not happen!?"
+                      << std::endl;
         }
     }
 }
@@ -1356,7 +1413,8 @@ void MainWindow::save_as()
     dialog->set_transient_for(*this);
     dialog->set_modal(true);
     dialog->set_do_overwrite_confirmation(true);
-    dialog->signal_response().connect(sigc::bind(sigc::mem_fun(*this, &MainWindow::on_save_as_dialog_response), dialog));
+    dialog->signal_response().connect(
+        sigc::bind(sigc::mem_fun(*this, &MainWindow::on_save_as_dialog_response), dialog));
     dialog->add_button("_Cancel", Gtk::ResponseType::RESPONSE_CANCEL);
     dialog->add_button("_Save", Gtk::ResponseType::RESPONSE_OK);
 
@@ -1372,15 +1430,16 @@ void MainWindow::save_as()
     dialog->add_filter(filter_any);
 
     // If user is saving as an existing file, set the current uri path
-    if (!this->currentFileSavedPath.empty())
+    if (!this->currentFileSavedPath_.empty())
     {
         try
         {
-            dialog->set_uri(Glib::filename_to_uri(currentFileSavedPath));
+            dialog->set_uri(Glib::filename_to_uri(currentFileSavedPath_));
         }
-        catch (Glib::Error &error)
+        catch (Glib::Error& error)
         {
-            std::cerr << "ERROR: Incorrect filename most likely. Message: " << error.what() << ". Error Code: " << error.code() << std::endl;
+            std::cerr << "ERROR: Incorrect filename most likely. Message: " << error.what()
+                      << ". Error Code: " << error.code() << std::endl;
         }
     }
     dialog->show();
@@ -1389,7 +1448,7 @@ void MainWindow::save_as()
 /**
  * \brief Signal response when 'save as' dialog is closed
  */
-void MainWindow::on_save_as_dialog_response(int response_id, Gtk::FileChooserDialog *dialog)
+void MainWindow::on_save_as_dialog_response(int response_id, Gtk::FileChooserDialog* dialog)
 {
     switch (response_id)
     {
@@ -1402,22 +1461,23 @@ void MainWindow::on_save_as_dialog_response(int response_id, Gtk::FileChooserDia
         // Save current content to file path
         try
         {
-            File::write(filePath, this->currentContent);
+            File::write(filePath, this->currentContent_);
             // Only if editor mode is enabled
             if (this->isEditorEnabled())
             {
                 // Set/update the current file saved path variable (used for the 'save' feature)
-                this->currentFileSavedPath = filePath;
+                this->currentFileSavedPath_ = filePath;
                 // And also update the address bar with the current file path
                 this->m_addressBar.set_text("file://" + filePath);
                 // Set title
                 std::string fileName = File::getFilename(filePath);
-                this->set_title(fileName + " - " + m_appName);
+                this->set_title(fileName + " - " + appName_);
             }
         }
-        catch (std::ios_base::failure &error)
+        catch (std::ios_base::failure& error)
         {
-            std::cerr << "ERROR: Could not write file: " << filePath << ". Message: " << error.what() << ".\nError code: " << error.code() << std::endl;
+            std::cerr << "ERROR: Could not write file: " << filePath << ". Message: " << error.what()
+                      << ".\nError code: " << error.code() << std::endl;
         }
         break;
     }
@@ -1440,7 +1500,7 @@ void MainWindow::on_save_as_dialog_response(int response_id, Gtk::FileChooserDia
 void MainWindow::publish()
 {
     int result = Gtk::RESPONSE_YES; // By default continue
-    if (this->currentContent.empty())
+    if (this->currentContent_.empty())
     {
         Gtk::MessageDialog dialog(*this, "Are you sure you want to publish <b>empty</b> content?", true,
                                   Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO);
@@ -1454,30 +1514,31 @@ void MainWindow::publish()
     {
         std::string path = "new_file.md";
         // Retrieve filename from saved file (if present)
-        if (!currentFileSavedPath.empty())
+        if (!currentFileSavedPath_.empty())
         {
-            path = currentFileSavedPath;
+            path = currentFileSavedPath_;
         }
         else
         {
-            // TODO: path is not defined yet. however, this may change anyway once we try to build more complex websites,
-            // needing to use directory structures.
+            // TODO: path is not defined yet. however, this may change anyway once we try to build more complex
+            // websites, needing to use directory structures.
         }
         // TODO:  should we run this within a seperate thread? Looks fine until now without threading.
 
         // Add content to IPFS!
         try
         {
-            std::string cid = ipfs.add(path, this->currentContent);
+            std::string cid = ipfs_.add(path, this->currentContent_);
             if (!cid.empty())
             {
                 // Show dialog
                 m_contentPublishedDialog.reset(new Gtk::MessageDialog(*this, "File is successfully added to IPFS!"));
-                m_contentPublishedDialog->set_secondary_text("The content is now available on the decentralized web, via:");
+                m_contentPublishedDialog->set_secondary_text(
+                    "The content is now available on the decentralized web, via:");
                 // Add custom label
-                Gtk::Label *label = Gtk::manage(new Gtk::Label("ipfs://" + cid));
+                Gtk::Label* label = Gtk::manage(new Gtk::Label("ipfs://" + cid));
                 label->set_selectable(true);
-                Gtk::Box *box = m_contentPublishedDialog->get_content_area();
+                Gtk::Box* box = m_contentPublishedDialog->get_content_area();
                 box->pack_end(*label);
 
                 m_contentPublishedDialog->set_modal(true);
@@ -1488,8 +1549,8 @@ void MainWindow::publish()
             }
             else
             {
-                m_contentPublishedDialog.reset(new Gtk::MessageDialog(*this, "File failed to be added added to IPFS", false,
-                                                                      Gtk::MESSAGE_ERROR));
+                m_contentPublishedDialog.reset(
+                    new Gtk::MessageDialog(*this, "File failed to be added added to IPFS", false, Gtk::MESSAGE_ERROR));
                 m_contentPublishedDialog->set_modal(true);
                 // m_contentPublishedDialog->set_hide_on_close(true); available in gtk-4.0
                 m_contentPublishedDialog->signal_response().connect(
@@ -1497,10 +1558,10 @@ void MainWindow::publish()
                 m_contentPublishedDialog->show();
             }
         }
-        catch (const std::runtime_error &error)
+        catch (const std::runtime_error& error)
         {
-            m_contentPublishedDialog.reset(new Gtk::MessageDialog(*this, "File could not be added to IPFS", false,
-                                                                  Gtk::MESSAGE_ERROR));
+            m_contentPublishedDialog.reset(
+                new Gtk::MessageDialog(*this, "File could not be added to IPFS", false, Gtk::MESSAGE_ERROR));
             m_contentPublishedDialog->set_secondary_text("Error message: " + std::string(error.what()));
             m_contentPublishedDialog->set_modal(true);
             // m_contentPublishedDialog->set_hide_on_close(true); available in gtk-4.0
@@ -1518,7 +1579,8 @@ void MainWindow::publish()
  * \param isHistoryRequest Set to true if this is an history request call: back/forward
  * \param isDisableEditor If true the editor will be disabled if needed
  */
-void MainWindow::postDoRequest(const std::string &path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor)
+void MainWindow::postDoRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest,
+                               bool isDisableEditor)
 {
     if (isSetAddressBar)
         m_addressBar.set_text(path);
@@ -1529,41 +1591,38 @@ void MainWindow::postDoRequest(const std::string &path, bool isSetAddressBar, bo
     // Do not insert history back/forward calls into the history (again)
     if (!isHistoryRequest)
     {
-        if (history.size() == 0)
+        if (history_.size() == 0)
         {
-            history.push_back(path);
-            currentHistoryIndex = history.size() - 1;
+            history_.push_back(path);
+            currentHistoryIndex_ = history_.size() - 1;
         }
-        else if (history.size() > 0 && !path.empty() && (history.back().compare(path) != 0))
+        else if (history_.size() > 0 && !path.empty() && (history_.back().compare(path) != 0))
         {
-            history.push_back(path);
-            currentHistoryIndex = history.size() - 1;
+            history_.push_back(path);
+            currentHistoryIndex_ = history_.size() - 1;
         }
     }
 
     // Enable back/forward buttons when possible
-    m_backButton.set_sensitive(currentHistoryIndex > 0);
-    m_menu.setBackMenuSensitive(currentHistoryIndex > 0);
-    m_forwardButton.set_sensitive(currentHistoryIndex < history.size() - 1);
-    m_menu.setForwardMenuSensitive(currentHistoryIndex < history.size() - 1);
+    m_backButton.set_sensitive(currentHistoryIndex_ > 0);
+    m_menu.setBackMenuSensitive(currentHistoryIndex_ > 0);
+    m_forwardButton.set_sensitive(currentHistoryIndex_ < history_.size() - 1);
+    m_menu.setForwardMenuSensitive(currentHistoryIndex_ < history_.size() - 1);
 }
 
 /**
  * \brief Show homepage
  */
-void MainWindow::go_home()
-{
-    doRequest("about:home", true, false, true);
-}
+void MainWindow::go_home() { doRequest("about:home", true, false, true); }
 
 /**
  * \brief Copy the IPFS Client ID to clipboard
  */
 void MainWindow::copy_client_id()
 {
-    if (!this->m_ipfsClientID.empty())
+    if (!this->ipfsClientID_.empty())
     {
-        get_clipboard("CLIPBOARD")->set_text(this->m_ipfsClientID);
+        get_clipboard("CLIPBOARD")->set_text(this->ipfsClientID_);
         this->showNotification("Copied to clipboard", "Your client ID is now copied to your clipboard.");
     }
     else
@@ -1577,9 +1636,9 @@ void MainWindow::copy_client_id()
  */
 void MainWindow::copy_client_public_key()
 {
-    if (!this->m_ipfsClientPublicKey.empty())
+    if (!this->ipfsClientPublicKey_.empty())
     {
-        get_clipboard("CLIPBOARD")->set_text(this->m_ipfsClientPublicKey);
+        get_clipboard("CLIPBOARD")->set_text(this->ipfsClientPublicKey_);
         this->showNotification("Copied to clipboard", "Your client public key is now copied to your clipboard.");
     }
     else
@@ -1703,19 +1762,19 @@ void MainWindow::show_search(bool replace)
 
 void MainWindow::back()
 {
-    if (currentHistoryIndex > 0)
+    if (currentHistoryIndex_ > 0)
     {
-        currentHistoryIndex--;
-        doRequest(history.at(currentHistoryIndex), true, true);
+        currentHistoryIndex_--;
+        doRequest(history_.at(currentHistoryIndex_), true, true);
     }
 }
 
 void MainWindow::forward()
 {
-    if (currentHistoryIndex < history.size() - 1)
+    if (currentHistoryIndex_ < history_.size() - 1)
     {
-        currentHistoryIndex++;
-        doRequest(history.at(currentHistoryIndex), true, true);
+        currentHistoryIndex_++;
+        doRequest(history_.at(currentHistoryIndex_), true, true);
     }
 }
 
@@ -1723,7 +1782,8 @@ void MainWindow::refresh()
 {
     // Only allow refresh if editor is disabled (doesn't make sense otherwise to refresh)
     if (!this->isEditorEnabled())
-        doRequest("", false, false, false); /*!< Reload existing file, don't need to update the address bar, don't disable the editor */
+        doRequest("", false, false,
+                  false); /*!< Reload existing file, don't need to update the address bar, don't disable the editor */
 }
 
 /**
@@ -1732,12 +1792,12 @@ void MainWindow::refresh()
  */
 bool MainWindow::isInstalled()
 {
-    char *path = NULL;
+    char* path = NULL;
     int length;
     length = wai_getExecutablePath(NULL, 0, NULL);
     if (length > 0)
     {
-        path = (char *)malloc(length + 1);
+        path = (char*)malloc(length + 1);
         if (!path)
         {
             std::cerr << "ERROR: Couldn't create path." << std::endl;
@@ -1789,7 +1849,8 @@ void MainWindow::enableEdit()
     // Disable "view source" menu item
     this->m_draw_main.setViewSourceMenuItem(false);
     // Connect changed signal
-    this->textChangedSignalHandler = m_draw_main.get_buffer().get()->signal_changed().connect(sigc::mem_fun(this, &MainWindow::editor_changed_text));
+    this->textChangedSignalHandler_ =
+        m_draw_main.get_buffer().get()->signal_changed().connect(sigc::mem_fun(this, &MainWindow::editor_changed_text));
     // Enable publish menu item
     this->m_menu.setPublishMenuSensitive(true);
     // Disable edit menu item (you are already editing)
@@ -1809,7 +1870,7 @@ void MainWindow::disableEdit()
         this->m_hboxFormattingEditorToolbar.hide();
         this->m_scrolledWindowSecondary.hide();
         // Disconnect text changed signal
-        this->textChangedSignalHandler.disconnect();
+        this->textChangedSignalHandler_.disconnect();
         // Show "view source" menu item again
         this->m_draw_main.setViewSourceMenuItem(true);
         this->m_draw_secondary.clearText();
@@ -1818,9 +1879,9 @@ void MainWindow::disableEdit()
         // Enable edit menu item
         this->m_menu.setEditMenuSensitive(true);
         // Empty current file saved path
-        this->currentFileSavedPath = "";
+        this->currentFileSavedPath_ = "";
         // Restore title
-        set_title(m_appName);
+        set_title(appName_);
     }
 }
 
@@ -1828,37 +1889,34 @@ void MainWindow::disableEdit()
  * \brief Check if editor is enabled
  * \return true if enabled, otherwise false
  */
-bool MainWindow::isEditorEnabled()
-{
-    return m_hboxStandardEditorToolbar.is_visible();
-}
+bool MainWindow::isEditorEnabled() { return m_hboxStandardEditorToolbar.is_visible(); }
 
 /**
  * \brief Get the file from disk or IPFS network, from the provided path,
  * parse the content, and display the document
  * \param path File path that needs to be fetched (from disk or IPFS network)
- * \param isParseContent Set to true if you want to parse and display the content as markdown syntax (from disk or IPFS network), 
- * set to false if you want to edit the content
+ * \param isParseContent Set to true if you want to parse and display the content as markdown syntax (from disk or IPFS
+ * network), set to false if you want to edit the content
  */
-void MainWindow::processRequest(const std::string &path, bool isParseContent)
+void MainWindow::processRequest(const std::string& path, bool isParseContent)
 {
     // Reset private variables
-    this->currentContent = "";
-    this->m_waitPageVisible = false;
+    this->currentContent_ = "";
+    this->waitPageVisible_ = false;
 
-    // Do not update the requestPath when path is empty,
+    // Do not update the requestPath_ when path is empty,
     // this is used for refreshing the page
     if (!path.empty())
     {
-        requestPath = path;
+        requestPath_ = path;
     }
 
-    if (requestPath.empty())
+    if (requestPath_.empty())
     {
         std::cerr << "Info: Empty request path." << std::endl;
     }
     // Handle homepage
-    else if (requestPath.compare("about:home") == 0)
+    else if (requestPath_.compare("about:home") == 0)
     {
         m_draw_main.showStartPage();
         m_refreshIcon.get_style_context()->remove_class("spinning");
@@ -1867,57 +1925,57 @@ void MainWindow::processRequest(const std::string &path, bool isParseContent)
     else
     {
         // Check if CID
-        if (requestPath.rfind("ipfs://", 0) == 0)
+        if (requestPath_.rfind("ipfs://", 0) == 0)
         {
-            finalRequestPath = requestPath;
-            finalRequestPath.erase(0, 7);
+            finalRequestPath_ = requestPath_;
+            finalRequestPath_.erase(0, 7);
             fetchFromIPFS(isParseContent);
         }
-        else if ((requestPath.length() == 46) && (requestPath.rfind("Qm", 0) == 0))
+        else if ((requestPath_.length() == 46) && (requestPath_.rfind("Qm", 0) == 0))
         {
             // CIDv0
-            finalRequestPath = requestPath;
+            finalRequestPath_ = requestPath_;
             fetchFromIPFS(isParseContent);
         }
-        else if (requestPath.rfind("file://", 0) == 0)
+        else if (requestPath_.rfind("file://", 0) == 0)
         {
-            finalRequestPath = requestPath;
-            finalRequestPath.erase(0, 7);
+            finalRequestPath_ = requestPath_;
+            finalRequestPath_.erase(0, 7);
             openFromDisk(isParseContent);
         }
         else
         {
             // IPFS as fallback / CIDv1
-            finalRequestPath = requestPath;
+            finalRequestPath_ = requestPath_;
             fetchFromIPFS(isParseContent);
         }
     }
 }
 
 /**
- * \brief Helper method for processRequest(), display markdown file from IPFS network. 
+ * \brief Helper method for processRequest(), display markdown file from IPFS network.
  * Runs in a seperate thread.
- * \param isParseContent Set to true if you want to parse and display the content as markdown syntax (from disk or IPFS network), 
- * set to false if you want to edit the content
+ * \param isParseContent Set to true if you want to parse and display the content as markdown syntax (from disk or IPFS
+ * network), set to false if you want to edit the content
  */
 void MainWindow::fetchFromIPFS(bool isParseContent)
 {
     try
     {
-        this->currentContent = ipfs.fetch(finalRequestPath);
+        this->currentContent_ = ipfs_.fetch(finalRequestPath_);
         if (isParseContent)
         {
-            cmark_node *doc = Parser::parseContent(this->currentContent);
+            cmark_node* doc = Parser::parseContent(this->currentContent_);
             m_draw_main.processDocument(doc);
             cmark_node_free(doc);
         }
         else
         {
             // directly set the plain content
-            m_draw_main.setText(this->currentContent);
+            m_draw_main.setText(this->currentContent_);
         }
     }
-    catch (const std::runtime_error &error)
+    catch (const std::runtime_error& error)
     {
         std::string errorMessage = std::string(error.what());
         std::cerr << "ERROR: IPFS request failed, with message: " << errorMessage << std::endl;
@@ -1929,14 +1987,16 @@ void MainWindow::fetchFromIPFS(bool isParseContent)
             std::string message = content.value("Message", "");
             if (message.starts_with("context deadline exceeded"))
             {
-                message += ". Time-out is set to: " + this->ipfsTimeout;
+                message += ". Time-out is set to: " + this->ipfsTimeout_;
             }
-            m_draw_main.showMessage("🎂 We're having trouble finding this site.", "Message: " + message + ".\n\nYou could try to reload or increase the time-out.");
+            m_draw_main.showMessage("🎂 We're having trouble finding this site.",
+                                    "Message: " + message + ".\n\nYou could try to reload or increase the time-out.");
         }
         else if (errorMessage.starts_with("Couldn't connect to server: Failed to connect to localhost"))
         {
-            m_draw_main.showMessage("⌛ Please wait...", "IPFS daemon is still spinnng-up, page will automatically refresh...");
-            m_waitPageVisible = true; // Please wait page is shown (auto-refresh when network is up)
+            m_draw_main.showMessage("⌛ Please wait...",
+                                    "IPFS daemon is still spinnng-up, page will automatically refresh...");
+            waitPageVisible_ = true; // Please wait page is shown (auto-refresh when network is up)
         }
         else
         {
@@ -1950,34 +2010,36 @@ void MainWindow::fetchFromIPFS(bool isParseContent)
 /**
  * \brief Helper method for processRequest(), display markdown file from disk.
  * Runs in a seperate thread.
- * \param isParseContent Set to true if you want to parse and display the content as markdown syntax (from disk or IPFS network), 
- * set to false if you want to edit the content
+ * \param isParseContent Set to true if you want to parse and display the content as markdown syntax (from disk or IPFS
+ * network), set to false if you want to edit the content
  */
 void MainWindow::openFromDisk(bool isParseContent)
 {
     try
     {
-        this->currentContent = File::read(finalRequestPath);
+        this->currentContent_ = File::read(finalRequestPath_);
         if (isParseContent)
         {
-            cmark_node *doc = Parser::parseContent(this->currentContent);
+            cmark_node* doc = Parser::parseContent(this->currentContent_);
             m_draw_main.processDocument(doc);
             cmark_node_free(doc);
         }
         else
         {
             // directly set the plain content
-            m_draw_main.setText(this->currentContent);
+            m_draw_main.setText(this->currentContent_);
         }
     }
-    catch (const std::ios_base::failure &error)
+    catch (const std::ios_base::failure& error)
     {
-        std::cerr << "ERROR: Could not read file: " << finalRequestPath << ". Message: " << error.what() << ".\nError code: " << error.code() << std::endl;
+        std::cerr << "ERROR: Could not read file: " << finalRequestPath_ << ". Message: " << error.what()
+                  << ".\nError code: " << error.code() << std::endl;
         m_draw_main.showMessage("🎂 Could not read file", "Message: " + std::string(error.what()));
     }
-    catch (const std::runtime_error &error)
+    catch (const std::runtime_error& error)
     {
-        std::cerr << "ERROR: File request failed, file: " << finalRequestPath << ". Message: " << error.what() << std::endl;
+        std::cerr << "ERROR: File request failed, file: " << finalRequestPath_ << ". Message: " << error.what()
+                  << std::endl;
         m_draw_main.showMessage("🎂 File not found", "Message: " + std::string(error.what()));
     }
     // Stop spinning
@@ -1990,12 +2052,13 @@ void MainWindow::openFromDisk(bool isParseContent)
  * @param typeofIcon Type of the icon is the sub-folder within the icons directory (eg. "editor", "arrows" or "basic")
  * @return full path of the icon PNG image
  */
-std::string MainWindow::getIconImageFromTheme(const std::string &iconName, const std::string &typeofIcon)
+std::string MainWindow::getIconImageFromTheme(const std::string& iconName, const std::string& typeofIcon)
 {
     // Try absolute path first
     for (std::string data_dir : Glib::get_system_data_dirs())
     {
-        std::vector<std::string> path_builder{data_dir, "libreweb-browser", "images", "icons", m_iconTheme, typeofIcon, iconName + ".png"};
+        std::vector<std::string> path_builder{data_dir,   "libreweb-browser", "images",         "icons",
+                                              iconTheme_, typeofIcon,         iconName + ".png"};
         std::string file_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
         if (Glib::file_test(file_path, Glib::FileTest::FILE_TEST_IS_REGULAR))
         {
@@ -2005,7 +2068,7 @@ std::string MainWindow::getIconImageFromTheme(const std::string &iconName, const
 
     // Try local path if the images are not (yet) installed
     // When working directory is in the build/bin folder (relative path)
-    std::vector<std::string> path_builder{"..", "..", "images", "icons", m_iconTheme, typeofIcon, iconName + ".png"};
+    std::vector<std::string> path_builder{"..", "..", "images", "icons", iconTheme_, typeofIcon, iconName + ".png"};
     std::string file_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
     if (Glib::file_test(file_path, Glib::FileTest::FILE_TEST_IS_REGULAR))
     {
@@ -2026,12 +2089,13 @@ void MainWindow::updateCSS()
     {
         m_drawCSSProvider->load_from_data("textview { "
                                           "font-family: \"" +
-                                          m_fontFamily + "\";"
-                                                         "font-size: " +
-                                          std::to_string(m_currentFontSize) + "pt; }" +
-                                          "textview text { letter-spacing: " + std::to_string(m_fontSpacing) + "px; }");
+                                          fontFamily_ +
+                                          "\";"
+                                          "font-size: " +
+                                          std::to_string(currentFontSize_) + "pt; }" +
+                                          "textview text { letter-spacing: " + std::to_string(fontSpacing_) + "px; }");
     }
-    catch (const Gtk::CssProviderError &error)
+    catch (const Gtk::CssProviderError& error)
     {
         std::cerr << "ERROR: Could not apply CSS format, error: " << error.what() << std::endl;
     }
@@ -2042,7 +2106,7 @@ void MainWindow::updateCSS()
  * @param title Title of the notification
  * @param message The message displayed along with the notificiation
  */
-void MainWindow::showNotification(const Glib::ustring &title, const Glib::ustring &message)
+void MainWindow::showNotification(const Glib::ustring& title, const Glib::ustring& message)
 {
     auto app = get_application();
     auto notification = Gio::Notification::create(title);
@@ -2055,9 +2119,9 @@ void MainWindow::showNotification(const Glib::ustring &title, const Glib::ustrin
 void MainWindow::editor_changed_text()
 {
     // Retrieve text from text editor
-    this->currentContent = m_draw_main.getText();
+    this->currentContent_ = m_draw_main.getText();
     // Parse the markdown contents
-    cmark_node *doc = Parser::parseContent(this->currentContent);
+    cmark_node* doc = Parser::parseContent(this->currentContent_);
     /* Can be enabled to show the markdown format in terminal:
     std::string md = Parser::renderMarkdown(doc);
     std::cout << "Markdown:\n" << md << std::endl;*/
@@ -2072,7 +2136,7 @@ void MainWindow::editor_changed_text()
  */
 void MainWindow::show_source_code_dialog()
 {
-    m_sourceCodeDialog.setText(this->currentContent);
+    m_sourceCodeDialog.setText(this->currentContent_);
     m_sourceCodeDialog.run();
 }
 
@@ -2092,12 +2156,12 @@ void MainWindow::get_heading()
             int headingLevel = std::stoi(active, &sz, 10);
             m_draw_main.make_heading(headingLevel);
         }
-        catch (const std::invalid_argument &)
+        catch (const std::invalid_argument&)
         {
             // ignore
             std::cerr << "ERROR: heading combobox id is invalid (not a number)." << std::endl;
         }
-        catch (const std::out_of_range &)
+        catch (const std::out_of_range&)
         {
             // ignore
         }
@@ -2112,36 +2176,37 @@ void MainWindow::insert_emoji()
 
 void MainWindow::on_zoom_out()
 {
-    m_currentFontSize -= 2;
+    currentFontSize_ -= 2;
     updateCSS();
-    m_zoomRestoreButton.set_sensitive(m_currentFontSize != m_defaultFontSize);
+    m_zoomRestoreButton.set_sensitive(currentFontSize_ != defaultFontSize_);
 }
 
 void MainWindow::on_zoom_restore()
 {
-    m_currentFontSize = m_defaultFontSize; // reset
+    currentFontSize_ = defaultFontSize_; // reset
     updateCSS();
     m_zoomRestoreButton.set_sensitive(false);
 }
 
 void MainWindow::on_zoom_in()
 {
-    m_currentFontSize += 2;
+    currentFontSize_ += 2;
     updateCSS();
-    m_zoomRestoreButton.set_sensitive(m_currentFontSize != m_defaultFontSize);
+    m_zoomRestoreButton.set_sensitive(currentFontSize_ != defaultFontSize_);
 }
 
 void MainWindow::on_font_set()
 {
     Pango::FontDescription fontDesc = Pango::FontDescription(m_fontButton.get_font_name());
-    m_fontFamily = fontDesc.get_family();
-    m_currentFontSize = m_defaultFontSize = (fontDesc.get_size_is_absolute()) ? fontDesc.get_size() : fontDesc.get_size() / PANGO_SCALE;
+    fontFamily_ = fontDesc.get_family();
+    currentFontSize_ = defaultFontSize_ =
+        (fontDesc.get_size_is_absolute()) ? fontDesc.get_size() : fontDesc.get_size() / PANGO_SCALE;
     updateCSS();
 }
 
 void MainWindow::on_spacing_changed()
 {
-    m_fontSpacing = m_spacingSpinButton.get_value_as_int(); // Letter spacing
+    fontSpacing_ = m_spacingSpinButton.get_value_as_int(); // Letter spacing
     updateCSS();
 }
 
@@ -2151,10 +2216,7 @@ void MainWindow::on_margins_changed()
     this->m_draw_main.set_right_margin(m_marginsSpinButton.get_value_as_int());
 }
 
-void MainWindow::on_indent_changed()
-{
-    this->m_draw_main.set_indent(m_indentSpinButton.get_value_as_int());
-}
+void MainWindow::on_indent_changed() { this->m_draw_main.set_indent(m_indentSpinButton.get_value_as_int()); }
 
 void MainWindow::on_theme_changed()
 {
@@ -2164,17 +2226,17 @@ void MainWindow::on_theme_changed()
     settings->property_gtk_application_prefer_dark_theme().set_value(isActive);
 }
 
-void MainWindow::on_icon_theme_activated(Gtk::ListBoxRow *row)
+void MainWindow::on_icon_theme_activated(Gtk::ListBoxRow* row)
 {
-    std::string themeName = static_cast<char *>(row->get_data("value"));
+    std::string themeName = static_cast<char*>(row->get_data("value"));
     if (themeName != "none")
     {
-        this->m_iconTheme = themeName;
-        this->m_useCurrentGTKIconTheme = false;
+        this->iconTheme_ = themeName;
+        this->useCurrentGTKIconTheme_ = false;
     }
     else
     {
-        this->m_useCurrentGTKIconTheme = true;
+        this->useCurrentGTKIconTheme_ = true;
     }
     // Reload images
     this->loadIcons();

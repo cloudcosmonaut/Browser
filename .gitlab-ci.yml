@@ -34,7 +34,11 @@ build:
 
 static_code_analysis:
   stage: build
-  script: ./scripts/check.sh
+  script: ./scripts/cpp_check.sh
+
+code_style_guideliens:
+  stage: build
+  script: ./scripts/check_format.sh
 
 #unit_test:
 #  stage: test

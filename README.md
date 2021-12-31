@@ -103,6 +103,18 @@ Just execute the following script: `./scripts/build_win_prod.sh`
 
 See latest [Developer Docs](https://gitlab.melroy.org/libreweb/browser/-/jobs/artifacts/master/file/build/docs/html/index.html?job=doxygen).
 
+### C++ Style Guidelines
+
+We use our [own Clang LLVM C++ Programming Style Format](.clang-format).
+
+To automatically comply to our format use following script below (inplace edits are executd):
+
+```sh
+./scripts/fix_format.sh
+```
+
+Check only for errors, run: `./scripts/check_format.sh`
+
 ### Research
 
 For [research document](https://gitlab.melroy.org/libreweb/research_lab/-/blob/master/research.md) plus findings including explanation (like [diagrams](https://gitlab.melroy.org/libreweb/research_lab/-/blob/master/diagrams.md)) see the:

@@ -1,10 +1,10 @@
 #include "about.h"
 #include "project_config.h"
 
-#include <glibmm/miscutils.h>
 #include <glibmm/fileutils.h>
+#include <glibmm/miscutils.h>
 
-About::About(Gtk::Window &parent)
+About::About(Gtk::Window& parent)
     : m_visitHomepage("https://libreweb.org/", "Visit Homepage"),
       m_visitProjectLinkButton("https://gitlab.melroy.org/libreweb/browser", "Visit the GitLab Project")
 {
@@ -28,22 +28,16 @@ About::About(Gtk::Window &parent)
     set_license_type(Gtk::License::LICENSE_MIT_X11);
     set_position(Gtk::WIN_POS_CENTER_ON_PARENT);
 
-    Gtk::Box *vbox = get_vbox();
+    Gtk::Box* vbox = get_vbox();
     vbox->pack_end(m_visitProjectLinkButton, Gtk::PackOptions::PACK_SHRINK);
     vbox->pack_end(m_visitHomepage, Gtk::PackOptions::PACK_SHRINK);
     m_visitHomepage.show();
     m_visitProjectLinkButton.show();
 }
 
-void About::show_about()
-{
-    run();
-}
+void About::show_about() { run(); }
 
-void About::hide_about(__attribute__((unused)) int response)
-{
-    hide();
-}
+void About::hide_about(__attribute__((unused)) int response) { hide(); }
 
 std::string About::getLogoImage()
 {

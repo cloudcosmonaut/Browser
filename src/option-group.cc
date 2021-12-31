@@ -1,7 +1,6 @@
 #include "option-group.h"
 
-OptionGroup::OptionGroup()
-    : Glib::OptionGroup("main_group", "Options", "Options"), m_timeout("120s"), m_version(false)
+OptionGroup::OptionGroup() : Glib::OptionGroup("main_group", "Options", "Options"), m_timeout("120s"), m_version(false)
 {
     Glib::OptionEntry entry1;
     entry1.set_long_name("timeout");
@@ -16,17 +15,17 @@ OptionGroup::OptionGroup()
     add_entry(entry2, m_version);
 }
 
-bool OptionGroup::on_pre_parse(Glib::OptionContext &context, Glib::OptionGroup &group)
+bool OptionGroup::on_pre_parse(Glib::OptionContext& context, Glib::OptionGroup& group)
 {
     return Glib::OptionGroup::on_pre_parse(context, group);
 }
 
-bool OptionGroup::on_post_parse(Glib::OptionContext &context, Glib::OptionGroup &group)
+bool OptionGroup::on_post_parse(Glib::OptionContext& context, Glib::OptionGroup& group)
 {
     return Glib::OptionGroup::on_post_parse(context, group);
 }
 
-void OptionGroup::on_error(Glib::OptionContext &context, Glib::OptionGroup &group)
+void OptionGroup::on_error(Glib::OptionContext& context, Glib::OptionGroup& group)
 {
     Glib::OptionGroup::on_error(context, group);
 }
