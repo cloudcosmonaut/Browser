@@ -52,15 +52,14 @@ The current success criteria:
 
 ---
 
+The sections below are mainly relevant for software developers, who want to contribute or help LibreWeb Browser.
+
 ## For Developers
 
-The following sections below are mainly relevant for software developers, who want to contribute or help LibreWeb Browser.
-
-Decentralized Browser is written C++ together with some [external libraries](/lib). LibreWeb is using the [cmark-gfm](https://github.com/github/cmark-gfm) library for example, which is used for CommonMark (markdown) parsing.
-
+Decentralized Browser is written C++ together with some [external libraries](/lib). LibreWeb is using the [cmark-gfm](https://github.com/github/cmark-gfm) library for example, which is used for CommonMark (markdown) parsing.  
 We're using markdown as the source-code of the content/site. No HTML and JavaScript anymore, content is king after all.
 
-LibreWeb Browser is also using [Gnome GTK3](https://developer.gnome.org/gtk3/stable/) framework for GUI.
+LibreWeb Browser is also using [Gnome GTK3](https://developer.gnome.org/gtk3/stable/) framework for the GUI. Using the C++ bindings, called [Gtkmm](https://gtkmm.org/en/).
 
 ### Development Environment
 
