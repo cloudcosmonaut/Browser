@@ -14,38 +14,38 @@
  */
 int main(int argc, char* argv[])
 {
-    // Start IPFS daemon
-    IPFSDaemon ipfsDaemon;
-    ipfsDaemon.spawn();
+  // Start IPFS daemon
+  IPFSDaemon ipfsDaemon;
+  ipfsDaemon.spawn();
 
-    // Set the command-line parameters option settings
-    Glib::OptionContext context("LibreWeb Browser - Decentralized Web Browser");
-    OptionGroup group;
-    context.set_main_group(group);
+  // Set the command-line parameters option settings
+  Glib::OptionContext context("LibreWeb Browser - Decentralized Web Browser");
+  OptionGroup group;
+  context.set_main_group(group);
 
-    // Create the GTK application
-    auto app = Gtk::Application::create();
-    app->set_flags(Gio::ApplicationFlags::APPLICATION_NON_UNIQUE);
+  // Create the GTK application
+  auto app = Gtk::Application::create();
+  app->set_flags(Gio::ApplicationFlags::APPLICATION_NON_UNIQUE);
 
-    // Parse the context
-    try
+  // Parse the context
+  try
+  {
+    context.parse(argc, argv);
+    if (group.m_version)
     {
-        context.parse(argc, argv);
-        if (group.m_version)
-        {
-            std::cout << "LibreWeb Browser " << PROJECT_VER << std::endl;
-            exit(EXIT_SUCCESS);
-        }
+      std::cout << "LibreWeb Browser " << PROJECT_VER << std::endl;
+      exit(EXIT_SUCCESS);
     }
-    catch (const Glib::Error& error)
-    {
-        std::cerr << "ERROR: Parse failure: " << error.what() << std::endl;
-        exit(EXIT_FAILURE);
-    }
+  }
+  catch (const Glib::Error& error)
+  {
+    std::cerr << "ERROR: Parse failure: " << error.what() << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
-    // Run the GTK window in the main thread
-    MainWindow window(group.m_timeout);
-    return app->run(window);
+  // Run the GTK window in the main thread
+  MainWindow window(group.m_timeout);
+  return app->run(window);
 }
 
 /*

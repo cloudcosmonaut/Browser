@@ -12,15 +12,15 @@
 class OptionGroup : public Glib::OptionGroup
 {
 public:
-    OptionGroup();
+  OptionGroup();
 
-    // Implement virtuals methods
-    bool on_pre_parse(Glib::OptionContext& context, Glib::OptionGroup& group) override;
-    bool on_post_parse(Glib::OptionContext& context, Glib::OptionGroup& group) override;
-    void on_error(Glib::OptionContext& context, Glib::OptionGroup& group) override;
+  // Implement virtuals methods
+  bool on_pre_parse(Glib::OptionContext& context, Glib::OptionGroup& group) override;
+  bool on_post_parse(Glib::OptionContext& context, Glib::OptionGroup& group) override;
+  void on_error(Glib::OptionContext& context, Glib::OptionGroup& group) override;
 
-    Glib::ustring m_timeout;
-    bool m_version;
+  Glib::ustring m_timeout;
+  bool m_version;
 };
 
 #endif

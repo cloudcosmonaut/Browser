@@ -20,20 +20,20 @@ namespace n_fs = ::std::filesystem;
  */
 std::string const File::read(const std::string& path)
 {
-    if (n_fs::exists(path) && n_fs::is_regular_file(path))
-    {
-        std::ifstream inFile;
-        inFile.open(path, std::ifstream::in);
+  if (n_fs::exists(path) && n_fs::is_regular_file(path))
+  {
+    std::ifstream inFile;
+    inFile.open(path, std::ifstream::in);
 
-        std::stringstream strStream;
-        strStream << inFile.rdbuf();
-        return strStream.str();
-    }
-    else
-    {
-        // File doesn't exists or isn't a file
-        throw std::runtime_error("File does not exists or isn't a regular file.");
-    }
+    std::stringstream strStream;
+    strStream << inFile.rdbuf();
+    return strStream.str();
+  }
+  else
+  {
+    // File doesn't exists or isn't a file
+    throw std::runtime_error("File does not exists or isn't a regular file.");
+  }
 }
 
 /**
@@ -44,10 +44,10 @@ std::string const File::read(const std::string& path)
  */
 void File::write(const std::string& path, const std::string& content)
 {
-    std::ofstream file;
-    file.open(path.c_str());
-    file << content;
-    file.close();
+  std::ofstream file;
+  file.open(path.c_str());
+  file << content;
+  file.close();
 }
 
 /**
@@ -55,4 +55,7 @@ void File::write(const std::string& path, const std::string& content)
  * \param path Full path
  * \return filename
  */
-std::string const File::getFilename(const std::string& path) { return n_fs::path(path).filename().string(); }
+std::string const File::getFilename(const std::string& path)
+{
+  return n_fs::path(path).filename().string();
+}

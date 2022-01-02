@@ -11,23 +11,23 @@
 class IPFSDaemon
 {
 public:
-    void spawn();
-    void stop();
-    int getPID() const;
-    sigc::signal<void, int> exited;
+  void spawn();
+  void stop();
+  int getPID() const;
+  sigc::signal<void, int> exited;
 
 protected:
-    // Signals
-    void child_watch_exit(Glib::Pid pid, int childStatus);
+  // Signals
+  void child_watch_exit(Glib::Pid pid, int childStatus);
 
 private:
-    std::string workingDir = ""; // cwd
-    Glib::Pid pid = 0;
-    bool isRunning = false;
-    sigc::connection childWatchHandler;
+  std::string workingDir = ""; // cwd
+  Glib::Pid pid = 0;
+  bool isRunning = false;
+  sigc::connection childWatchHandler;
 
-    static std::string locateIPFSBinary();
-    static int getExistingPID();
-    // bool shouldProcessTerminated();
+  static std::string locateIPFSBinary();
+  static int getExistingPID();
+  // bool shouldProcessTerminated();
 };
 #endif
