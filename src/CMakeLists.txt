@@ -1,4 +1,3 @@
-# TODO: Maybe move this CMake file to cmake folder and include it in the top-level Cmake file?
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
