@@ -1517,8 +1517,9 @@ void MainWindow::publish()
     try
     {
       // Add content to IPFS!
-      std::string cid = ipfs_.add(path, this->currentContent_);   
-      if (cid.empty())  {
+      std::string cid = ipfs_.add(path, this->currentContent_);
+      if (cid.empty())
+      {
         throw std::runtime_error("CID hash is empty.");
       }
       // Show dialog

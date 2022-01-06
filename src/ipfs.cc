@@ -169,7 +169,9 @@ std::string const IPFS::add(const std::string& path, const std::string& content)
       hash = files.value()["hash"];
       break;
     }
-  } else {
+  }
+  else
+  {
     throw std::runtime_error("File is not added, result is incorrect.");
   }
   return hash;

@@ -19,13 +19,13 @@ public:
   std::string const getVersion();
   std::map<std::string, float> getBandwidthRates();
   std::map<std::string, std::variant<int, std::string>> getRepoStats();
-  void fetch(const std::string& path, std::iostream *contents);
+  void fetch(const std::string& path, std::iostream* contents);
   std::string const add(const std::string& path, const std::string& content);
 
 private:
-  std::string host;           /* IPFS host name */
-  int port;                   /* IFPS port number */
-  std::string timeout;        /* IPFS timeout (eg. 6s) */
-  ipfs::Client client;        /* IPFS Client object */
+  std::string host;    /* IPFS host name */
+  int port;            /* IFPS port number */
+  std::string timeout; /* IPFS timeout (eg. 6s) */
+  ipfs::Client client; /* IPFS Client object */
 };
 #endif
