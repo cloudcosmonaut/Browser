@@ -282,7 +282,8 @@ private:
   std::string ipfsHost_;
   int ipfsPort_;
   std::string ipfsTimeout_;
-  IPFS ipfs_;
+  IPFS ipfs_;        /* IPFS object for main thread */
+  IPFS ipfs_thread_; /* IPFS object for request thread, so it doesn't conflict with the main thread calls */
 
   void loadStoredSettings();
   void loadIcons();

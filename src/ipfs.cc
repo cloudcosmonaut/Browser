@@ -138,39 +138,39 @@ std::map<std::string, std::variant<int, std::string>> IPFS::getRepoStats()
 }
 
 /**
- * \brief Fetch file from IFPS network (create a new client object each time - which is thread-safe), static method
+ * \brief Fetch file from IFPS network
  * \param path File path
- * \throw std::runtime_error when there is a connection-time/something goes wrong while trying to get the file
- * \return content as string
+ * \param contents File contents as iostream
+ * \throw std::runtime_error when there is a
+ * connection-time/something goes wrong while trying to get the file
  */
-std::string const IPFS::fetch(const std::string& path)
+void IPFS::fetch(const std::string& path, std::iostream* contents)
 {
-  // Create new client each time for thread-safety
-  ipfs::Client client(this->host, this->port, this->timeout);
-  std::stringstream contents;
-  client.FilesGet(path, &contents);
-  return contents.str();
+  client.FilesGet(path, contents);
 }
 
 /**
  * \brief Add a file to IPFS network (not thread-safe)
  * \param path File path where the file could be stored in IPFS (like puting a file inside a directory within IPFS)
  * \param content Content that needs to be written to the IPFS network
- * \throw std::runtime_error when there is a connection-time/something goes wrong while trying to get the file
+ * \throw std::runtime_error when there is a connection-time/something goes wrong while adding the file
  * \return IPFS content-addressed identifier (CID) hash
  */
 std::string const IPFS::add(const std::string& path, const std::string& content)
 {
   ipfs::Json result;
+  std::string hash;
   // Publish a single file
   client.FilesAdd({{path, ipfs::http::FileUpload::Type::kFileContents, content}}, &result);
-  if (result.is_array())
+  if (result.is_array() && result.size() > 0)
   {
     for (const auto& files : result.items())
     {
-      return files.value()["hash"];
+      hash = files.value()["hash"];
+      break;
     }
+  } else {
+    throw std::runtime_error("File is not added, result is incorrect.");
   }
-  // something is wrong, fallback
-  return "";
+  return hash;
 }

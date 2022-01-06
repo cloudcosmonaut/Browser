@@ -78,7 +78,8 @@ MainWindow::MainWindow(const std::string& timeout)
       ipfsHost_("localhost"),
       ipfsPort_(5001),
       ipfsTimeout_(timeout),
-      ipfs_(ipfsHost_, ipfsPort_, ipfsTimeout_) // Create IPFS object
+      ipfs_(ipfsHost_, ipfsPort_, ipfsTimeout_),
+      ipfs_thread_(ipfsHost_, ipfsPort_, ipfsTimeout_)
 {
   set_title(appName_);
   set_default_size(1000, 800);
@@ -1513,37 +1514,27 @@ void MainWindow::publish()
     }
     // TODO:  should we run this within a seperate thread? Looks fine until now without threading.
 
-    // Add content to IPFS!
     try
     {
-      std::string cid = ipfs_.add(path, this->currentContent_);
-      if (!cid.empty())
-      {
-        // Show dialog
-        m_contentPublishedDialog.reset(new Gtk::MessageDialog(*this, "File is successfully added to IPFS!"));
-        m_contentPublishedDialog->set_secondary_text("The content is now available on the decentralized web, via:");
-        // Add custom label
-        Gtk::Label* label = Gtk::manage(new Gtk::Label("ipfs://" + cid));
-        label->set_selectable(true);
-        Gtk::Box* box = m_contentPublishedDialog->get_content_area();
-        box->pack_end(*label);
+      // Add content to IPFS!
+      std::string cid = ipfs_.add(path, this->currentContent_);   
+      if (cid.empty())  {
+        throw std::runtime_error("CID hash is empty.");
+      }
+      // Show dialog
+      m_contentPublishedDialog.reset(new Gtk::MessageDialog(*this, "File is successfully added to IPFS!"));
+      m_contentPublishedDialog->set_secondary_text("The content is now available on the decentralized web, via:");
+      // Add custom label
+      Gtk::Label* label = Gtk::manage(new Gtk::Label("ipfs://" + cid));
+      label->set_selectable(true);
+      Gtk::Box* box = m_contentPublishedDialog->get_content_area();
+      box->pack_end(*label);
 
-        m_contentPublishedDialog->set_modal(true);
-        // m_contentPublishedDialog->set_hide_on_close(true); available in gtk-4.0
-        m_contentPublishedDialog->signal_response().connect(
-            sigc::hide(sigc::mem_fun(*m_contentPublishedDialog, &Gtk::Widget::hide)));
-        m_contentPublishedDialog->show_all();
-      }
-      else
-      {
-        m_contentPublishedDialog.reset(
-            new Gtk::MessageDialog(*this, "File failed to be added added to IPFS", false, Gtk::MESSAGE_ERROR));
-        m_contentPublishedDialog->set_modal(true);
-        // m_contentPublishedDialog->set_hide_on_close(true); available in gtk-4.0
-        m_contentPublishedDialog->signal_response().connect(
-            sigc::hide(sigc::mem_fun(*m_contentPublishedDialog, &Gtk::Widget::hide)));
-        m_contentPublishedDialog->show();
-      }
+      m_contentPublishedDialog->set_modal(true);
+      // m_contentPublishedDialog->set_hide_on_close(true); available in gtk-4.0
+      m_contentPublishedDialog->signal_response().connect(
+          sigc::hide(sigc::mem_fun(*m_contentPublishedDialog, &Gtk::Widget::hide)));
+      m_contentPublishedDialog->show_all();
     }
     catch (const std::runtime_error& error)
     {
@@ -1957,7 +1948,10 @@ void MainWindow::fetchFromIPFS(bool isParseContent)
 {
   try
   {
-    this->currentContent_ = ipfs_.fetch(finalRequestPath_);
+    std::stringstream contents;
+    // Fetch content from IPFS
+    ipfs_thread_.fetch(finalRequestPath_, &contents);
+    this->currentContent_ = contents.str();
     if (isParseContent)
     {
       cmark_node* doc = Parser::parseContent(this->currentContent_);
@@ -1966,7 +1960,7 @@ void MainWindow::fetchFromIPFS(bool isParseContent)
     }
     else
     {
-      // directly set the plain content
+      // Directly display the plain markdown content
       m_draw_main.setText(this->currentContent_);
     }
   }
