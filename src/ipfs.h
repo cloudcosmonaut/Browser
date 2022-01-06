@@ -21,6 +21,7 @@ public:
   std::map<std::string, std::variant<int, std::string>> getRepoStats();
   void fetch(const std::string& path, std::iostream* contents);
   std::string const add(const std::string& path, const std::string& content);
+  void abort();
 
 private:
   std::string host;    /* IPFS host name */

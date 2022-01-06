@@ -21,7 +21,6 @@
 #include <gtkmm/settings.h>
 #include <iostream>
 #include <nlohmann/json.hpp>
-#include <pthread.h>
 #include <whereami.h>
 
 MainWindow::MainWindow(const std::string& timeout)
@@ -59,6 +58,9 @@ MainWindow::MainWindow(const std::string& timeout)
       m_indentLabel("Indent"),
       m_themeLabel("Dark Theme"),
       m_iconThemeLabel("Active Theme"),
+      requestThread_(nullptr),
+      is_request_thread_done_(false),
+      keep_request_thread_running_(true),
       appName_("LibreWeb Browser"),
       iconTheme_("flat"),             // default is flat theme
       useCurrentGTKIconTheme_(false), // Use our built-in icon theme or the GTK icons
@@ -67,7 +69,6 @@ MainWindow::MainWindow(const std::string& timeout)
       defaultFontSize_(10),
       currentFontSize_(10),
       fontSpacing_(0),
-      requestThread_(nullptr),
       currentHistoryIndex_(0),
       waitPageVisible_(false),
       ipfsNetworkStatus_("Disconnected"),
@@ -174,15 +175,7 @@ MainWindow::MainWindow(const std::string& timeout)
  */
 MainWindow::~MainWindow()
 {
-  if (requestThread_)
-  {
-    if (requestThread_->joinable())
-    {
-      pthread_cancel(requestThread_->native_handle());
-      requestThread_->join();
-      delete requestThread_;
-    }
-  }
+  this->abortRequest();
 }
 
 /**
@@ -931,45 +924,6 @@ void MainWindow::initSignals()
 }
 
 /**
- * Fetch document from disk or IPFS, using threading
- * \param path File path that needs to be opened (either from disk or IPFS network)
- * \param isSetAddressBar If true change update the address bar with the file path (default: true)
- * \param isHistoryRequest Set to true if this is an history request call: back/forward (default: false)
- * \param isDisableEditor If true the editor will be disabled if needed (default: true)
- * \param isParseContext If true the content received will be parsed and displayed as markdown syntax (default: true),
- * set to false if you want to editor the content
- */
-void MainWindow::doRequest(
-    const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor, bool isParseContent)
-{
-  if (requestThread_)
-  {
-    if (requestThread_->joinable())
-    {
-      std::cout << "INFO: Already running request. Stop running thread first..." << std::endl;
-      // TODO: Let's implement a thread-safe C++ ipfs client using the cURL multi API, with a atomic boolean to
-      // stop the thread.
-
-      pthread_cancel(requestThread_->native_handle());
-      requestThread_->join();
-      delete requestThread_;
-      requestThread_ = nullptr;
-
-      std::cout << "INFO: Thread stopped." << std::endl;
-    }
-  }
-
-  if (requestThread_ == nullptr)
-  {
-    // Show spinning icon
-    m_refreshIcon.get_style_context()->add_class("spinning");
-    // Start thread
-    requestThread_ = new std::thread(&MainWindow::processRequest, this, path, isParseContent);
-    this->postDoRequest(path, isSetAddressBar, isHistoryRequest, isDisableEditor);
-  }
-}
-
-/**
  * \brief Called when Window is closed/exited
  */
 bool MainWindow::delete_window(GdkEventAny* any_event __attribute__((unused)))
@@ -1552,6 +1506,57 @@ void MainWindow::publish()
 }
 
 /**
+ * Fetch document from disk or IPFS, using threading
+ * \param path File path that needs to be opened (either from disk or IPFS network)
+ * \param isSetAddressBar If true change update the address bar with the file path (default: true)
+ * \param isHistoryRequest Set to true if this is an history request call: back/forward (default: false)
+ * \param isDisableEditor If true the editor will be disabled if needed (default: true)
+ * \param isParseContext If true the content received will be parsed and displayed as markdown syntax (default: true),
+ * set to false if you want to editor the content
+ */
+void MainWindow::doRequest(
+    const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor, bool isParseContent)
+{
+  // Stop any request first, if applicable
+  this->abortRequest();
+
+  if (requestThread_ == nullptr)
+  {
+    // Show spinning icon
+    m_refreshIcon.get_style_context()->add_class("spinning");
+    // Start thread
+    requestThread_ = new std::thread(&MainWindow::processRequest, this, path, isParseContent);
+    this->postDoRequest(path, isSetAddressBar, isHistoryRequest, isDisableEditor);
+  }
+}
+
+/**
+ * Abort request and stop the thread, if applicable.
+ */
+void MainWindow::abortRequest()
+{
+  if (requestThread_ && requestThread_->joinable())
+  {
+    if (is_request_thread_done_)
+    {
+      requestThread_->join();
+    }
+    else
+    {
+      // Trigger the thread to stop now.
+      // We call the abort method of the IPFS client.
+      ipfs_thread_.abort();
+      keep_request_thread_running_ = false;
+      requestThread_->join();
+      keep_request_thread_running_ = true;
+    }
+    delete requestThread_;
+    requestThread_ = nullptr;
+    is_request_thread_done_ = false; // reset
+  }
+}
+
+/**
  * \brief Post-processing request actions
  * \param path File path (on disk or IPFS) that needs to be processed
  * \param isSetAddressBar If true change update the address bar with the file path
@@ -1937,6 +1942,8 @@ void MainWindow::processRequest(const std::string& path, bool isParseContent)
       fetchFromIPFS(isParseContent);
     }
   }
+
+  is_request_thread_done_ = true; // mark thread as done
 }
 
 /**
@@ -1952,17 +1959,22 @@ void MainWindow::fetchFromIPFS(bool isParseContent)
     std::stringstream contents;
     // Fetch content from IPFS
     ipfs_thread_.fetch(finalRequestPath_, &contents);
-    this->currentContent_ = contents.str();
-    if (isParseContent)
+    // Skip the str() function is we want to stop the thread, this will only take extra time.
+    // Don't bother to update the GTK window.
+    if (keep_request_thread_running_)
     {
-      cmark_node* doc = Parser::parseContent(this->currentContent_);
-      m_draw_main.processDocument(doc);
-      cmark_node_free(doc);
-    }
-    else
-    {
-      // Directly display the plain markdown content
-      m_draw_main.setText(this->currentContent_);
+      this->currentContent_ = contents.str();
+      if (isParseContent)
+      {
+        cmark_node* doc = Parser::parseContent(this->currentContent_);
+        m_draw_main.processDocument(doc);
+        cmark_node_free(doc);
+      }
+      else
+      {
+        // Directly display the plain markdown content
+        m_draw_main.setText(this->currentContent_);
+      }
     }
   }
   catch (const std::runtime_error& error)
@@ -2008,16 +2020,20 @@ void MainWindow::openFromDisk(bool isParseContent)
   try
   {
     this->currentContent_ = File::read(finalRequestPath_);
-    if (isParseContent)
+    // If the thread stops, don't brother to parse the file/update the GTK window
+    if (keep_request_thread_running_)
     {
-      cmark_node* doc = Parser::parseContent(this->currentContent_);
-      m_draw_main.processDocument(doc);
-      cmark_node_free(doc);
-    }
-    else
-    {
-      // directly set the plain content
-      m_draw_main.setText(this->currentContent_);
+      if (isParseContent)
+      {
+        cmark_node* doc = Parser::parseContent(this->currentContent_);
+        m_draw_main.processDocument(doc);
+        cmark_node_free(doc);
+      }
+      else
+      {
+        // directly set the plain content
+        m_draw_main.setText(this->currentContent_);
+      }
     }
   }
   catch (const std::ios_base::failure& error)

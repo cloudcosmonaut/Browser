@@ -176,3 +176,11 @@ std::string const IPFS::add(const std::string& path, const std::string& content)
   }
   return hash;
 }
+
+/**
+ * Abort the request abruptly. Used for stopping the thread.
+ */
+void IPFS::abort()
+{
+  client.Abort();
+}

@@ -7,6 +7,7 @@
 #include "menu.h"
 #include "source-code-dialog.h"
 
+#include <atomic>
 #include <giomm/settings.h>
 #include <gtkmm/adjustment.h>
 #include <gtkmm/box.h>
@@ -252,6 +253,9 @@ protected:
   Gtk::Separator m_separator10;
 
 private:
+  std::thread* requestThread_;                    /* Request thread pointer */
+  std::atomic<bool> is_request_thread_done_;      /* Indication when the single request is done */
+  std::atomic<bool> keep_request_thread_running_; /* Trigger the thread to stop/continue */
   std::string appName_;
   std::string iconTheme_;
   bool useCurrentGTKIconTheme_;
@@ -260,7 +264,6 @@ private:
   int defaultFontSize_;
   int currentFontSize_;
   int fontSpacing_;
-  std::thread* requestThread_;
   std::string requestPath_;
   std::string finalRequestPath_;
   std::string currentContent_;
@@ -279,11 +282,11 @@ private:
   std::string ipfsVersion_;
   std::string ipfsClientID_;
   std::string ipfsClientPublicKey_;
-  std::string ipfsHost_;
-  int ipfsPort_;
-  std::string ipfsTimeout_;
-  IPFS ipfs_;        /* IPFS object for main thread */
-  IPFS ipfs_thread_; /* IPFS object for request thread, so it doesn't conflict with the main thread calls */
+  std::string ipfsHost_;    /* IPFS host name */
+  int ipfsPort_;            /* IPFS port number */
+  std::string ipfsTimeout_; /* IPFS time-out setting */
+  IPFS ipfs_;               /* IPFS object for main thread */
+  IPFS ipfs_thread_;        /* IPFS object for request thread, so it doesn't conflict with the main thread calls */
 
   void loadStoredSettings();
   void loadIcons();
@@ -297,6 +300,7 @@ private:
   void enableEdit();
   void disableEdit();
   bool isEditorEnabled();
+  void abortRequest();
   void postDoRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor);
   void processRequest(const std::string& path, bool isParseContent);
   void fetchFromIPFS(bool isParseContent);

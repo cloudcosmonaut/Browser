@@ -1018,7 +1018,7 @@ void Draw::followLink(Gtk::TextBuffer::iterator& iter)
     if (url != 0 && (strlen(url) > 0))
     {
       // Get the URL
-      mainWindow.doRequest(url, true);
+      mainWindow.doRequest(url);
       break;
     }
   }
