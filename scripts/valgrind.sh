@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-valgrind --leak-check=full --track-origins=yes ./build/bin/libreweb-browser
+valgrind --leak-check=full --track-origins=yes ./libreweb-browser

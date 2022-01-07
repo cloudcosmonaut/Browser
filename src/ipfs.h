@@ -2,6 +2,7 @@
 #define IPFS_H
 
 #include "ipfs/client.h"
+#include <iostream>
 #include <string>
 #include <variant>
 
@@ -22,6 +23,7 @@ public:
   void fetch(const std::string& path, std::iostream* contents);
   std::string const add(const std::string& path, const std::string& content);
   void abort();
+  void reset();
 
 private:
   std::string host;    /* IPFS host name */

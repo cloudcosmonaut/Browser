@@ -5,7 +5,6 @@
 #include "menu.h"
 #include "project_config.h"
 #include <cmark-gfm.h>
-#include <fstream>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <giomm/file.h>
 #include <giomm/notification.h>
@@ -19,8 +18,8 @@
 #include <gtkmm/listboxrow.h>
 #include <gtkmm/menuitem.h>
 #include <gtkmm/settings.h>
-#include <iostream>
 #include <nlohmann/json.hpp>
+#include <sstream>
 #include <whereami.h>
 
 MainWindow::MainWindow(const std::string& timeout)
@@ -1548,6 +1547,8 @@ void MainWindow::abortRequest()
       ipfs_thread_.abort();
       keep_request_thread_running_ = false;
       requestThread_->join();
+      // Reset states, allowing new threads with new API requests/calls
+      ipfs_thread_.reset();
       keep_request_thread_running_ = true;
     }
     delete requestThread_;
@@ -1956,10 +1957,11 @@ void MainWindow::fetchFromIPFS(bool isParseContent)
 {
   try
   {
+    // TODO: Check file contents (first bytes?), to guess the file type.
+    // only proceed further file is UTF-8 unicode text (avoid images etc.).
     std::stringstream contents;
-    // Fetch content from IPFS
     ipfs_thread_.fetch(finalRequestPath_, &contents);
-    // Skip the str() function is we want to stop the thread, this will only take extra time.
+    // Skip the str() function since we want to stop the thread, this will only take extra time.
     // Don't bother to update the GTK window.
     if (keep_request_thread_running_)
     {
@@ -2019,6 +2021,8 @@ void MainWindow::openFromDisk(bool isParseContent)
 {
   try
   {
+    // TODO: Abort file read, if keep_request_thread_running_ = false
+    // eg. when you are reading a very big file from disk.
     this->currentContent_ = File::read(finalRequestPath_);
     // If the thread stops, don't brother to parse the file/update the GTK window
     if (keep_request_thread_running_)

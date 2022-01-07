@@ -1,5 +1,4 @@
 #include "ipfs.h"
-#include <sstream>
 
 /**
  * \brief IPFS Contructor, connect to IPFS
@@ -183,4 +182,12 @@ std::string const IPFS::add(const std::string& path, const std::string& content)
 void IPFS::abort()
 {
   client.Abort();
+}
+
+/**
+ * Reset the state, to allow for new API IPFS requests. Used after the thread.join() and abort() call.
+ */
+void IPFS::reset()
+{
+  client.Reset();
 }
