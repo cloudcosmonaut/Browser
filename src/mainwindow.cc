@@ -2203,7 +2203,7 @@ void MainWindow::insert_emoji()
 
 void MainWindow::on_zoom_out()
 {
-  currentFontSize_ -= 2;
+  currentFontSize_ -= 1;
   updateCSS();
   m_zoomRestoreButton.set_sensitive(currentFontSize_ != defaultFontSize_);
 }
@@ -2217,7 +2217,7 @@ void MainWindow::on_zoom_restore()
 
 void MainWindow::on_zoom_in()
 {
-  currentFontSize_ += 2;
+  currentFontSize_ += 1;
   updateCSS();
   m_zoomRestoreButton.set_sensitive(currentFontSize_ != defaultFontSize_);
 }
