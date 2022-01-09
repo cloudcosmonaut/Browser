@@ -756,7 +756,7 @@ void MainWindow::initSettingsPopover()
   iconThemeButtonlabel->set_xalign(0.0);
   aboutButtonLabel->set_xalign(0.0);
 
-  //Add Settings vbox to popover menu
+  // Add Settings vbox to popover menu
   m_vboxSettings.set_margin_start(10);
   m_vboxSettings.set_margin_end(10);
   m_vboxSettings.set_margin_top(10);
@@ -2100,7 +2100,8 @@ void MainWindow::updateCSS()
   std::string brightnessScale = brightnessDoubleStream.str();
 
   // If it's getting to dark, let's change the font color to white
-  if (brightnessScale_ >= 0.7) {
+  if (brightnessScale_ >= 0.7)
+  {
     double colorDouble = ((((1.0 - brightnessScale_) - 0.5) * (20.0 - 255.0)) / (1.0 - 0.5)) + 255.0;
     std::ostringstream colorStream;
     colorStream << colorDouble;
@@ -2115,10 +2116,11 @@ void MainWindow::updateCSS()
                                       fontFamily_ +
                                       "\";"
                                       "font-size: " +
-                                      std::to_string(currentFontSize_) + "pt; }" +
-                                      "textview text { " + colorCss +
-                                      "background-color: rgba(0, 0, 0," + brightnessScale + ");"
-                                      "letter-spacing: " + std::to_string(fontSpacing_) + "px; }");
+                                      std::to_string(currentFontSize_) + "pt; }" + "textview text { " + colorCss +
+                                      "background-color: rgba(0, 0, 0," + brightnessScale +
+                                      ");"
+                                      "letter-spacing: " +
+                                      std::to_string(fontSpacing_) + "px; }");
   }
   catch (const Gtk::CssProviderError& error)
   {
