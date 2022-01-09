@@ -49,5 +49,13 @@
       <default>false</default>
       <summary>Is GTK default theme active</summary>
     </key>
+    <key name="brightness" type="d">
+      <default>1.0</default>
+      <summary>Brightnesse</summary>
+    </key>
+    <key name="dark-theme" type="b">
+      <default>false</default>
+      <summary>Prefer dark theme</summary>
+    </key>
   </schema>
 </schemalist>

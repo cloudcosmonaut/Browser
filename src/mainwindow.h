@@ -266,6 +266,7 @@ private:
   int currentFontSize_;
   int fontSpacing_;
   double brightnessScale_;
+  bool useDarkTheme_;
   std::string requestPath_;
   std::string finalRequestPath_;
   std::string currentContent_;
@@ -294,6 +295,7 @@ private:
   void loadIcons();
   std::size_t loadStatusIcon(bool reload = true);
   void initButtons();
+  void setTheme();
   void initStatusPopover();
   void initSettingsPopover();
   void updateStatusPopover();

@@ -68,7 +68,8 @@ MainWindow::MainWindow(const std::string& timeout)
       defaultFontSize_(10),
       currentFontSize_(10),
       fontSpacing_(0),
-      brightnessScale_(0),
+      brightnessScale_(1.0),
+      useDarkTheme_(false),
       currentHistoryIndex_(0),
       waitPageVisible_(false),
       ipfsNetworkStatus_("Disconnected"),
@@ -90,6 +91,7 @@ MainWindow::MainWindow(const std::string& timeout)
   loadStoredSettings();
   loadIcons();
   initButtons();
+  setTheme();
   initStatusPopover();
   initSettingsPopover();
   initSignals();
@@ -219,6 +221,8 @@ void MainWindow::loadStoredSettings()
 
     this->iconTheme_ = m_settings->get_string("icon-theme");
     this->useCurrentGTKIconTheme_ = m_settings->get_boolean("icon-gtk-theme");
+    this->brightnessScale_ = m_settings->get_double("brightness");
+    this->useDarkTheme_ = m_settings->get_boolean("dark-theme");
   }
   else
   {
@@ -598,6 +602,14 @@ void MainWindow::initButtons()
 }
 
 /**
+ * Prefer dark or light theme
+ */
+void MainWindow::setTheme() {
+  auto settings = Gtk::Settings::get_default();
+  settings->property_gtk_application_prefer_dark_theme().set_value(this->useDarkTheme_);
+}
+
+/**
  * Init the IPFS status pop-over
  */
 void MainWindow::initStatusPopover()
@@ -709,12 +721,16 @@ void MainWindow::initSettingsPopover()
   m_hboxSetingsZoom.pack_end(m_zoomInButton);
 
   // Brightness slider
+  m_brightnessAdjustment->set_value(this->brightnessScale_);// Override with current loaded brightness setting
   m_scaleSettingsBrightness.set_adjustment(m_brightnessAdjustment);
-  m_scaleSettingsBrightness.add_mark(1.0, Gtk::PositionType::POS_BOTTOM, "");
+  m_scaleSettingsBrightness.add_mark(0.5, Gtk::PositionType::POS_BOTTOM, "");
   m_scaleSettingsBrightness.set_draw_value(false);
   m_scaleSettingsBrightness.signal_value_changed().connect(sigc::mem_fun(this, &MainWindow::on_brightness_changed));
   m_hboxSetingsBrightness.pack_start(m_brightnessImage, false, false);
   m_hboxSetingsBrightness.pack_end(m_scaleSettingsBrightness);
+
+  // Dark theme switch
+  m_themeSwitch.set_active(this->useDarkTheme_); // Override with current dark theme preference
 
   // Spin buttons
   m_spacingSpinButton.set_adjustment(m_spacingAdjustment);
@@ -947,6 +963,8 @@ bool MainWindow::delete_window(GdkEventAny* any_event __attribute__((unused)))
     m_settings->set_int("indent", this->m_indentSpinButton.get_value_as_int());
     m_settings->set_string("icon-theme", this->iconTheme_);
     m_settings->set_boolean("icon-gtk-theme", this->useCurrentGTKIconTheme_);
+    m_settings->set_double("brightness", this->brightnessScale_);
+    m_settings->set_boolean("dark-theme", this->useDarkTheme_);
   }
   return false;
 }
@@ -2095,18 +2113,19 @@ std::string MainWindow::getIconImageFromTheme(const std::string& iconName, const
 void MainWindow::updateCSS()
 {
   std::string colorCss;
-  std::ostringstream brightnessDoubleStream;
-  brightnessDoubleStream << brightnessScale_;
-  std::string brightnessScale = brightnessDoubleStream.str();
+  double darknessScale = (1.0 - brightnessScale_);
+  std::ostringstream darknessDoubleStream;
+  darknessDoubleStream << darknessScale;
+  std::string darknessStr = darknessDoubleStream.str();
 
   // If it's getting to dark, let's change the font color to white
-  if (brightnessScale_ >= 0.7)
+  if (darknessScale >= 0.7)
   {
-    double colorDouble = ((((1.0 - brightnessScale_) - 0.5) * (20.0 - 255.0)) / (1.0 - 0.5)) + 255.0;
+    double colorDouble = ((((1.0 - darknessScale) - 0.5) * (20.0 - 255.0)) / (1.0 - 0.5)) + 255.0;
     std::ostringstream colorStream;
     colorStream << colorDouble;
-    std::string color = colorStream.str();
-    colorCss = "color: rgba(" + color + ", " + color + ", " + color + ", " + brightnessScale + ");";
+    std::string colorStr = colorStream.str();
+    colorCss = "color: rgba(" + colorStr + ", " + colorStr + ", " + colorStr + ", " + darknessStr + ");";
   }
 
   try
@@ -2117,7 +2136,7 @@ void MainWindow::updateCSS()
                                       "\";"
                                       "font-size: " +
                                       std::to_string(currentFontSize_) + "pt; }" + "textview text { " + colorCss +
-                                      "background-color: rgba(0, 0, 0," + brightnessScale +
+                                      "background-color: rgba(0, 0, 0," + darknessStr +
                                       ");"
                                       "letter-spacing: " +
                                       std::to_string(fontSpacing_) + "px; }");
@@ -2250,16 +2269,15 @@ void MainWindow::on_indent_changed()
 
 void MainWindow::on_brightness_changed()
 {
-  this->brightnessScale_ = 1.0 - m_scaleSettingsBrightness.get_value();
+  this->brightnessScale_ = m_scaleSettingsBrightness.get_value();
   updateCSS();
 }
 
 void MainWindow::on_theme_changed()
 {
-  // TODO: better testing and store to settings (between restarts)
-  bool isActive = m_themeSwitch.get_active();
-  auto settings = Gtk::Settings::get_default();
-  settings->property_gtk_application_prefer_dark_theme().set_value(isActive);
+  // Switch between dark or light theme preference
+  this->useDarkTheme_ = m_themeSwitch.get_active();
+  setTheme();
 }
 
 void MainWindow::on_icon_theme_activated(Gtk::ListBoxRow* row)
