@@ -25,7 +25,7 @@
 MainWindow::MainWindow(const std::string& timeout)
     : m_accelGroup(Gtk::AccelGroup::create()),
       m_settings(),
-      m_brightnessAdjustment(Gtk::Adjustment::create(1.0, 0.5, 1.5, 0.05, 0.1)),
+      m_brightnessAdjustment(Gtk::Adjustment::create(1.0, 0.0, 1.0, 0.05, 0.1)),
       m_spacingAdjustment(Gtk::Adjustment::create(0, -10, 10, 1, 2)),
       m_marginsAdjustment(Gtk::Adjustment::create(20, 0, 1000, 10, 20)),
       m_indentAdjustment(Gtk::Adjustment::create(0, 0, 1000, 5, 10)),
@@ -68,6 +68,7 @@ MainWindow::MainWindow(const std::string& timeout)
       defaultFontSize_(10),
       currentFontSize_(10),
       fontSpacing_(0),
+      brightnessScale_(0),
       currentHistoryIndex_(0),
       waitPageVisible_(false),
       ipfsNetworkStatus_("Disconnected"),
@@ -238,7 +239,6 @@ void MainWindow::loadStoredSettings()
 
 /**
  * Load all icon images from theme/disk. Or reload them.
- * TODO: Reloading images, does this cause any memory leaks or?
  */
 void MainWindow::loadIcons()
 {
@@ -712,6 +712,7 @@ void MainWindow::initSettingsPopover()
   m_scaleSettingsBrightness.set_adjustment(m_brightnessAdjustment);
   m_scaleSettingsBrightness.add_mark(1.0, Gtk::PositionType::POS_BOTTOM, "");
   m_scaleSettingsBrightness.set_draw_value(false);
+  m_scaleSettingsBrightness.signal_value_changed().connect(sigc::mem_fun(this, &MainWindow::on_brightness_changed));
   m_hboxSetingsBrightness.pack_start(m_brightnessImage, false, false);
   m_hboxSetingsBrightness.pack_end(m_scaleSettingsBrightness);
 
@@ -755,11 +756,30 @@ void MainWindow::initSettingsPopover()
   iconThemeButtonlabel->set_xalign(0.0);
   aboutButtonLabel->set_xalign(0.0);
 
-  // Submenu: back button
+  //Add Settings vbox to popover menu
+  m_vboxSettings.set_margin_start(10);
+  m_vboxSettings.set_margin_end(10);
+  m_vboxSettings.set_margin_top(10);
+  m_vboxSettings.set_margin_bottom(10);
+  m_vboxSettings.set_spacing(8);
+  m_vboxSettings.add(m_hboxSetingsZoom);
+  m_vboxSettings.add(m_hboxSetingsBrightness); // TODO
+  m_vboxSettings.add(m_separator5);
+  m_vboxSettings.add(m_settingsGrid);
+  m_vboxSettings.add(m_separator6);
+  m_vboxSettings.add(m_iconThemeButton);
+  m_vboxSettings.add(m_separator7);
+  m_vboxSettings.pack_end(m_aboutButton, false, false);
+  m_settingsPopover.set_position(Gtk::POS_BOTTOM);
+  m_settingsPopover.set_size_request(200, 300);
+  m_settingsPopover.set_margin_end(2);
+  m_settingsPopover.add(m_vboxSettings);
+
+  // Add Theme vbox to popover menu
   m_iconThemeBackButton.set_label("Icon Theme");
   m_iconThemeBackButton.property_menu_name() = "main";
   m_iconThemeBackButton.property_inverted() = true;
-  // List box
+  // List of themes in list box
   Gtk::Label* iconTheme1 = Gtk::manage(new Gtk::Label("Flat theme"));
   Gtk::ListBoxRow* row1 = Gtk::manage(new Gtk::ListBoxRow());
   row1->add(*iconTheme1);
@@ -783,29 +803,8 @@ void MainWindow::initSettingsPopover()
   m_vboxIconTheme.add(m_separator8);
   m_vboxIconTheme.add(m_iconThemeLabel);
   m_vboxIconTheme.add(m_iconThemeListScrolledWindow);
-  // TODO: Some strange sliding animation happens the first time I collapse the settings popover
   m_settingsPopover.add(m_vboxIconTheme);
-
   m_settingsPopover.child_property_submenu(m_vboxIconTheme) = "icon-theme";
-
-  // Add all to vbox / pop-over
-  m_vboxSettings.set_margin_start(10);
-  m_vboxSettings.set_margin_end(10);
-  m_vboxSettings.set_margin_top(10);
-  m_vboxSettings.set_margin_bottom(10);
-  m_vboxSettings.set_spacing(8);
-  m_vboxSettings.add(m_hboxSetingsZoom);
-  // m_vboxSettings.add(m_hboxSetingsBrightness); // TODO
-  m_vboxSettings.add(m_separator5);
-  m_vboxSettings.add(m_settingsGrid);
-  m_vboxSettings.add(m_separator6);
-  m_vboxSettings.add(m_iconThemeButton);
-  m_vboxSettings.add(m_separator7);
-  m_vboxSettings.pack_end(m_aboutButton, false, false);
-  m_settingsPopover.set_position(Gtk::POS_BOTTOM);
-  m_settingsPopover.set_size_request(200, 300);
-  m_settingsPopover.set_margin_end(2);
-  m_settingsPopover.add(m_vboxSettings);
   m_settingsPopover.show_all_children();
 }
 
@@ -2095,6 +2094,20 @@ std::string MainWindow::getIconImageFromTheme(const std::string& iconName, const
  */
 void MainWindow::updateCSS()
 {
+  std::string colorCss;
+  std::ostringstream brightnessDoubleStream;
+  brightnessDoubleStream << brightnessScale_;
+  std::string brightnessScale = brightnessDoubleStream.str();
+
+  // If it's getting to dark, let's change the font color to white
+  if (brightnessScale_ >= 0.7) {
+    double colorDouble = ((((1.0 - brightnessScale_) - 0.5) * (20.0 - 255.0)) / (1.0 - 0.5)) + 255.0;
+    std::ostringstream colorStream;
+    colorStream << colorDouble;
+    std::string color = colorStream.str();
+    colorCss = "color: rgba(" + color + ", " + color + ", " + color + ", " + brightnessScale + ");";
+  }
+
   try
   {
     m_drawCSSProvider->load_from_data("textview { "
@@ -2103,7 +2116,9 @@ void MainWindow::updateCSS()
                                       "\";"
                                       "font-size: " +
                                       std::to_string(currentFontSize_) + "pt; }" +
-                                      "textview text { letter-spacing: " + std::to_string(fontSpacing_) + "px; }");
+                                      "textview text { " + colorCss +
+                                      "background-color: rgba(0, 0, 0," + brightnessScale + ");"
+                                      "letter-spacing: " + std::to_string(fontSpacing_) + "px; }");
   }
   catch (const Gtk::CssProviderError& error)
   {
@@ -2229,6 +2244,12 @@ void MainWindow::on_margins_changed()
 void MainWindow::on_indent_changed()
 {
   this->m_draw_main.set_indent(m_indentSpinButton.get_value_as_int());
+}
+
+void MainWindow::on_brightness_changed()
+{
+  this->brightnessScale_ = 1.0 - m_scaleSettingsBrightness.get_value();
+  updateCSS();
 }
 
 void MainWindow::on_theme_changed()

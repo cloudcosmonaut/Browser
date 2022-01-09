@@ -95,6 +95,7 @@ protected:
   void on_spacing_changed();
   void on_margins_changed();
   void on_indent_changed();
+  void on_brightness_changed();
   void on_theme_changed();
   void on_icon_theme_activated(Gtk::ListBoxRow* row);
 
@@ -264,6 +265,7 @@ private:
   int defaultFontSize_;
   int currentFontSize_;
   int fontSpacing_;
+  double brightnessScale_;
   std::string requestPath_;
   std::string finalRequestPath_;
   std::string currentContent_;
