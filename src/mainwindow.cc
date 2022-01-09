@@ -604,7 +604,8 @@ void MainWindow::initButtons()
 /**
  * Prefer dark or light theme
  */
-void MainWindow::setTheme() {
+void MainWindow::setTheme()
+{
   auto settings = Gtk::Settings::get_default();
   settings->property_gtk_application_prefer_dark_theme().set_value(this->useDarkTheme_);
 }
@@ -721,7 +722,7 @@ void MainWindow::initSettingsPopover()
   m_hboxSetingsZoom.pack_end(m_zoomInButton);
 
   // Brightness slider
-  m_brightnessAdjustment->set_value(this->brightnessScale_);// Override with current loaded brightness setting
+  m_brightnessAdjustment->set_value(this->brightnessScale_); // Override with current loaded brightness setting
   m_scaleSettingsBrightness.set_adjustment(m_brightnessAdjustment);
   m_scaleSettingsBrightness.add_mark(0.5, Gtk::PositionType::POS_BOTTOM, "");
   m_scaleSettingsBrightness.set_draw_value(false);
