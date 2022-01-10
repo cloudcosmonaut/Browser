@@ -212,8 +212,8 @@ protected:
   Gtk::Image m_exitBottomIcon;
   Gtk::PopoverMenu m_statusPopover;
   Gtk::PopoverMenu m_settingsPopover;
-  Gtk::Button m_copyIDButton;
-  Gtk::Button m_copyPublicKeyButton;
+  Gtk::ModelButton m_copyIDButton;
+  Gtk::ModelButton m_copyPublicKeyButton;
   Gtk::Switch m_themeSwitch;
   Gtk::Label m_networkHeadingLabel;
   Gtk::Label m_networkRateHeadingLabel;

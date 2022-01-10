@@ -45,7 +45,7 @@ Draw::Draw(MainWindow& mainWindow)
   // Set cursors
   auto display = get_display();
   normalCursor = Gdk::Cursor::create(display, "default");
-  linkCursor = Gdk::Cursor::create(display, "grab");
+  linkCursor = Gdk::Cursor::create(display, "pointer");
   textCursor = Gdk::Cursor::create(display, "text");
 
   // Create text-tags

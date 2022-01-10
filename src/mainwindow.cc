@@ -39,8 +39,6 @@ MainWindow::MainWindow(const std::string& timeout)
       m_vboxSettings(Gtk::ORIENTATION_VERTICAL),
       m_vboxIconTheme(Gtk::ORIENTATION_VERTICAL),
       m_searchMatchCase("Match _Case", true),
-      m_copyIDButton("Copy your ID"),
-      m_copyPublicKeyButton("Copy Public Key"),
       m_networkHeadingLabel("IPFS Network"),
       m_networkRateHeadingLabel("Network rate"),
       m_connectivityLabel("Status:"),
@@ -665,6 +663,9 @@ void MainWindow::initStatusPopover()
 
   m_networkHeadingLabel.get_style_context()->add_class("dim-label");
   m_networkRateHeadingLabel.get_style_context()->add_class("dim-label");
+
+  m_copyIDButton.set_label("Copy your ID");
+  m_copyPublicKeyButton.set_label("Copy Public Key");
   m_copyIDButton.set_margin_start(6);
   m_copyIDButton.set_margin_end(6);
   m_copyPublicKeyButton.set_margin_start(6);
@@ -2155,6 +2156,7 @@ void MainWindow::updateCSS()
  */
 void MainWindow::showNotification(const Glib::ustring& title, const Glib::ustring& message)
 {
+  // TODO: Gives GLib-CRITICAL. But maybe not our cause?
   auto app = get_application();
   auto notification = Gio::Notification::create(title);
   auto icon = Gio::ThemedIcon::create("dialog-information");
