@@ -2019,9 +2019,9 @@ void MainWindow::fetchFromIPFS(bool isParseContent)
           }
           message += ".\n\n";
         }
-        catch (const nlohmann::json::parse_error& error)
+        catch (const nlohmann::json::parse_error& parseError)
         {
-          std::cerr << "ERROR: Could not parse at byte: " << error.byte << std::endl;
+          std::cerr << "ERROR: Could not parse at byte: " << parseError.byte << std::endl;
         }
       }
       m_draw_main.showMessage("🎂 We're having trouble finding this site.",
