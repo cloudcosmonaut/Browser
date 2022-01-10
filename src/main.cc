@@ -50,33 +50,3 @@ int main(int argc, char* argv[])
   MainWindow window(group.timeout);
   return app->run(window);
 }
-
-/*
-
-TODO: Start IPFS process outside this application via installation?
-
-Unix Fork code:
-
-    pid_t child_pid = fork();
-    if (child_pid == 0)
-    {
-        // Run by child process
-        return IPFSProcess::startIPFSDaemon();
-    }
-    else if (child_pid > 0)
-    {
-        // Run the GTK window in the parent process (child_pid is the PID of child process)
-        MainWindow window(group.m_timeout);
-        int exitCode = app->run(window);
-
-        // TODO: If we have multiple browsers running, maybe don't kill the IPFS daemon child process yet..?
-        // For now, let's don't kill the IPFS process
-        //kill(child_pid, SIGTERM);
-        return exitCode;
-    }
-    else // PID < 0, error
-    {
-        printf("ERROR: fork failed.\n");
-        return EXIT_FAILURE;
-    }
-*/
