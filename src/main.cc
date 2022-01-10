@@ -14,10 +14,6 @@
  */
 int main(int argc, char* argv[])
 {
-  // Start IPFS daemon
-  IPFSDaemon ipfsDaemon;
-  ipfsDaemon.spawn();
-
   // Set the command-line parameters option settings
   Glib::OptionContext context("LibreWeb Browser - Decentralized Web Browser");
   OptionGroup group;
@@ -31,7 +27,7 @@ int main(int argc, char* argv[])
   try
   {
     context.parse(argc, argv);
-    if (group.m_version)
+    if (group.version)
     {
       std::cout << "LibreWeb Browser " << PROJECT_VER << std::endl;
       exit(EXIT_SUCCESS);
@@ -43,8 +39,15 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
 
+  // By default start the IPFS Daemon
+  if (!group.disableIPFSDaemon)
+  {
+    IPFSDaemon ipfsDaemon;
+    ipfsDaemon.spawn();
+  }
+
   // Run the GTK window in the main thread
-  MainWindow window(group.m_timeout);
+  MainWindow window(group.timeout);
   return app->run(window);
 }
 

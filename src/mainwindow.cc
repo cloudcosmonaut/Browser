@@ -2004,16 +2004,28 @@ void MainWindow::fetchFromIPFS(bool isParseContent)
     std::cerr << "ERROR: IPFS request failed, with message: " << errorMessage << std::endl;
     if (errorMessage.starts_with("HTTP request failed with status code"))
     {
+      std::string message;
       // Remove text until ':\n'
       errorMessage.erase(0, errorMessage.find(':') + 2);
-      auto content = nlohmann::json::parse(errorMessage);
-      std::string message = content.value("Message", "");
-      if (message.starts_with("context deadline exceeded"))
+      if (!errorMessage.empty() && errorMessage != "")
       {
-        message += ". Time-out is set to: " + this->ipfsTimeout_;
+        try
+        {
+          auto content = nlohmann::json::parse(errorMessage);
+          message = "Message: " + content.value("Message", "");
+          if (message.starts_with("context deadline exceeded"))
+          {
+            message += ". Time-out is set to: " + this->ipfsTimeout_;
+          }
+          message += ".\n\n";
+        }
+        catch (const nlohmann::json::parse_error& error)
+        {
+          std::cerr << "ERROR: Could not parse at byte: " << error.byte << std::endl;
+        }
       }
       m_draw_main.showMessage("🎂 We're having trouble finding this site.",
-                              "Message: " + message + ".\n\nYou could try to reload or increase the time-out.");
+                              message + "You could try to reload the page or try increase the time-out (see --help).");
     }
     else if (errorMessage.starts_with("Couldn't connect to server: Failed to connect to localhost"))
     {

@@ -19,8 +19,9 @@ public:
   bool on_post_parse(Glib::OptionContext& context, Glib::OptionGroup& group) override;
   void on_error(Glib::OptionContext& context, Glib::OptionGroup& group) override;
 
-  Glib::ustring m_timeout;
-  bool m_version;
+  Glib::ustring timeout;
+  bool disableIPFSDaemon;
+  bool version;
 };
 
 #endif
