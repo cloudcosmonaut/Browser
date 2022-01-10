@@ -1,6 +1,6 @@
 # LibreWeb Browser
 
-[![Telegram](https://img.shields.io/badge/chat-on%telegram-brightgreen)](https://t.me/libreweb)
+[![Telegram](https://img.shields.io/badge/chat-on%20telegram-brightgreen)](https://t.me/libreweb)
 [![Matrix](https://img.shields.io/badge/chat-on%20matrix-brightgreen)](https://matrix.to/#/#libreweb:melroy.org)
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-brightgreen)](https://gitter.im/LibreWeb/Browser)
 
