@@ -1,6 +1,8 @@
 # LibreWeb Browser
 
-<!-- Add badge: ![Matrix](https://img.shields.io/matrix/libreweb:matrix.melroy.org) -->
+[![Telegram](https://img.shields.io/badge/chat-on%telegram-brightgreen)](https://t.me/libreweb)
+[![Matrix](https://img.shields.io/badge/chat-on%20matrix-brightgreen)](https://matrix.to/#/#libreweb:melroy.org)
+[![Gitter](https://img.shields.io/badge/chat-on%20gitter-brightgreen)](https://gitter.im/LibreWeb/Browser)
 
 Decentralized Web-Browser; a revolution of the WWW.
 
