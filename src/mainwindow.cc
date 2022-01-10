@@ -2168,13 +2168,12 @@ void MainWindow::updateCSS()
  */
 void MainWindow::showNotification(const Glib::ustring& title, const Glib::ustring& message)
 {
-  // TODO: Gives GLib-CRITICAL. But maybe not our cause?
-  auto app = get_application();
+  // TODO: Report GLib-CRITICAL upstream to GTK (this is not my issue)
   auto notification = Gio::Notification::create(title);
   auto icon = Gio::ThemedIcon::create("dialog-information");
   notification->set_body(message);
   notification->set_icon(icon);
-  app->send_notification(notification);
+  get_application()->send_notification(notification);
 }
 
 void MainWindow::editor_changed_text()
