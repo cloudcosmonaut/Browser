@@ -324,6 +324,10 @@ void MainWindow::loadIcons()
           Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("zoom_in", "basic"), iconSize_, iconSize_));
       m_brightnessImage.set(
           Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("brightness", "basic"), iconSize_, iconSize_));
+      m_statusOfflineIcon = Gdk::Pixbuf::create_from_file(
+          this->getIconImageFromTheme("network_disconnected", "network"), iconSize_, iconSize_);
+      m_statusOnlineIcon = Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("network_connected", "network"),
+                                                         iconSize_, iconSize_);
     }
   }
   catch (const Glib::FileError& error)
@@ -336,19 +340,15 @@ void MainWindow::loadIcons()
     std::cerr << "ERROR: Icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless..."
               << std::endl;
   }
-
-  // Load toolbar status icon image separately
-  loadStatusIcon();
 }
 
 /**
  * Dedicated function for loading the status icon in the toolbar.
  * Because it will require some additional logic. It also returns the number of IPFS peers connected to.
  *
- * @param reload Reloading pix buffer from disk again (only needed when the theme has changed)
  * @return Number of IPFS peers
  */
-std::size_t MainWindow::loadStatusIcon(bool reload)
+std::size_t MainWindow::loadStatusIcon()
 {
   // TODO: This call is causing hangs under Windows at the moment (blocking call? too high time-outs)
   auto startd1 = high_resolution_clock::now();
@@ -357,29 +357,23 @@ std::size_t MainWindow::loadStatusIcon(bool reload)
             << std::endl;
   try
   {
-    if (useCurrentGTKIconTheme_)
+    if (nrPeers > 0)
     {
-      if (nrPeers > 0)
+      if (useCurrentGTKIconTheme_)
       {
         m_statusIcon.set_from_icon_name("network-wired-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
       }
       else
       {
-        m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+        m_statusIcon.set(m_statusOnlineIcon);
       }
     }
     else
     {
-      if (reload)
+      if (useCurrentGTKIconTheme_)
       {
-        m_statusOfflineIcon = Gdk::Pixbuf::create_from_file(
-            this->getIconImageFromTheme("network_disconnected", "network"), iconSize_, iconSize_);
-        m_statusOnlineIcon = Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("network_connected", "network"),
-                                                           iconSize_, iconSize_);
-      }
-      if (nrPeers > 0)
-      {
-        m_statusIcon.set(m_statusOnlineIcon);
+        m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic",
+                                               Gtk::IconSize(Gtk::ICON_SIZE_MENU));
       }
       else
       {
@@ -529,6 +523,7 @@ void MainWindow::initButtons()
   m_refreshButton.add(m_refreshIcon);
   m_homeButton.add(m_homeIcon);
   m_searchButton.add(m_searchIcon);
+
   m_statusButton.add(m_statusIcon);
   m_settingsButton.add(m_settingsIcon);
 
@@ -1003,7 +998,7 @@ bool MainWindow::update_connection_status()
   std::cout << "C: " << duration_cast<milliseconds>(high_resolution_clock::now() - startc).count() << " ms"
             << std::endl;
   auto startd = high_resolution_clock::now();
-  this->ipfsNumberOfPeers_ = loadStatusIcon(false); // No reloading of the image required
+  this->ipfsNumberOfPeers_ = this->loadStatusIcon();
   std::cout << "D: " << duration_cast<milliseconds>(high_resolution_clock::now() - startd).count() << " ms"
             << std::endl;
   if (this->ipfsNumberOfPeers_ > 0)
@@ -2316,6 +2311,9 @@ void MainWindow::on_icon_theme_activated(Gtk::ListBoxRow* row)
   {
     this->useCurrentGTKIconTheme_ = true;
   }
-  // Reload images
+  // Reload icons
   this->loadIcons();
+
+  // Trigger IPFS status icon update, depending on the nr. of peers
+  this->loadStatusIcon();
 }

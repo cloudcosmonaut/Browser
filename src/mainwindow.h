@@ -293,7 +293,7 @@ private:
 
   void loadStoredSettings();
   void loadIcons();
-  std::size_t loadStatusIcon(bool reload = true);
+  std::size_t loadStatusIcon();
   void initButtons();
   void setTheme();
   void initStatusPopover();
