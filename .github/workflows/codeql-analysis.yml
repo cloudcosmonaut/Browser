@@ -20,6 +20,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+
+      - name: Install dep packages
+        run: sudo apt install libcurl4-openssl-dev libgtkmm-3.0-dev
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v1
         with:
