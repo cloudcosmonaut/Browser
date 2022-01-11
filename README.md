@@ -85,6 +85,12 @@ For the GNU/Linux build you need at least:
 
 ### Build
 
+Clone the source-code wuth SSH (do not forget `--recurse-submodules`):
+
+```sh
+git clone --recurse-submodules -j5 git@gitlab.melroy.org:libreweb/browser.git
+```
+
 Start the build, which is using Cmake and Ninja build system, using the wrapper script:
 
 ```sh
