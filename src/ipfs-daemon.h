@@ -23,7 +23,6 @@ protected:
 private:
   std::string workingDir = ""; // cwd
   Glib::Pid pid = 0;
-  bool isRunning = false;
   sigc::connection childWatchHandler;
 
   static std::string locateIPFSBinary();

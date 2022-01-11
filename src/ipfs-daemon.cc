@@ -55,7 +55,10 @@ void IPFSDaemon::spawn()
         // optionally we can use spawn_async_with_pipes(), to retrieve stdout & stderr to specified output
         // buffers
         Glib::spawn_async(this->workingDir, argv, flags, Glib::SlotSpawnChildSetup(), &this->pid);
-        this->isRunning = true;
+
+        if (this->childWatchHandler.connected())
+          this->childWatchHandler.disconnect();
+
         this->childWatchHandler =
             Glib::signal_child_watch().connect(sigc::mem_fun(*this, &IPFSDaemon::child_watch_exit), this->pid);
       }
@@ -80,27 +83,20 @@ void IPFSDaemon::spawn()
  */
 void IPFSDaemon::stop()
 {
-  if (!this->isRunning)
-    return; // It's already stopped
-
-  Glib::spawn_close_pid(pid);
-  this->isRunning = false;
+  if (this->pid != 0)
+    Glib::spawn_close_pid(this->pid);
 }
 
 /**
  * \brief Exit signal handler for the process.
  * Emits the exited signal with the status code.
+ * 
+ * Avoid using this-> calls, this will lead to segmention faults
  */
 void IPFSDaemon::child_watch_exit(Glib::Pid pid, int childStatus)
 {
-  std::cout << "WARN: IPFS Daemon exited, with status: " << childStatus << std::endl;
+  std::cout << "WARN: IPFS Daemon exited, with status code: " << childStatus << std::endl;
   Glib::spawn_close_pid(pid);
-
-  // Disconnect from signal
-  if (this->childWatchHandler.connected())
-    this->childWatchHandler.disconnect();
-
-  this->isRunning = false;
 
   // Emit exit signal with status code
   exited.emit(childStatus);
@@ -112,7 +108,7 @@ void IPFSDaemon::child_watch_exit(Glib::Pid pid, int childStatus)
  */
 int IPFSDaemon::getPID() const
 {
-  if (!this->isRunning)
+  if (this->pid == 0)
     return 0;
 #ifdef _WIN32
   return GetProcessId(pid);
