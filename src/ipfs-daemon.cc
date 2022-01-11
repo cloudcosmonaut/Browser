@@ -90,7 +90,7 @@ void IPFSDaemon::stop()
 /**
  * \brief Exit signal handler for the process.
  * Emits the exited signal with the status code.
- * 
+ *
  * Avoid using this-> calls, this will lead to segmention faults
  */
 void IPFSDaemon::child_watch_exit(Glib::Pid pid, int childStatus)
