@@ -372,8 +372,7 @@ std::size_t MainWindow::loadStatusIcon()
     {
       if (useCurrentGTKIconTheme_)
       {
-        m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic",
-                                               Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+        m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
       }
       else
       {
