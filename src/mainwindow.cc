@@ -22,8 +22,7 @@
 #include <sstream>
 #include <whereami.h>
 
-
-#include <chrono> // Only used for measuring time now
+#include <chrono>            // Only used for measuring time now
 using namespace std::chrono; // Only used for measuring time now
 
 MainWindow::MainWindow(const std::string& timeout)
@@ -354,7 +353,8 @@ std::size_t MainWindow::loadStatusIcon(bool reload)
   // TODO: This call is causing hangs under Windows at the moment (blocking call? too high time-outs)
   auto startd1 = high_resolution_clock::now();
   std::size_t nrPeers = ipfs_.getNrPeers();
-  std::cout << "D1: " << duration_cast<milliseconds>(high_resolution_clock::now() - startd1).count() << " ms" << std::endl;
+  std::cout << "D1: " << duration_cast<milliseconds>(high_resolution_clock::now() - startd1).count() << " ms"
+            << std::endl;
   try
   {
     if (useCurrentGTKIconTheme_)
@@ -990,18 +990,22 @@ bool MainWindow::update_connection_status()
   auto starta = high_resolution_clock::now();
   if (this->ipfsClientID_.empty())
     this->ipfsClientID_ = ipfs_.getClientID();
-  std::cout << "A: " << duration_cast<milliseconds>(high_resolution_clock::now() - starta).count() << " ms" << std::endl;
+  std::cout << "A: " << duration_cast<milliseconds>(high_resolution_clock::now() - starta).count() << " ms"
+            << std::endl;
   auto startb = high_resolution_clock::now();
   if (this->ipfsClientPublicKey_.empty())
     this->ipfsClientPublicKey_ = ipfs_.getClientPublicKey();
-  std::cout << "B: " << duration_cast<milliseconds>(high_resolution_clock::now() - startb).count() << " ms" << std::endl;
+  std::cout << "B: " << duration_cast<milliseconds>(high_resolution_clock::now() - startb).count() << " ms"
+            << std::endl;
   auto startc = high_resolution_clock::now();
   if (this->ipfsVersion_.empty())
     this->ipfsVersion_ = ipfs_.getVersion();
-  std::cout << "C: " << duration_cast<milliseconds>(high_resolution_clock::now() - startc).count() << " ms" << std::endl;
+  std::cout << "C: " << duration_cast<milliseconds>(high_resolution_clock::now() - startc).count() << " ms"
+            << std::endl;
   auto startd = high_resolution_clock::now();
   this->ipfsNumberOfPeers_ = loadStatusIcon(false); // No reloading of the image required
-  std::cout << "D: " << duration_cast<milliseconds>(high_resolution_clock::now() - startd).count() << " ms" << std::endl;
+  std::cout << "D: " << duration_cast<milliseconds>(high_resolution_clock::now() - startd).count() << " ms"
+            << std::endl;
   if (this->ipfsNumberOfPeers_ > 0)
   {
     // Auto-refresh page if needed (when 'Please wait' page is shown)
@@ -1030,7 +1034,8 @@ bool MainWindow::update_connection_status()
   // Trigger update of all status fields
   auto starte = high_resolution_clock::now();
   this->updateStatusPopover();
-  std::cout << "E: " << duration_cast<milliseconds>(high_resolution_clock::now() - starte).count() << " ms" << std::endl;
+  std::cout << "E: " << duration_cast<milliseconds>(high_resolution_clock::now() - starte).count() << " ms"
+            << std::endl;
 
   // Keep going (never disconnect the timer)
   return true;
