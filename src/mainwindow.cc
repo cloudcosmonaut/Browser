@@ -78,8 +78,8 @@ MainWindow::MainWindow(const std::string& timeout)
       ipfsHost_("localhost"),
       ipfsPort_(5001),
       ipfsTimeout_(timeout),
-      ipfs_(ipfsHost_, ipfsPort_, ipfsTimeout_),
-      ipfs_thread_(ipfsHost_, ipfsPort_, ipfsTimeout_)
+      ipfs_status_(ipfsHost_, ipfsPort_, ipfsTimeout_),
+      ipfs_fetch_(ipfsHost_, ipfsPort_, ipfsTimeout_)
 {
   set_title(appName_);
   set_default_size(1000, 800);
@@ -350,41 +350,28 @@ std::size_t MainWindow::loadStatusIcon()
   // TODO: cURL commands are taking quite some time under Windows.
   // This method needs to also run inside a seperate thread (let's see if we need to change this method calls, to have
   // one function that runs inside a seperate thread)
-  std::size_t nrPeers = ipfs_.getNrPeers();
-  try
+  std::size_t nrPeers = ipfs_status_.getNrPeers();
+  if (nrPeers > 0)
   {
-    if (nrPeers > 0)
+    if (useCurrentGTKIconTheme_)
     {
-      if (useCurrentGTKIconTheme_)
-      {
-        m_statusIcon.set_from_icon_name("network-wired-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-      }
-      else
-      {
-        m_statusIcon.set(m_statusOnlineIcon);
-      }
+      m_statusIcon.set_from_icon_name("network-wired-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
     }
     else
     {
-      if (useCurrentGTKIconTheme_)
-      {
-        m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-      }
-      else
-      {
-        m_statusIcon.set(m_statusOfflineIcon);
-      }
+      m_statusIcon.set(m_statusOnlineIcon);
     }
   }
-  catch (const Glib::FileError& error)
+  else
   {
-    std::cerr << "ERROR: Status icon could not be loaded, file error: " << error.what() << ".\nContinue nevertheless..."
-              << std::endl;
-  }
-  catch (const Gdk::PixbufError& error)
-  {
-    std::cerr << "ERROR: Status icon could not be loaded, pixbuf error: " << error.what()
-              << ".\nContinue nevertheless..." << std::endl;
+    if (useCurrentGTKIconTheme_)
+    {
+      m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+    }
+    else
+    {
+      m_statusIcon.set(m_statusOfflineIcon);
+    }
   }
   return nrPeers;
 }
@@ -979,11 +966,11 @@ bool MainWindow::update_connection_status()
   //   And make all the GTK calls thread-safe (like signal_idle() functions for instance)
 
   if (this->ipfsClientID_.empty())
-    this->ipfsClientID_ = ipfs_.getClientID();
+    this->ipfsClientID_ = ipfs_status_.getClientID();
   if (this->ipfsClientPublicKey_.empty())
-    this->ipfsClientPublicKey_ = ipfs_.getClientPublicKey();
+    this->ipfsClientPublicKey_ = ipfs_status_.getClientPublicKey();
   if (this->ipfsVersion_.empty())
-    this->ipfsVersion_ = ipfs_.getVersion();
+    this->ipfsVersion_ = ipfs_status_.getVersion();
   this->ipfsNumberOfPeers_ = this->loadStatusIcon();
   if (this->ipfsNumberOfPeers_ > 0)
   {
@@ -992,11 +979,11 @@ bool MainWindow::update_connection_status()
       this->refresh();
 
     this->ipfsNetworkStatus_ = "Connected";
-    std::map<std::string, std::variant<int, std::string>> repoStats = ipfs_.getRepoStats();
+    std::map<std::string, std::variant<int, std::string>> repoStats = ipfs_status_.getRepoStats();
     this->ipfsRepoSize_ = std::get<int>(repoStats.at("total_size"));
     this->ipfsRepoPath_ = std::get<std::string>(repoStats.at("path"));
 
-    std::map<std::string, float> rates = ipfs_.getBandwidthRates();
+    std::map<std::string, float> rates = ipfs_status_.getBandwidthRates();
     char buf[32];
     this->ipfsIncomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("in") / 1000.0));
     this->ipfsOutcomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("out") / 1000.0));
@@ -1475,7 +1462,7 @@ void MainWindow::publish()
     try
     {
       // Add content to IPFS!
-      std::string cid = ipfs_.add(path, this->currentContent_);
+      std::string cid = ipfs_status_.add(path, this->currentContent_);
       if (cid.empty())
       {
         throw std::runtime_error("CID hash is empty.");
@@ -1549,11 +1536,11 @@ void MainWindow::abortRequest()
     {
       // Trigger the thread to stop now.
       // We call the abort method of the IPFS client.
-      ipfs_thread_.abort();
+      ipfs_fetch_.abort();
       keep_request_thread_running_ = false;
       requestThread_->join();
       // Reset states, allowing new threads with new API requests/calls
-      ipfs_thread_.reset();
+      ipfs_fetch_.reset();
       keep_request_thread_running_ = true;
     }
     delete requestThread_;
@@ -1965,7 +1952,7 @@ void MainWindow::fetchFromIPFS(bool isParseContent)
     // TODO: Check file contents (first bytes?), to guess the file type.
     // only proceed further file is UTF-8 unicode text (avoid images etc.).
     std::stringstream contents;
-    ipfs_thread_.fetch(finalRequestPath_, &contents);
+    ipfs_fetch_.fetch(finalRequestPath_, &contents);
     // Skip the str() function since we want to stop the thread, this will only take extra time.
     // Don't bother to update the GTK window.
     if (keep_request_thread_running_)

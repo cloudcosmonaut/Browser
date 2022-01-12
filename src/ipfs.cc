@@ -15,7 +15,7 @@ IPFS::IPFS(const std::string& host, int port, const std::string& timeout)
 }
 
 /**
- * \brief Get the number of IPFS peers
+ * \brief Get the number of IPFS peers. Does not throw errors.
  * \return number of peers
  */
 std::size_t IPFS::getNrPeers()
@@ -34,7 +34,7 @@ std::size_t IPFS::getNrPeers()
 }
 
 /**
- * \brief Retrieve your IPFS client ID
+ * \brief Retrieve your IPFS client ID. Does not throw errors.
  * \return ID
  */
 std::string const IPFS::getClientID()
@@ -53,7 +53,7 @@ std::string const IPFS::getClientID()
 }
 
 /**
- * \brief Retrieve your IPFS Public Key
+ * \brief Retrieve your IPFS Public Key. Does not throw errors.
  * \return Public Key
  */
 std::string const IPFS::getClientPublicKey()
@@ -72,7 +72,7 @@ std::string const IPFS::getClientPublicKey()
 }
 
 /**
- * \brief Retrieve the Go IPFS daemon version
+ * \brief Retrieve the Go IPFS daemon version. Does not throw errors.
  * \return Public Key
  */
 std::string const IPFS::getVersion()
@@ -91,7 +91,7 @@ std::string const IPFS::getVersion()
 }
 
 /**
- * \brief Get the number of IPFS peers
+ * \brief Get the number of IPFS peers. Does not throw errors.
  * \return Map with bandwidth information (with keys: 'in' and 'out')
  */
 std::map<std::string, float> IPFS::getBandwidthRates()
@@ -114,7 +114,7 @@ std::map<std::string, float> IPFS::getBandwidthRates()
 }
 
 /**
- * \brief Get the stats of the current Repo
+ * \brief Get the stats of the current Repo. Does not throw errors.
  * \return Map with repo stats (with keys: 'total_size' and 'path')
  */
 std::map<std::string, std::variant<int, std::string>> IPFS::getRepoStats()

@@ -288,8 +288,8 @@ private:
   std::string ipfsHost_;    /* IPFS host name */
   int ipfsPort_;            /* IPFS port number */
   std::string ipfsTimeout_; /* IPFS time-out setting */
-  IPFS ipfs_;               /* IPFS object for main thread */
-  IPFS ipfs_thread_;        /* IPFS object for request thread, so it doesn't conflict with the main thread calls */
+  IPFS ipfs_status_;        /* IPFS object for status info */
+  IPFS ipfs_fetch_;         /* IPFS object for requests, so it doesn't conflict with status requests */
 
   void loadStoredSettings();
   void loadIcons();
