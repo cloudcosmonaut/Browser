@@ -22,9 +22,6 @@
 #include <sstream>
 #include <whereami.h>
 
-#include <chrono>            // Only used for measuring time now
-using namespace std::chrono; // Only used for measuring time now
-
 MainWindow::MainWindow(const std::string& timeout)
     : m_accelGroup(Gtk::AccelGroup::create()),
       m_settings(),
@@ -160,7 +157,7 @@ MainWindow::MainWindow(const std::string& timeout)
 
   // First time manually trigger the status update once,
   // timer will do the updates later
-  // TODO: Fix under Windows. It causes hang.
+  // TODO: Fix under Windows. It causes hang. We need call this function inside a seperate std::thread
   this->update_connection_status();
 
 // Show homepage if debugging is disabled
@@ -350,11 +347,10 @@ void MainWindow::loadIcons()
  */
 std::size_t MainWindow::loadStatusIcon()
 {
-  // TODO: This call is causing hangs under Windows at the moment (blocking call? too high time-outs)
-  auto startd1 = high_resolution_clock::now();
+  // TODO: cURL commands are taking quite some time under Windows.
+  // This method needs to also run inside a seperate thread (let's see if we need to change this method calls, to have
+  // one function that runs inside a seperate thread)
   std::size_t nrPeers = ipfs_.getNrPeers();
-  std::cout << "D1: " << duration_cast<milliseconds>(high_resolution_clock::now() - startd1).count() << " ms"
-            << std::endl;
   try
   {
     if (nrPeers > 0)
@@ -978,28 +974,17 @@ bool MainWindow::update_connection_status()
 {
 
   // Try to set the client ID & Public key and version
-  // TODO: ipfs.getClientID() can also be the first cause.. and ipfs.getClientPublicKey() .. next
-  // why the performance are bad under Windows.
+  // TODO: All calls will take about 2 seconds under Windows,
+  //   so we need to wrap this inside a thread again.
+  //   And make all the GTK calls thread-safe (like signal_idle() functions for instance)
 
-  auto starta = high_resolution_clock::now();
   if (this->ipfsClientID_.empty())
     this->ipfsClientID_ = ipfs_.getClientID();
-  std::cout << "A: " << duration_cast<milliseconds>(high_resolution_clock::now() - starta).count() << " ms"
-            << std::endl;
-  auto startb = high_resolution_clock::now();
   if (this->ipfsClientPublicKey_.empty())
     this->ipfsClientPublicKey_ = ipfs_.getClientPublicKey();
-  std::cout << "B: " << duration_cast<milliseconds>(high_resolution_clock::now() - startb).count() << " ms"
-            << std::endl;
-  auto startc = high_resolution_clock::now();
   if (this->ipfsVersion_.empty())
     this->ipfsVersion_ = ipfs_.getVersion();
-  std::cout << "C: " << duration_cast<milliseconds>(high_resolution_clock::now() - startc).count() << " ms"
-            << std::endl;
-  auto startd = high_resolution_clock::now();
   this->ipfsNumberOfPeers_ = this->loadStatusIcon();
-  std::cout << "D: " << duration_cast<milliseconds>(high_resolution_clock::now() - startd).count() << " ms"
-            << std::endl;
   if (this->ipfsNumberOfPeers_ > 0)
   {
     // Auto-refresh page if needed (when 'Please wait' page is shown)
@@ -1026,10 +1011,7 @@ bool MainWindow::update_connection_status()
   }
 
   // Trigger update of all status fields
-  auto starte = high_resolution_clock::now();
   this->updateStatusPopover();
-  std::cout << "E: " << duration_cast<milliseconds>(high_resolution_clock::now() - starte).count() << " ms"
-            << std::endl;
 
   // Keep going (never disconnect the timer)
   return true;

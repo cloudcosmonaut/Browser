@@ -39,8 +39,14 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
 
-  // By default start the IPFS Daemon
-  if (!group.disableIPFSDaemon)
+  // The default is to start the IPFS Daemon
+  if (group.disableIPFSDaemon)
+  {
+    std::cout << "WARN: You disabled the IPFS Daemon from starting-up "
+                 "(you are using: -d/--disable-ipfs-daemon)."
+              << std::endl;
+  }
+  else
   {
     IPFSDaemon ipfsDaemon;
     ipfsDaemon.spawn();
