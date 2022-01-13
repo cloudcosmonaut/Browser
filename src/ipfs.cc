@@ -16,78 +16,46 @@ IPFS::IPFS(const std::string& host, int port, const std::string& timeout)
 
 /**
  * \brief Get the number of IPFS peers. Does not throw errors.
- * \return number of peers
+ * \return number of peers as size_t
  */
 std::size_t IPFS::getNrPeers()
 {
-  try
-  {
-    ipfs::Json peers;
-    client.SwarmPeers(&peers);
-    return peers["Peers"].size();
-  }
-  catch (const std::runtime_error& error)
-  {
-    // ignore connection issues
-  }
-  return 0;
+  ipfs::Json peers;
+  client.SwarmPeers(&peers);
+  return peers["Peers"].size();
 }
 
 /**
  * \brief Retrieve your IPFS client ID. Does not throw errors.
- * \return ID
+ * \return ID as string
  */
 std::string const IPFS::getClientID()
 {
-  try
-  {
-    ipfs::Json id;
-    client.Id(&id);
-    return id["ID"];
-  }
-  catch (const std::runtime_error& error)
-  {
-    // ignore connection issues
-  }
-  return "";
+  ipfs::Json id;
+  client.Id(&id);
+  return id["ID"];
 }
 
 /**
  * \brief Retrieve your IPFS Public Key. Does not throw errors.
- * \return Public Key
+ * \return Public key string
  */
 std::string const IPFS::getClientPublicKey()
 {
-  try
-  {
-    ipfs::Json id;
-    client.Id(&id);
-    return id["PublicKey"];
-  }
-  catch (const std::runtime_error& error)
-  {
-    // ignore connection issues
-  }
-  return "";
+  ipfs::Json id;
+  client.Id(&id);
+  return id["PublicKey"];
 }
 
 /**
  * \brief Retrieve the Go IPFS daemon version. Does not throw errors.
- * \return Public Key
+ * \return Version string
  */
 std::string const IPFS::getVersion()
 {
-  try
-  {
-    ipfs::Json version;
-    client.Version(&version);
-    return version["Version"];
-  }
-  catch (const std::runtime_error& error)
-  {
-    // ignore connection issues
-  }
-  return "";
+  ipfs::Json version;
+  client.Version(&version);
+  return version["Version"];
 }
 
 /**
@@ -97,19 +65,12 @@ std::string const IPFS::getVersion()
 std::map<std::string, float> IPFS::getBandwidthRates()
 {
   std::map<std::string, float> bandwidthRates;
-  try
-  {
-    ipfs::Json bandwidth_info;
-    client.StatsBw(&bandwidth_info);
-    float in = bandwidth_info["RateIn"];
-    float out = bandwidth_info["RateOut"];
-    bandwidthRates.insert(std::pair<std::string, float>("in", in));
-    bandwidthRates.insert(std::pair<std::string, float>("out", out));
-  }
-  catch (const std::runtime_error& error)
-  {
-    // ignore connection issues
-  }
+  ipfs::Json bandwidth_info;
+  client.StatsBw(&bandwidth_info);
+  float in = bandwidth_info["RateIn"];
+  float out = bandwidth_info["RateOut"];
+  bandwidthRates.insert(std::pair<std::string, float>("in", in));
+  bandwidthRates.insert(std::pair<std::string, float>("out", out));
   return bandwidthRates;
 }
 
@@ -120,19 +81,12 @@ std::map<std::string, float> IPFS::getBandwidthRates()
 std::map<std::string, std::variant<int, std::string>> IPFS::getRepoStats()
 {
   std::map<std::string, std::variant<int, std::string>> repoStats;
-  try
-  {
-    ipfs::Json repo_stats;
-    client.StatsRepo(&repo_stats);
-    int repoSize = (int)repo_stats["RepoSize"] / 1000000; // Convert from bytes to MB
-    std::string repoPath = repo_stats["RepoPath"];
-    repoStats.insert(std::pair<std::string, int>("total_size", repoSize));
-    repoStats.insert(std::pair<std::string, std::string>("path", repoPath));
-  }
-  catch (const std::runtime_error& error)
-  {
-    // ignore connection issues
-  }
+  ipfs::Json repo_stats;
+  client.StatsRepo(&repo_stats);
+  int repoSize = (int)repo_stats["RepoSize"] / 1000000; // Convert from bytes to MB
+  std::string repoPath = repo_stats["RepoPath"];
+  repoStats.insert(std::pair<std::string, int>("total_size", repoSize));
+  repoStats.insert(std::pair<std::string, std::string>("path", repoPath));
   return repoStats;
 }
 
@@ -149,8 +103,8 @@ void IPFS::fetch(const std::string& path, std::iostream* contents)
 }
 
 /**
- * \brief Add a file to IPFS network (not thread-safe)
- * \param path File path where the file could be stored in IPFS (like puting a file inside a directory within IPFS)
+ * \brief Add a file to IPFS network
+ * \param path File path where the file could be stored in IPFS (like putting a file inside a directory within IPFS)
  * \param content Content that needs to be written to the IPFS network
  * \throw std::runtime_error when there is a connection-time/something goes wrong while adding the file
  * \return IPFS content-addressed identifier (CID) hash

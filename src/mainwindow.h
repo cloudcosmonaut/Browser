@@ -34,6 +34,7 @@
 #include <gtkmm/switch.h>
 #include <gtkmm/togglebutton.h>
 #include <gtkmm/window.h>
+#include <mutex>
 #include <thread>
 
 /**
@@ -55,7 +56,7 @@ public:
 protected:
   // Signal handlers
   bool delete_window(GdkEventAny* any_event);
-  bool update_connection_status();
+  bool on_update_connection_status();
   void cut();
   void copy();
   void paste();
@@ -254,12 +255,10 @@ protected:
   Gtk::Separator m_separator10;
 
 private:
-  std::thread* requestThread_;                    /* Request thread pointer */
-  std::atomic<bool> is_request_thread_done_;      /* Indication when the single request is done */
-  std::atomic<bool> keep_request_thread_running_; /* Trigger the thread to stop/continue */
+  // Generic:
   std::string appName_;
-  std::string iconTheme_;
   bool useCurrentGTKIconTheme_;
+  std::string iconTheme_;
   int iconSize_;
   std::string fontFamily_;
   int defaultFontSize_;
@@ -276,6 +275,20 @@ private:
   sigc::connection textChangedSignalHandler_;
   sigc::connection statusTimerHandler_;
   bool waitPageVisible_;
+
+  // Threading:
+  std::thread* requestThread_;                    /* Request thread pointer */
+  std::thread* statusThread_;                     /* Status thread pointer */
+  std::atomic<bool> is_request_thread_done_;      /* Indication when the single request (fetch) is done */
+  std::atomic<bool> keep_request_thread_running_; /* Trigger the request thread to stop/continue */
+  std::atomic<bool> is_status_thread_done_;       /* Indication when the status calls are done */
+
+  // IPFS related:
+  std::string ipfsHost_;    /* IPFS host name */
+  int ipfsPort_;            /* IPFS port number */
+  std::string ipfsTimeout_; /* IPFS time-out setting */
+  IPFS ipfs_fetch_;         /* IPFS object for fetch calls */
+  IPFS ipfs_status_;        /* IPFS object for status calls, so it doesn't conflict with the fetch request */
   std::string ipfsNetworkStatus_;
   std::size_t ipfsNumberOfPeers_;
   int ipfsRepoSize_;
@@ -285,30 +298,27 @@ private:
   std::string ipfsVersion_;
   std::string ipfsClientID_;
   std::string ipfsClientPublicKey_;
-  std::string ipfsHost_;    /* IPFS host name */
-  int ipfsPort_;            /* IPFS port number */
-  std::string ipfsTimeout_; /* IPFS time-out setting */
-  IPFS ipfs_status_;        /* IPFS object for status info */
-  IPFS ipfs_fetch_;         /* IPFS object for requests, so it doesn't conflict with status requests */
+  std::mutex status_mutex_; /* IPFS status mutex to protect class members */
 
   void loadStoredSettings();
   void loadIcons();
-  std::size_t loadStatusIcon();
   void initButtons();
   void setTheme();
   void initStatusPopover();
   void initSettingsPopover();
-  void updateStatusPopover();
+  void updateStatusPopoverAndIcon();
   void initSignals();
   bool isInstalled();
   void enableEdit();
   void disableEdit();
   bool isEditorEnabled();
-  void abortRequest();
   void postDoRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor);
+  void abortRequest();
+  void abortStatus();
   void processRequest(const std::string& path, bool isParseContent);
   void fetchFromIPFS(bool isParseContent);
   void openFromDisk(bool isParseContent);
+  void processStatus();
   std::string getIconImageFromTheme(const std::string& iconName, const std::string& typeofIcon);
   void updateCSS();
   void showNotification(const Glib::ustring& title, const Glib::ustring& message = "");

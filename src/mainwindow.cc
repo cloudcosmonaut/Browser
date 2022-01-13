@@ -55,12 +55,10 @@ MainWindow::MainWindow(const std::string& timeout)
       m_indentLabel("Indent"),
       m_themeLabel("Dark Theme"),
       m_iconThemeLabel("Active Theme"),
-      requestThread_(nullptr),
-      is_request_thread_done_(false),
-      keep_request_thread_running_(true),
+      // Generic:
       appName_("LibreWeb Browser"),
-      iconTheme_("flat"),             // default is flat theme
-      useCurrentGTKIconTheme_(false), // Use our built-in icon theme or the GTK icons
+      useCurrentGTKIconTheme_(false), // Use LibreWeb icon theme or the GTK icons
+      iconTheme_("flat"),             // Default is flat built-in theme
       iconSize_(18),
       fontFamily_("Sans"),
       defaultFontSize_(10),
@@ -70,16 +68,23 @@ MainWindow::MainWindow(const std::string& timeout)
       useDarkTheme_(false),
       currentHistoryIndex_(0),
       waitPageVisible_(false),
+      // Threading:
+      requestThread_(nullptr),
+      statusThread_(nullptr),
+      is_request_thread_done_(false),
+      keep_request_thread_running_(true),
+      is_status_thread_done_(false),
+      // IPFS related:
+      ipfsHost_("localhost"),
+      ipfsPort_(5001),
+      ipfsTimeout_(timeout),
+      ipfs_fetch_(ipfsHost_, ipfsPort_, ipfsTimeout_),
+      ipfs_status_(ipfsHost_, ipfsPort_, ipfsTimeout_),
       ipfsNetworkStatus_("Disconnected"),
       ipfsNumberOfPeers_(0),
       ipfsRepoSize_(0),
       ipfsIncomingRate_("0.0"),
-      ipfsOutcomingRate_("0.0"),
-      ipfsHost_("localhost"),
-      ipfsPort_(5001),
-      ipfsTimeout_(timeout),
-      ipfs_status_(ipfsHost_, ipfsPort_, ipfsTimeout_),
-      ipfs_fetch_(ipfsHost_, ipfsPort_, ipfsTimeout_)
+      ipfsOutcomingRate_("0.0")
 {
   set_title(appName_);
   set_default_size(1000, 800);
@@ -155,10 +160,9 @@ MainWindow::MainWindow(const std::string& timeout)
   // Grap focus to input field by default
   m_addressBar.grab_focus();
 
-  // First time manually trigger the status update once,
-  // timer will do the updates later
-  // TODO: Fix under Windows. It causes hang. We need call this function inside a seperate std::thread
-  this->update_connection_status();
+  // Trigger status update once manually,
+  // timer will automatically update status later.
+  on_update_connection_status();
 
 // Show homepage if debugging is disabled
 #ifdef NDEBUG
@@ -175,7 +179,9 @@ MainWindow::MainWindow(const std::string& timeout)
  */
 MainWindow::~MainWindow()
 {
-  this->abortRequest();
+  statusTimerHandler_.disconnect();
+  abortRequest();
+  abortStatus();
 }
 
 /**
@@ -337,43 +343,6 @@ void MainWindow::loadIcons()
     std::cerr << "ERROR: Icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless..."
               << std::endl;
   }
-}
-
-/**
- * Dedicated function for loading the status icon in the toolbar.
- * Because it will require some additional logic. It also returns the number of IPFS peers connected to.
- *
- * @return Number of IPFS peers
- */
-std::size_t MainWindow::loadStatusIcon()
-{
-  // TODO: cURL commands are taking quite some time under Windows.
-  // This method needs to also run inside a seperate thread (let's see if we need to change this method calls, to have
-  // one function that runs inside a seperate thread)
-  std::size_t nrPeers = ipfs_status_.getNrPeers();
-  if (nrPeers > 0)
-  {
-    if (useCurrentGTKIconTheme_)
-    {
-      m_statusIcon.set_from_icon_name("network-wired-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-    }
-    else
-    {
-      m_statusIcon.set(m_statusOnlineIcon);
-    }
-  }
-  else
-  {
-    if (useCurrentGTKIconTheme_)
-    {
-      m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-    }
-    else
-    {
-      m_statusIcon.set(m_statusOfflineIcon);
-    }
-  }
-  return nrPeers;
 }
 
 /**
@@ -673,8 +642,8 @@ void MainWindow::initStatusPopover()
   m_statusPopover.add(m_vboxStatus);
   m_statusPopover.show_all_children();
 
-  // Set fallback values for all status fields
-  this->updateStatusPopover();
+  // Set fallback values for all status fields + status icon
+  this->updateStatusPopoverAndIcon();
 }
 
 /**
@@ -810,9 +779,9 @@ void MainWindow::initSettingsPopover()
 }
 
 /**
- * \brief Update all status fields in status pop-over menu
+ * \brief Update all status fields in status pop-over menu + status icon
  */
-void MainWindow::updateStatusPopover()
+void MainWindow::updateStatusPopoverAndIcon()
 {
   m_connectivityStatusLabel.set_markup("<b>" + ipfsNetworkStatus_ + "</b>");
   m_peersStatusLabel.set_text(std::to_string(ipfsNumberOfPeers_));
@@ -821,6 +790,29 @@ void MainWindow::updateStatusPopover()
   m_ipfsVersionStatusLabel.set_text(ipfsVersion_);
   m_networkIncomingStatusLabel.set_text(ipfsIncomingRate_);
   m_networkOutcomingStatusLabel.set_text(ipfsOutcomingRate_);
+  // Update status icon
+  if (ipfsNumberOfPeers_ > 0)
+  {
+    if (useCurrentGTKIconTheme_)
+    {
+      m_statusIcon.set_from_icon_name("network-wired-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+    }
+    else
+    {
+      m_statusIcon.set(m_statusOnlineIcon);
+    }
+  }
+  else
+  {
+    if (useCurrentGTKIconTheme_)
+    {
+      m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+    }
+    else
+    {
+      m_statusIcon.set(m_statusOfflineIcon);
+    }
+  }
 }
 
 /**
@@ -828,10 +820,9 @@ void MainWindow::updateStatusPopover()
  */
 void MainWindow::initSignals()
 {
-  // Timeouts
-  // TODO: Fix under Windows. It causes hang.
-  // this->statusTimerHandler_ = Glib::signal_timeout().connect(sigc::mem_fun(this,
-  // &MainWindow::update_connection_status), 3000);
+  // Create a timer, triggers every 4 seconds
+  statusTimerHandler_ =
+      Glib::signal_timeout().connect_seconds(sigc::mem_fun(this, &MainWindow::on_update_connection_status), 4);
 
   // Window signals
   this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::delete_window));
@@ -955,51 +946,19 @@ bool MainWindow::delete_window(GdkEventAny* any_event __attribute__((unused)))
 }
 
 /**
- * \brief Timeout slot: Update the IPFS connection status every x seconds
+ * \brief Timeout slot: Update the IPFS connection status every x seconds.
+ * Process requests inside a seperate thread, to avoid blocking the GUI thread.
+ * \return always true, when running as a GTK timeout handler
  */
-bool MainWindow::update_connection_status()
+bool MainWindow::on_update_connection_status()
 {
+  // Stop any on-going status calls first, if applicable
+  abortStatus();
 
-  // Try to set the client ID & Public key and version
-  // TODO: All calls will take about 2 seconds under Windows,
-  //   so we need to wrap this inside a thread again.
-  //   And make all the GTK calls thread-safe (like signal_idle() functions for instance)
-
-  if (this->ipfsClientID_.empty())
-    this->ipfsClientID_ = ipfs_status_.getClientID();
-  if (this->ipfsClientPublicKey_.empty())
-    this->ipfsClientPublicKey_ = ipfs_status_.getClientPublicKey();
-  if (this->ipfsVersion_.empty())
-    this->ipfsVersion_ = ipfs_status_.getVersion();
-  this->ipfsNumberOfPeers_ = this->loadStatusIcon();
-  if (this->ipfsNumberOfPeers_ > 0)
+  if (statusThread_ == nullptr)
   {
-    // Auto-refresh page if needed (when 'Please wait' page is shown)
-    if (this->waitPageVisible_)
-      this->refresh();
-
-    this->ipfsNetworkStatus_ = "Connected";
-    std::map<std::string, std::variant<int, std::string>> repoStats = ipfs_status_.getRepoStats();
-    this->ipfsRepoSize_ = std::get<int>(repoStats.at("total_size"));
-    this->ipfsRepoPath_ = std::get<std::string>(repoStats.at("path"));
-
-    std::map<std::string, float> rates = ipfs_status_.getBandwidthRates();
-    char buf[32];
-    this->ipfsIncomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("in") / 1000.0));
-    this->ipfsOutcomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("out") / 1000.0));
+    statusThread_ = new std::thread(&MainWindow::processStatus, this);
   }
-  else
-  {
-    this->ipfsNetworkStatus_ = "Disconnected";
-    this->ipfsRepoSize_ = 0;
-    this->ipfsRepoPath_ = "";
-    this->ipfsIncomingRate_ = "0.0";
-    this->ipfsOutcomingRate_ = "0.0";
-  }
-
-  // Trigger update of all status fields
-  this->updateStatusPopover();
-
   // Keep going (never disconnect the timer)
   return true;
 }
@@ -1457,8 +1416,9 @@ void MainWindow::publish()
       // TODO: path is not defined yet. however, this may change anyway once we try to build more complex
       // websites, needing to use directory structures.
     }
-    // TODO:  should we run this within a seperate thread? Looks fine until now without threading.
 
+    // TODO: We should run this within a seperate thread, to avoid blocking the main thread.
+    // Also for example, when suddently the IPFS daemon is down.
     try
     {
       // Add content to IPFS!
@@ -1508,8 +1468,8 @@ void MainWindow::publish()
 void MainWindow::doRequest(
     const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor, bool isParseContent)
 {
-  // Stop any request first, if applicable
-  this->abortRequest();
+  // Stop any on-going request first, if applicable
+  abortRequest();
 
   if (requestThread_ == nullptr)
   {
@@ -1517,35 +1477,7 @@ void MainWindow::doRequest(
     m_refreshIcon.get_style_context()->add_class("spinning");
     // Start thread
     requestThread_ = new std::thread(&MainWindow::processRequest, this, path, isParseContent);
-    this->postDoRequest(path, isSetAddressBar, isHistoryRequest, isDisableEditor);
-  }
-}
-
-/**
- * Abort request and stop the thread, if applicable.
- */
-void MainWindow::abortRequest()
-{
-  if (requestThread_ && requestThread_->joinable())
-  {
-    if (is_request_thread_done_)
-    {
-      requestThread_->join();
-    }
-    else
-    {
-      // Trigger the thread to stop now.
-      // We call the abort method of the IPFS client.
-      ipfs_fetch_.abort();
-      keep_request_thread_running_ = false;
-      requestThread_->join();
-      // Reset states, allowing new threads with new API requests/calls
-      ipfs_fetch_.reset();
-      keep_request_thread_running_ = true;
-    }
-    delete requestThread_;
-    requestThread_ = nullptr;
-    is_request_thread_done_ = false; // reset
+    postDoRequest(path, isSetAddressBar, isHistoryRequest, isDisableEditor);
   }
 }
 
@@ -1587,6 +1519,60 @@ void MainWindow::postDoRequest(const std::string& path,
   m_menu.setBackMenuSensitive(currentHistoryIndex_ > 0);
   m_forwardButton.set_sensitive(currentHistoryIndex_ < history_.size() - 1);
   m_menu.setForwardMenuSensitive(currentHistoryIndex_ < history_.size() - 1);
+}
+
+/**
+ * Abort request call and stop the thread, if applicable.
+ */
+void MainWindow::abortRequest()
+{
+  if (requestThread_ && requestThread_->joinable())
+  {
+    if (is_request_thread_done_)
+    {
+      requestThread_->join();
+    }
+    else
+    {
+      // Trigger the thread to stop now.
+      // We call the abort method of the IPFS client.
+      ipfs_fetch_.abort();
+      keep_request_thread_running_ = false;
+      requestThread_->join();
+      // Reset states, allowing new threads with new API requests/calls
+      ipfs_fetch_.reset();
+      keep_request_thread_running_ = true;
+    }
+    delete requestThread_;
+    requestThread_ = nullptr;
+    is_request_thread_done_ = false; // reset
+  }
+}
+
+/**
+ * Abort status calls and stop the thread, if applicable.
+ */
+void MainWindow::abortStatus()
+{
+  if (statusThread_ && statusThread_->joinable())
+  {
+    if (is_status_thread_done_)
+    {
+      statusThread_->join();
+    }
+    else
+    {
+      // Trigger the thread to stop now.
+      // We call the abort method of the IPFS client.
+      ipfs_status_.abort();
+      statusThread_->join();
+      // Reset states, allowing new threads with new API status calls
+      ipfs_status_.reset();
+    }
+    delete statusThread_;
+    statusThread_ = nullptr;
+    is_status_thread_done_ = false; // reset
+  }
 }
 
 /**
@@ -1953,62 +1939,64 @@ void MainWindow::fetchFromIPFS(bool isParseContent)
     // only proceed further file is UTF-8 unicode text (avoid images etc.).
     std::stringstream contents;
     ipfs_fetch_.fetch(finalRequestPath_, &contents);
-    // Skip the str() function since we want to stop the thread, this will only take extra time.
-    // Don't bother to update the GTK window.
-    if (keep_request_thread_running_)
+    this->currentContent_ = contents.str();
+    if (isParseContent)
     {
-      this->currentContent_ = contents.str();
-      if (isParseContent)
-      {
-        cmark_node* doc = Parser::parseContent(this->currentContent_);
-        m_draw_main.processDocument(doc);
-        cmark_node_free(doc);
-      }
-      else
-      {
-        // Directly display the plain markdown content
-        m_draw_main.setText(this->currentContent_);
-      }
+      // TODO: Maybe we want to abort the parser when keep_request_thread_running_ = false,
+      // depending time the parser is taking?
+      cmark_node* doc = Parser::parseContent(this->currentContent_);
+      m_draw_main.processDocument(doc);
+      cmark_node_free(doc);
+    }
+    else
+    {
+      // Directly display the plain markdown content
+      m_draw_main.setText(this->currentContent_);
     }
   }
   catch (const std::runtime_error& error)
   {
     std::string errorMessage = std::string(error.what());
-    std::cerr << "ERROR: IPFS request failed, with message: " << errorMessage << std::endl;
-    if (errorMessage.starts_with("HTTP request failed with status code"))
+    // Ignore error reporting when the request was aborted
+    if (errorMessage != "Request was aborted")
     {
-      std::string message;
-      // Remove text until ':\n'
-      errorMessage.erase(0, errorMessage.find(':') + 2);
-      if (!errorMessage.empty() && errorMessage != "")
+      std::cerr << "ERROR: IPFS request failed, with message: " << errorMessage << std::endl;
+      if (errorMessage.starts_with("HTTP request failed with status code"))
       {
-        try
+        std::string message;
+        // Remove text until ':\n'
+        errorMessage.erase(0, errorMessage.find(':') + 2);
+        if (!errorMessage.empty() && errorMessage != "")
         {
-          auto content = nlohmann::json::parse(errorMessage);
-          message = "Message: " + content.value("Message", "");
-          if (message.starts_with("context deadline exceeded"))
+          try
           {
-            message += ". Time-out is set to: " + this->ipfsTimeout_;
+            auto content = nlohmann::json::parse(errorMessage);
+            message = "Message: " + content.value("Message", "");
+            if (message.starts_with("context deadline exceeded"))
+            {
+              message += ". Time-out is set to: " + this->ipfsTimeout_;
+            }
+            message += ".\n\n";
           }
-          message += ".\n\n";
+          catch (const nlohmann::json::parse_error& parseError)
+          {
+            std::cerr << "ERROR: Could not parse at byte: " << parseError.byte << std::endl;
+          }
         }
-        catch (const nlohmann::json::parse_error& parseError)
-        {
-          std::cerr << "ERROR: Could not parse at byte: " << parseError.byte << std::endl;
-        }
+        m_draw_main.showMessage("🎂 We're having trouble finding this site.",
+                                message +
+                                    "You could try to reload the page or try increase the time-out (see --help).");
       }
-      m_draw_main.showMessage("🎂 We're having trouble finding this site.",
-                              message + "You could try to reload the page or try increase the time-out (see --help).");
-    }
-    else if (errorMessage.starts_with("Couldn't connect to server: Failed to connect to localhost"))
-    {
-      m_draw_main.showMessage("⌛ Please wait...",
-                              "IPFS daemon is still spinnng-up, page will automatically refresh...");
-      waitPageVisible_ = true; // Please wait page is shown (auto-refresh when network is up)
-    }
-    else
-    {
-      m_draw_main.showMessage("❌ Something went wrong", "Error message: " + std::string(error.what()));
+      else if (errorMessage.starts_with("Couldn't connect to server: Failed to connect to localhost"))
+      {
+        m_draw_main.showMessage("⌛ Please wait...",
+                                "IPFS daemon is still spinnng-up, page will automatically refresh...");
+        waitPageVisible_ = true; // Please wait page is shown (auto-refresh when network is up)
+      }
+      else
+      {
+        m_draw_main.showMessage("❌ Something went wrong", "Error message: " + std::string(error.what()));
+      }
     }
   }
   // Stop spinning
@@ -2025,7 +2013,7 @@ void MainWindow::openFromDisk(bool isParseContent)
 {
   try
   {
-    // TODO: Abort file read, if keep_request_thread_running_ = false
+    // Abort file read if keep_request_thread_running_ = false and throw runtime error, to stop futher execution
     // eg. when you are reading a very big file from disk.
     this->currentContent_ = File::read(finalRequestPath_);
     // If the thread stops, don't brother to parse the file/update the GTK window
@@ -2058,6 +2046,68 @@ void MainWindow::openFromDisk(bool isParseContent)
   }
   // Stop spinning
   m_refreshIcon.get_style_context()->remove_class("spinning");
+}
+
+/**
+ * Process the IPFS status calls.
+ * Runs inside a thread.
+ */
+void MainWindow::processStatus()
+{
+  std::lock_guard<std::mutex> guard(status_mutex_);
+  try
+  {
+    this->ipfsNumberOfPeers_ = ipfs_status_.getNrPeers();
+    if (this->ipfsNumberOfPeers_ > 0)
+    {
+      // Auto-refresh page if needed (when 'Please wait' page was shown)
+      // if (this->waitPageVisible_)
+      //  this->refresh();
+
+      this->ipfsNetworkStatus_ = "Connected";
+      std::map<std::string, std::variant<int, std::string>> repoStats = ipfs_status_.getRepoStats();
+      this->ipfsRepoSize_ = std::get<int>(repoStats.at("total_size"));
+      this->ipfsRepoPath_ = std::get<std::string>(repoStats.at("path"));
+
+      std::map<std::string, float> rates = ipfs_status_.getBandwidthRates();
+      char buf[32];
+      this->ipfsIncomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("in") / 1000.0));
+      this->ipfsOutcomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("out") / 1000.0));
+    }
+    else
+    {
+      this->ipfsNetworkStatus_ = "Disconnected";
+      this->ipfsRepoSize_ = 0;
+      this->ipfsRepoPath_ = "";
+      this->ipfsIncomingRate_ = "0.0";
+      this->ipfsOutcomingRate_ = "0.0";
+    }
+
+    if (this->ipfsClientID_.empty())
+      this->ipfsClientID_ = ipfs_status_.getClientID();
+    if (this->ipfsClientPublicKey_.empty())
+      this->ipfsClientPublicKey_ = ipfs_status_.getClientPublicKey();
+    if (this->ipfsVersion_.empty())
+      this->ipfsVersion_ = ipfs_status_.getVersion();
+
+    // Trigger update of all status fields, in a thread-safe manner
+    Glib::signal_idle().connect_once(sigc::mem_fun(*this, &MainWindow::updateStatusPopoverAndIcon));
+  }
+  catch (const std::runtime_error& error)
+  {
+    std::string errorMessage = std::string(error.what());
+    if (errorMessage != "Request was aborted")
+    {
+      // Assume no connection or connection lost; display disconnected
+      this->ipfsNumberOfPeers_ = 0;
+      this->ipfsNetworkStatus_ = "Disconnected";
+      this->ipfsRepoSize_ = 0;
+      this->ipfsRepoPath_ = "";
+      this->ipfsIncomingRate_ = "0.0";
+      this->ipfsOutcomingRate_ = "0.0";
+      Glib::signal_idle().connect_once(sigc::mem_fun(*this, &MainWindow::updateStatusPopoverAndIcon));
+    }
+  }
 }
 
 /**
@@ -2282,6 +2332,6 @@ void MainWindow::on_icon_theme_activated(Gtk::ListBoxRow* row)
   // Reload icons
   this->loadIcons();
 
-  // Trigger IPFS status icon update, depending on the nr. of peers
-  this->loadStatusIcon();
+  // Trigger IPFS status icon
+  updateStatusPopoverAndIcon();
 }
