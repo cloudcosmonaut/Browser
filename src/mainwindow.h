@@ -107,7 +107,7 @@ protected:
   Glib::RefPtr<Gtk::Adjustment> m_spacingAdjustment;    /*!< Spacing adjustment settings */
   Glib::RefPtr<Gtk::Adjustment> m_marginsAdjustment;    /*!< Margins adjustment settings */
   Glib::RefPtr<Gtk::Adjustment> m_indentAdjustment;     /*!< Indent adjustment settings */
-  Glib::RefPtr<Gtk::CssProvider> m_drawCSSProvider; /*!< CSS Provider for draw textviews */
+  Glib::RefPtr<Gtk::CssProvider> m_drawCSSProvider;     /*!< CSS Provider for draw textviews */
 
   // Child widgets
   Menu m_menu;

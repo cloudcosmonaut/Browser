@@ -82,6 +82,7 @@ private:
   void processRequest(const std::string& path, bool isParseContent);
   void fetchFromIPFS(bool isParseContent);
   void openFromDisk(bool isParseContent);
+  void doIPFSStatusUpdateOnce();
   bool doIPFSStatusUpdate();
   void processIPFSStatus();
   void abortRequest();

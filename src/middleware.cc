@@ -30,11 +30,12 @@ Middleware::Middleware(MainWindow& mainWindow, const std::string& timeout)
       // Request & Response:
       waitPageVisible_(false)
 {
-  doIPFSStatusUpdate();
-
   // Hook up signals to Main Window methods
   requestStarted_.connect(sigc::mem_fun(mainWindow, &MainWindow::startedRequest));
   requestFinished_.connect(sigc::mem_fun(mainWindow, &MainWindow::finishedRequest));
+
+  // First update status manually (with slight delay), after that the timer below will take care of updates
+  Glib::signal_timeout().connect_once(sigc::mem_fun(this, &Middleware::doIPFSStatusUpdateOnce), 550);
 
   // Create a timer, triggers every 4 seconds
   statusTimerHandler_ = Glib::signal_timeout().connect_seconds(sigc::mem_fun(this, &Middleware::doIPFSStatusUpdate), 4);
@@ -400,6 +401,14 @@ void Middleware::openFromDisk(bool isParseContent)
     std::cerr << "ERROR: File request failed, file: " << finalRequestPath_ << ". Message: " << error.what() << std::endl;
     mainWindow.setMessage("🎂 File not found", "Message: " + std::string(error.what()));
   }
+}
+
+/**
+ * \brief Simple wrapper of the method below with void return
+ */
+void Middleware::doIPFSStatusUpdateOnce()
+{
+  doIPFSStatusUpdate();
 }
 
 /**
