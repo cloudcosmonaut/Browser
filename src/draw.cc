@@ -213,7 +213,7 @@ void Draw::populate_popup(Gtk::Menu* menu)
 }
 
 /**
- * \brief Show a message on screen - thread-safe
+ * \brief Show a message on screen
  * \param message Headliner
  * \param details Additional text info
  */
@@ -221,7 +221,7 @@ void Draw::setMessage(const Glib::ustring& message, const Glib::ustring& details
 {
   if (get_editable())
     this->disableEdit();
-  this->clearOnThread();
+  this->clear();
 
   this->headingLevel = 1;
   this->insertText(message);
@@ -231,13 +231,13 @@ void Draw::setMessage(const Glib::ustring& message, const Glib::ustring& details
 }
 
 /**
- * \brief Draw homepage - thread-safe
+ * \brief Draw homepage
  */
 void Draw::showStartPage()
 {
   if (get_editable())
     this->disableEdit();
-  this->clearOnThread();
+  this->clear();
 
   this->headingLevel = 1;
   this->insertText("🚀🌍 Welcome to the Decentralized Web (DWeb)");
@@ -252,14 +252,15 @@ This browser has even a built-in editor. Check it out in the menu: File->New Doc
 }
 
 /**
- * \brief Process AST document (markdown format) and draw the text in the GTK TextView - thread-safe
+ * \brief Process AST document (markdown format) and draw the text in the GTK TextView
+ * The cmark_node pointer will be automatically freed for you.
  * \param rootNode Markdown AST tree that will be displayed on screen
  */
 void Draw::setDocument(cmark_node* rootNode)
 {
   if (get_editable())
     this->disableEdit();
-  this->clearOnThread();
+  this->clear();
 
   // Loop over AST nodes
   cmark_event_type ev_type;
@@ -277,6 +278,8 @@ void Draw::setDocument(cmark_node* rootNode)
       // Continue nevertheless
     }
   }
+  // Clean-up the memory
+  cmark_node_free(rootNode);
 }
 
 void Draw::setViewSourceMenuItem(bool isEnabled)
@@ -298,7 +301,7 @@ void Draw::newDocument()
 }
 
 /**
- * \brief Retrieve the current text buffer (not thread-safe)
+ * \brief Retrieve the current text buffer
  */
 Glib::ustring Draw::getText()
 {
@@ -306,12 +309,12 @@ Glib::ustring Draw::getText()
 }
 
 /**
- * \brief Set text in text buffer (for example plain text) - thead-safe
- * \param content Content string that needs to be set as buffer text
+ * \brief Set text in text buffer (for example plain text)
+ * \param text Text string
  */
-void Draw::setText(const Glib::ustring& content)
+void Draw::setText(const Glib::ustring& text)
 {
-  Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::insertPlainTextIdle), content));
+  get_buffer()->set_text(text);
 }
 
 /**
@@ -1328,7 +1331,7 @@ void Draw::encodeText(std::string& string)
 }
 
 /**
- * Insert markup text - thread safe
+ * Insert markup text
  */
 void Draw::insertText(std::string text, const Glib::ustring& url, CodeTypeEnum codeType)
 {
@@ -1433,51 +1436,71 @@ void Draw::insertText(std::string text, const Glib::ustring& url, CodeTypeEnum c
 }
 
 /**
- * Insert pango text with tags - thread safe
+ * Insert pango text with tags
  */
 void Draw::insertTagText(const Glib::ustring& text, std::vector<Glib::ustring> const& tagNames)
 {
-  Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::insertTagTextIdle), text, tagNames));
+  auto buffer = get_buffer();
+  auto endIter = buffer->end();
+  buffer->insert_with_tags_by_name(endIter, text, tagNames);
 }
 
 /**
- * Insert pango text with a single tag name - thread safe
+ * Insert pango text with a single tag name
  */
 void Draw::insertTagText(const Glib::ustring& text, const Glib::ustring& tagName)
 {
-  Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::insertSingleTagTextIdle), text, tagName));
+  auto buffer = get_buffer();
+  auto endIter = buffer->end();
+  buffer->insert_with_tag(endIter, text, tagName);
 }
 
 /**
- * Insert markup pango text - thread safe
+ * Insert markup pango text
  */
 void Draw::insertMarkupText(const Glib::ustring& text)
 {
-  Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::insertMarupTextIdle), text));
+  auto buffer = get_buffer();
+  auto endIter = buffer->end();
+  buffer->insert_markup(endIter, text);
 }
 
 /**
- * Insert url link - thread safe
+ * Insert url link
  */
 void Draw::insertLink(const Glib::ustring& text, const Glib::ustring& url)
 {
-  Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::insertLinkIdle), text, url));
+  auto buffer = get_buffer();
+  auto endIter = buffer->end();
+  auto tag = buffer->create_tag();
+  // TODO: Create a tag name with name "url" and reuse tag if possible.
+  tag->property_foreground() = "#569cd6";
+  tag->property_underline() = Pango::Underline::UNDERLINE_SINGLE;
+  tag->set_data("url", g_strdup(url.c_str()));
+  buffer->insert_with_tag(endIter, text, tag);
 }
 
 /**
- * Remove nr. chars from the end of the text buffer - thread safe
+ * Remove nr. chars from the end of the text buffer
  */
 void Draw::truncateText(int charsTruncated)
 {
-  Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(*this, &Draw::truncateTextIdle), charsTruncated));
+  auto buffer = get_buffer();
+  auto endIter = buffer->end();
+  auto beginIter = endIter;
+  beginIter.backward_chars(charsTruncated);
+  buffer->erase(beginIter, endIter);
 }
 
 /**
- * Clear buffer - thread-safe
+ * Clear text-buffer
  */
-void Draw::clearOnThread()
+void Draw::clear()
 {
-  Glib::signal_idle().connect_once(sigc::mem_fun(*this, &Draw::clearBufferIdle));
+  auto buffer = get_buffer();
+  auto beginIter = buffer->begin();
+  auto endIter = buffer->end();
+  buffer->erase(beginIter, endIter);
 }
 
 /**
@@ -1512,84 +1535,6 @@ void Draw::changeCursor(int x, int y)
     else
       window->set_cursor(normalCursor);
   }
-}
-
-/**
- * Insert text with tags on signal idle
- */
-
-void Draw::insertTagTextIdle(const Glib::ustring& text, std::vector<Glib::ustring> const& tagNames)
-{
-  auto buffer = get_buffer();
-  auto endIter = buffer->end();
-  buffer->insert_with_tags_by_name(endIter, text, tagNames);
-}
-
-/**
- * Insert text with a single tag name on signal idle
- */
-
-void Draw::insertSingleTagTextIdle(const Glib::ustring& text, const Glib::ustring& tagName)
-{
-  auto buffer = get_buffer();
-  auto endIter = buffer->end();
-  buffer->insert_with_tag(endIter, text, tagName);
-}
-
-/**
- * Insert markup text on signal idle
- */
-void Draw::insertMarupTextIdle(const Glib::ustring& text)
-{
-  auto buffer = get_buffer();
-  auto endIter = buffer->end();
-  buffer->insert_markup(endIter, text);
-}
-
-/**
- * Insert plain text on signal idle
- */
-void Draw::insertPlainTextIdle(const Glib::ustring& text)
-{
-  get_buffer()->set_text(text);
-}
-
-/**
- * Insert link url on signal idle
- */
-void Draw::insertLinkIdle(const Glib::ustring& text, const Glib::ustring& url)
-{
-  auto buffer = get_buffer();
-  auto endIter = buffer->end();
-  auto tag = buffer->create_tag();
-  // TODO: Create a tag name with name "url" and reuse tag if possible.
-  tag->property_foreground() = "#569cd6";
-  tag->property_underline() = Pango::Underline::UNDERLINE_SINGLE;
-  tag->set_data("url", g_strdup(url.c_str()));
-  buffer->insert_with_tag(endIter, text, tag);
-}
-
-/**
- * Truncate text from the end of the buffer on signal idle
- */
-void Draw::truncateTextIdle(int charsTruncated)
-{
-  auto buffer = get_buffer();
-  auto endIter = buffer->end();
-  auto beginIter = endIter;
-  beginIter.backward_chars(charsTruncated);
-  buffer->erase(beginIter, endIter);
-}
-
-/**
- * clearOnThread Text on signal idle
- */
-void Draw::clearBufferIdle()
-{
-  auto buffer = get_buffer();
-  auto beginIter = buffer->begin();
-  auto endIter = buffer->end();
-  buffer->erase(beginIter, endIter);
 }
 
 /**

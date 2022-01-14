@@ -213,7 +213,7 @@ void MainWindow::setText(const Glib::ustring& content)
 }
 
 /**
- * \brief Set markdown document (cmark)
+ * \brief Set markdown document (cmark). cmark_node pointer will be freed automatically.
  * \param rootNode cmark root data struct
  */
 void MainWindow::setDocument(cmark_node* rootNode)
@@ -1848,6 +1848,9 @@ void MainWindow::showNotification(const Glib::ustring& title, const Glib::ustrin
 
 void MainWindow::editor_changed_text()
 {
+  // TODO: Just execute the code below in a signal_idle call?
+  // So it will never block the GUI thread
+
   // Retrieve text from editor and parse the markdown contents
   middleware_.setContent(m_draw_main.getText());
   cmark_node* doc = middleware_.parseContent();
@@ -1858,7 +1861,6 @@ void MainWindow::editor_changed_text()
 
   // Show the document as a preview on the right side text-view panel
   m_draw_secondary.setDocument(doc);
-  cmark_node_free(doc);
 }
 
 /**

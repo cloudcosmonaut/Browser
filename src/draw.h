@@ -43,7 +43,7 @@ public:
   void setViewSourceMenuItem(bool isEnabled);
   void newDocument();
   Glib::ustring getText();
-  void setText(const Glib::ustring& content);
+  void setText(const Glib::ustring& text);
   void clearText();
   void undo();
   void redo();
@@ -115,7 +115,6 @@ private:
   void disableEdit();
   void followLink(Gtk::TextBuffer::iterator& iter);
   void processNode(cmark_node* node, cmark_event_type ev_type);
-  // Helper functions for inserting text (thread-safe)
   void encodeText(std::string& string);
   void insertText(std::string text, const Glib::ustring& url = "", CodeTypeEnum codeType = CodeTypeEnum::CODE_TYPE_NONE);
   void insertTagText(const Glib::ustring& text, std::vector<Glib::ustring> const& tagNames);
@@ -123,16 +122,8 @@ private:
   void insertMarkupText(const Glib::ustring& text);
   void insertLink(const Glib::ustring& text, const Glib::ustring& url);
   void truncateText(int charsTruncated);
-  void clearOnThread();
-
+  void clear();
   void changeCursor(int x, int y);
-  void insertTagTextIdle(const Glib::ustring& text, std::vector<Glib::ustring> const& tagNames);
-  void insertSingleTagTextIdle(const Glib::ustring& text, const Glib::ustring& tagName);
-  void insertMarupTextIdle(const Glib::ustring& text);
-  void insertPlainTextIdle(const Glib::ustring& text);
-  void insertLinkIdle(const Glib::ustring& text, const Glib::ustring& url);
-  void truncateTextIdle(int charsTruncated);
-  void clearBufferIdle();
   static Glib::ustring const intToRoman(int num);
 };
 

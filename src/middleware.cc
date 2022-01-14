@@ -249,7 +249,7 @@ void Middleware::processRequest(const std::string& path, bool isParseContent)
   // Handle homepage
   else if (requestPath_.compare("about:home") == 0)
   {
-    mainWindow.showStartpage();
+    Glib::signal_idle().connect_once(sigc::mem_fun(mainWindow, &MainWindow::showStartpage));
   }
   // Handle disk or IPFS file paths
   else
@@ -306,13 +306,12 @@ void Middleware::fetchFromIPFS(bool isParseContent)
       // TODO: Maybe we want to abort the parser when keep_request_thread_running_ = false,
       // depending time the parser is taking?
       cmark_node* doc = parseContent();
-      mainWindow.setDocument(doc);
-      cmark_node_free(doc);
+      Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setDocument), doc));
     }
     else
     {
       // Directly display the plain markdown content
-      mainWindow.setText(getContent());
+      Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setText), getContent()));
     }
   }
   catch (const std::runtime_error& error)
@@ -344,17 +343,19 @@ void Middleware::fetchFromIPFS(bool isParseContent)
             std::cerr << "ERROR: Could not parse at byte: " << parseError.byte << std::endl;
           }
         }
-        mainWindow.setMessage("🎂 We're having trouble finding this site.",
-                              message + "You could try to reload the page or try increase the time-out (see --help).");
+        Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setMessage), "🎂 We're having trouble finding this site.",
+                                                    message + "You could try to reload the page or try increase the time-out (see --help)."));
       }
       else if (errorMessage.starts_with("Couldn't connect to server: Failed to connect to localhost"))
       {
-        mainWindow.setMessage("⌛ Please wait...", "IPFS daemon is still spinnng-up, page will automatically refresh...");
+        Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setMessage), "⌛ Please wait...",
+                                                    "IPFS daemon is still spinnng-up, page will automatically refresh..."));
         waitPageVisible_ = true; // Please wait page is shown (auto-refresh when network is up)
       }
       else
       {
-        mainWindow.setMessage("❌ Something went wrong", "Error message: " + std::string(error.what()));
+        Glib::signal_idle().connect_once(
+            sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setMessage), "❌ Something went wrong", "Error message: " + std::string(error.what())));
       }
     }
   }
@@ -379,13 +380,12 @@ void Middleware::openFromDisk(bool isParseContent)
       if (isParseContent)
       {
         cmark_node* doc = parseContent();
-        mainWindow.setDocument(doc);
-        cmark_node_free(doc);
+        Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setDocument), doc));
       }
       else
       {
-        // directly set the plain content
-        mainWindow.setText(getContent());
+        // Directly set the plain markdown content
+        Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setText), getContent()));
       }
     }
   }
@@ -393,12 +393,14 @@ void Middleware::openFromDisk(bool isParseContent)
   {
     std::cerr << "ERROR: Could not read file: " << finalRequestPath_ << ". Message: " << error.what() << ".\nError code: " << error.code()
               << std::endl;
-    mainWindow.setMessage("🎂 Could not read file", "Message: " + std::string(error.what()));
+    Glib::signal_idle().connect_once(
+        sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setMessage), "🎂 Could not read file", "Message: " + std::string(error.what())));
   }
   catch (const std::runtime_error& error)
   {
     std::cerr << "ERROR: File request failed, file: " << finalRequestPath_ << ". Message: " << error.what() << std::endl;
-    mainWindow.setMessage("🎂 File not found", "Message: " + std::string(error.what()));
+    Glib::signal_idle().connect_once(
+        sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setMessage), "🎂 File not found", "Message: " + std::string(error.what())));
   }
 }
 
