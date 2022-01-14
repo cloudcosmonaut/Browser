@@ -53,7 +53,8 @@ int main(int argc, char* argv[])
     ipfsDaemon.spawn();
   }
 
-  if (group.timeout.compare(defaultTimeout) != 0) {
+  if (group.timeout.compare(defaultTimeout) != 0)
+  {
     std::cout << "WARN: You changed the time-out value. Please, be sure you know what you're doing." << std::endl;
   }
 
