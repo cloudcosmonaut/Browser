@@ -29,7 +29,7 @@ std::size_t IPFS::getNrPeers()
  * \brief Retrieve your IPFS client ID. Does not throw errors.
  * \return ID as string
  */
-std::string const IPFS::getClientID()
+std::string IPFS::getClientID()
 {
   ipfs::Json id;
   client.Id(&id);
@@ -40,7 +40,7 @@ std::string const IPFS::getClientID()
  * \brief Retrieve your IPFS Public Key. Does not throw errors.
  * \return Public key string
  */
-std::string const IPFS::getClientPublicKey()
+std::string IPFS::getClientPublicKey()
 {
   ipfs::Json id;
   client.Id(&id);
@@ -51,7 +51,7 @@ std::string const IPFS::getClientPublicKey()
  * \brief Retrieve the Go IPFS daemon version. Does not throw errors.
  * \return Version string
  */
-std::string const IPFS::getVersion()
+std::string IPFS::getVersion()
 {
   ipfs::Json version;
   client.Version(&version);
@@ -109,7 +109,7 @@ void IPFS::fetch(const std::string& path, std::iostream* contents)
  * \throw std::runtime_error when there is a connection-time/something goes wrong while adding the file
  * \return IPFS content-addressed identifier (CID) hash
  */
-std::string const IPFS::add(const std::string& path, const std::string& content)
+std::string IPFS::add(const std::string& path, const std::string& content)
 {
   ipfs::Json result;
   std::string hash;

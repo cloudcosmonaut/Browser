@@ -1590,6 +1590,7 @@ void MainWindow::show_search(bool replace)
     }
     else
     {
+      m_searchEntry.grab_focus();
       m_searchReplaceEntry.hide();
     }
   }

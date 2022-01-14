@@ -16,8 +16,8 @@ public:
   // Singleton
   static Parser& getInstance();
   static cmark_node* parseContent(const std::string& content);
-  static std::string const renderHTML(cmark_node* node);
-  static std::string const renderMarkdown(cmark_node* node);
+  static std::string renderHTML(cmark_node* node);
+  static std::string renderMarkdown(cmark_node* node);
 
 private:
   Parser();

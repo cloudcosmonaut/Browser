@@ -18,7 +18,7 @@ namespace n_fs = ::std::filesystem;
  *        or std::ios_base::failure when file can't be read
  * \return Contents as string
  */
-std::string const File::read(const std::string& path)
+std::string File::read(const std::string& path)
 {
   if (n_fs::exists(path) && n_fs::is_regular_file(path))
   {
@@ -55,7 +55,7 @@ void File::write(const std::string& path, const std::string& content)
  * \param path Full path
  * \return filename
  */
-std::string const File::getFilename(const std::string& path)
+std::string File::getFilename(const std::string& path)
 {
   return n_fs::path(path).filename().string();
 }

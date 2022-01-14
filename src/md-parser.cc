@@ -55,7 +55,7 @@ cmark_node* Parser::parseContent(const std::string& content)
 /**
  * Built-in cmark parser to HTML
  */
-std::string const Parser::renderHTML(cmark_node* node)
+std::string Parser::renderHTML(cmark_node* node)
 {
   char* tmp = cmark_render_html(node, OPTIONS, NULL);
   std::string output = std::string(tmp);
@@ -66,7 +66,7 @@ std::string const Parser::renderHTML(cmark_node* node)
 /**
  * Built-in cmark parser to markdown (again)
  */
-std::string const Parser::renderMarkdown(cmark_node* node)
+std::string Parser::renderMarkdown(cmark_node* node)
 {
   char* tmp = cmark_render_commonmark(node, OPTIONS, 600);
   std::string output = std::string(tmp);

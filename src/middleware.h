@@ -33,17 +33,17 @@ public:
   void doWrite(const std::string& path);
   std::string getFilename(const std::string& path);
   void setContent(const std::string& content);
-  std::string const getContent();
+  std::string getContent();
   cmark_node* parseContent();
   void resetContentAndPath();
   std::size_t getIPFSNumberOfPeers();
   int getIPFSRepoSize();
-  std::string const getIPFSRepoPath();
-  std::string const getIPFSIncomingRate();
-  std::string const getIPFSOutcomingRate();
-  std::string const getIPFSVersion();
-  std::string const getIPFSClientId();
-  std::string const getIPFSClientPublicKey();
+  std::string getIPFSRepoPath();
+  std::string getIPFSIncomingRate();
+  std::string getIPFSOutcomingRate();
+  std::string getIPFSVersion();
+  std::string getIPFSClientId();
+  std::string getIPFSClientPublicKey();
 
 private:
   MainWindow& mainWindow;

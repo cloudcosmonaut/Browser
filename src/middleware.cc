@@ -74,7 +74,6 @@ void Middleware::doRequest(const std::string& path, bool isSetAddressBar, bool i
   }
   else
   {
-    // TODO: throw a runtime error, so we can abort everything in the mainwindow
     std::cerr << "ERROR: Could not start request thread. Something went wrong." << std::endl;
   }
 }
@@ -122,7 +121,7 @@ void Middleware::setContent(const std::string& content)
  * \brief Get current plain content (not parsed)
  * \return content as string
  */
-std::string const Middleware::getContent()
+std::string Middleware::getContent()
 {
   return currentContent_;
 }
@@ -168,7 +167,7 @@ int Middleware::getIPFSRepoSize()
  * \brief Get IPFS repository path
  * \return repo path (string)
  */
-std::string const Middleware::getIPFSRepoPath()
+std::string Middleware::getIPFSRepoPath()
 {
   return ipfsRepoPath_;
 }
@@ -177,7 +176,7 @@ std::string const Middleware::getIPFSRepoPath()
  * \brief Get IPFS Incoming rate
  * \return incoming rate (string)
  */
-std::string const Middleware::getIPFSIncomingRate()
+std::string Middleware::getIPFSIncomingRate()
 {
   return ipfsIncomingRate_;
 }
@@ -186,7 +185,7 @@ std::string const Middleware::getIPFSIncomingRate()
  * \brief Get IPFS Outgoing rate
  * \return outgoing rate (string)
  */
-std::string const Middleware::getIPFSOutcomingRate()
+std::string Middleware::getIPFSOutcomingRate()
 {
   return ipfsOutcomingRate_;
 }
@@ -195,7 +194,7 @@ std::string const Middleware::getIPFSOutcomingRate()
  * \brief Get IPFS version
  * \return version (string)
  */
-std::string const Middleware::getIPFSVersion()
+std::string Middleware::getIPFSVersion()
 {
   return ipfsVersion_;
 }
@@ -204,7 +203,7 @@ std::string const Middleware::getIPFSVersion()
  * \brief Get IPFS Client ID
  * \return client ID (string)
  */
-std::string const Middleware::getIPFSClientId()
+std::string Middleware::getIPFSClientId()
 {
   return ipfsClientID_;
 }
@@ -213,7 +212,7 @@ std::string const Middleware::getIPFSClientId()
  * \brief Get IPFS Client Public key
  * \return public key (string)
  */
-std::string const Middleware::getIPFSClientPublicKey()
+std::string Middleware::getIPFSClientPublicKey()
 {
   return ipfsClientPublicKey_;
 }
