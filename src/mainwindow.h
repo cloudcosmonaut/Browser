@@ -275,6 +275,7 @@ private:
   sigc::connection textChangedSignalHandler_;
 
   void loadStoredSettings();
+  void setGTKIcons();
   void loadIcons();
   void initButtons();
   void setTheme();

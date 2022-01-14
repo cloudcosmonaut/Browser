@@ -334,6 +334,24 @@ void MainWindow::loadStoredSettings()
 }
 
 /**
+ * \brief set GTK Icons
+ */
+void MainWindow::setGTKIcons()
+{
+  // Toolbox buttons
+  m_backIcon.set_from_icon_name("go-previous", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+  m_forwardIcon.set_from_icon_name("go-next", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+  m_refreshIcon.set_from_icon_name("view-refresh", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+  m_homeIcon.set_from_icon_name("go-home", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+  m_searchIcon.set_from_icon_name("edit-find-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+  m_settingsIcon.set_from_icon_name("open-menu-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+  // Settings pop-over buttons
+  m_zoomOutImage.set_from_icon_name("zoom-out-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+  m_zoomInImage.set_from_icon_name("zoom-in-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+  m_brightnessImage.set_from_icon_name("display-brightness-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+}
+
+/**
  * Load all icon images from theme/disk. Or reload them.
  */
 void MainWindow::loadIcons()
@@ -365,18 +383,7 @@ void MainWindow::loadIcons()
 
     if (useCurrentGTKIconTheme_)
     {
-      // Toolbox buttons
-      m_backIcon.set_from_icon_name("go-previous", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-      m_forwardIcon.set_from_icon_name("go-next", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-      m_refreshIcon.set_from_icon_name("view-refresh", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-      m_homeIcon.set_from_icon_name("go-home", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-      m_searchIcon.set_from_icon_name("edit-find-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-      m_settingsIcon.set_from_icon_name("open-menu-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-
-      // Settings pop-over buttons
-      m_zoomOutImage.set_from_icon_name("zoom-out-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-      m_zoomInImage.set_from_icon_name("zoom-in-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-      m_brightnessImage.set_from_icon_name("display-brightness-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+      setGTKIcons();
     }
     else
     {
@@ -398,11 +405,17 @@ void MainWindow::loadIcons()
   }
   catch (const Glib::FileError& error)
   {
-    std::cerr << "ERROR: Icon could not be loaded, file error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
+    std::cerr << "ERROR: Icon could not be loaded, file error: " << error.what() << ".\nContinue nevertheless, with GTK icons as fallback..."
+              << std::endl;
+    setGTKIcons();
+    useCurrentGTKIconTheme_ = true;
   }
   catch (const Gdk::PixbufError& error)
   {
-    std::cerr << "ERROR: Icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
+    std::cerr << "ERROR: Icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless, with GTK icons as fallback..."
+              << std::endl;
+    setGTKIcons();
+    useCurrentGTKIconTheme_ = true;
   }
 }
 
