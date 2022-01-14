@@ -102,7 +102,9 @@ Optionally, use the VSCode `CMake Tools` extension to start the build or build w
 
 Build a release target, including packaging under GNU/Linux, using: `./scripts/build_prod.sh`
 
-### C++ Style Guidelines
+### C++ Coding Style Guidelines
+
+#### Automated Clang-format
 
 We use our [own Clang LLVM C++ Programming Style Format](.clang-format), using [clang-format](https://clang.llvm.org/docs/ClangFormat.html) command.
 
@@ -113,6 +115,10 @@ To automatically comply to our style format execute following script (inplace ed
 ```
 
 Check only for errors, run: `./scripts/check_format.sh`
+
+#### Core Guidelines
+
+We also tend to follow the [C++ Core Guidelines](http://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines) as much as possible.
 
 ### Doxygen
 
