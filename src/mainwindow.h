@@ -3,11 +3,10 @@
 
 #include "about.h"
 #include "draw.h"
-#include "ipfs.h"
 #include "menu.h"
+#include "middleware.h"
 #include "source-code-dialog.h"
 
-#include <atomic>
 #include <giomm/settings.h>
 #include <gtkmm/adjustment.h>
 #include <gtkmm/box.h>
@@ -34,8 +33,9 @@
 #include <gtkmm/switch.h>
 #include <gtkmm/togglebutton.h>
 #include <gtkmm/window.h>
-#include <mutex>
-#include <thread>
+#include <sigc++/connection.h>
+
+struct cmark_node;
 
 /**
  * \class MainWindow
@@ -46,17 +46,18 @@ class MainWindow : public Gtk::Window
 public:
   static const int DEFAULT_FONT_SIZE = 10;
   explicit MainWindow(const std::string& timeout);
-  virtual ~MainWindow();
-  void doRequest(const std::string& path = std::string(),
-                 bool isSetAddressBar = true,
-                 bool isHistoryRequest = false,
-                 bool isDisableEditor = true,
-                 bool isParseContent = true);
+  void preRequest();
+  void postRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor);
+  void finishedRequest();
+  void showStartpage();
+  void setText(const Glib::ustring& content);
+  void setDocument(cmark_node* rootNode);
+  void setMessage(const Glib::ustring& message, const Glib::ustring& details = "");
+  void updateStatusPopoverAndIcon();
 
 protected:
   // Signal handlers
   bool delete_window(GdkEventAny* any_event);
-  bool on_update_connection_status();
   void cut();
   void copy();
   void paste();
@@ -255,7 +256,7 @@ protected:
   Gtk::Separator m_separator10;
 
 private:
-  // Generic:
+  Middleware middleware_;
   std::string appName_;
   bool useCurrentGTKIconTheme_;
   std::string iconTheme_;
@@ -266,39 +267,10 @@ private:
   int fontSpacing_;
   double brightnessScale_;
   bool useDarkTheme_;
-  std::string requestPath_;
-  std::string finalRequestPath_;
-  std::string currentContent_;
   std::string currentFileSavedPath_;
   std::size_t currentHistoryIndex_;
   std::vector<std::string> history_;
   sigc::connection textChangedSignalHandler_;
-  sigc::connection statusTimerHandler_;
-  bool waitPageVisible_;
-
-  // Threading:
-  std::thread* requestThread_;                    /* Request thread pointer */
-  std::thread* statusThread_;                     /* Status thread pointer */
-  std::atomic<bool> is_request_thread_done_;      /* Indication when the single request (fetch) is done */
-  std::atomic<bool> keep_request_thread_running_; /* Trigger the request thread to stop/continue */
-  std::atomic<bool> is_status_thread_done_;       /* Indication when the status calls are done */
-
-  // IPFS related:
-  std::string ipfsHost_;    /* IPFS host name */
-  int ipfsPort_;            /* IPFS port number */
-  std::string ipfsTimeout_; /* IPFS time-out setting */
-  IPFS ipfs_fetch_;         /* IPFS object for fetch calls */
-  IPFS ipfs_status_;        /* IPFS object for status calls, so it doesn't conflict with the fetch request */
-  std::string ipfsNetworkStatus_;
-  std::size_t ipfsNumberOfPeers_;
-  int ipfsRepoSize_;
-  std::string ipfsRepoPath_;
-  std::string ipfsIncomingRate_;
-  std::string ipfsOutcomingRate_;
-  std::string ipfsVersion_;
-  std::string ipfsClientID_;
-  std::string ipfsClientPublicKey_;
-  std::mutex status_mutex_; /* IPFS status mutex to protect class members */
 
   void loadStoredSettings();
   void loadIcons();
@@ -306,19 +278,11 @@ private:
   void setTheme();
   void initStatusPopover();
   void initSettingsPopover();
-  void updateStatusPopoverAndIcon();
   void initSignals();
   bool isInstalled();
   void enableEdit();
   void disableEdit();
   bool isEditorEnabled();
-  void postDoRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor);
-  void abortRequest();
-  void abortStatus();
-  void processRequest(const std::string& path, bool isParseContent);
-  void fetchFromIPFS(bool isParseContent);
-  void openFromDisk(bool isParseContent);
-  void processStatus();
   std::string getIconImageFromTheme(const std::string& iconName, const std::string& typeofIcon);
   void updateCSS();
   void showNotification(const Glib::ustring& title, const Glib::ustring& message = "");

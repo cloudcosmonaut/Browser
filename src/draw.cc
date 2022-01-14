@@ -1,8 +1,9 @@
 #include "draw.h"
-#include "mainwindow.h"
+#include "middleware.h"
 #include "node.h"
 #include "strikethrough.h"
 #include "syntax_extension.h"
+#include <cmark-gfm.h>
 #include <gdkmm/window.h>
 #include <glibmm.h>
 #include <gtkmm/textiter.h>
@@ -10,8 +11,8 @@
 #include <regex>
 #include <stdexcept>
 
-Draw::Draw(MainWindow& mainWindow)
-    : mainWindow(mainWindow),
+Draw::Draw(Middleware& middleware)
+    : middleware(middleware),
       buffer(Glib::unwrap(this->get_buffer())),
       addViewSourceMenuItem(true),
       headingLevel(0),
@@ -212,11 +213,11 @@ void Draw::populate_popup(Gtk::Menu* menu)
 }
 
 /**
- * \brief Show a message on screen
+ * \brief Show a message on screen - thread-safe
  * \param message Headliner
- * \param detailed_info Additional text info
+ * \param details Additional text info
  */
-void Draw::showMessage(const Glib::ustring& message, const Glib::ustring& detailed_info)
+void Draw::setMessage(const Glib::ustring& message, const Glib::ustring& details)
 {
   if (get_editable())
     this->disableEdit();
@@ -226,11 +227,11 @@ void Draw::showMessage(const Glib::ustring& message, const Glib::ustring& detail
   this->insertText(message);
   this->headingLevel = 0;
   this->insertMarkupText("\n\n");
-  this->insertText(detailed_info);
+  this->insertText(details);
 }
 
 /**
- * \brief Draw homepage
+ * \brief Draw homepage - thread-safe
  */
 void Draw::showStartPage()
 {
@@ -251,10 +252,10 @@ This browser has even a built-in editor. Check it out in the menu: File->New Doc
 }
 
 /**
- * \brief Process AST document (markdown format) and draw the text in the GTK TextView
- * \param root_node Markdown AST tree that will be displayed on screen
+ * \brief Process AST document (markdown format) and draw the text in the GTK TextView - thread-safe
+ * \param rootNode Markdown AST tree that will be displayed on screen
  */
-void Draw::processDocument(cmark_node* root_node)
+void Draw::setDocument(cmark_node* rootNode)
 {
   if (get_editable())
     this->disableEdit();
@@ -262,7 +263,7 @@ void Draw::processDocument(cmark_node* root_node)
 
   // Loop over AST nodes
   cmark_event_type ev_type;
-  cmark_iter* iter = cmark_iter_new(root_node);
+  cmark_iter* iter = cmark_iter_new(rootNode);
   while ((ev_type = cmark_iter_next(iter)) != CMARK_EVENT_DONE)
   {
     cmark_node* cur = cmark_iter_get_node(iter);
@@ -1018,7 +1019,7 @@ void Draw::followLink(Gtk::TextBuffer::iterator& iter)
     if (url != 0 && (strlen(url) > 0))
     {
       // Get the URL
-      mainWindow.doRequest(url);
+      middleware.doRequest(url);
       break;
     }
   }

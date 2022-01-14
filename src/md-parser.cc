@@ -25,9 +25,10 @@ Parser& Parser::getInstance()
 }
 
 /**
- * Parse markdown file from string content.
+ * \brief Parse markdown file from string content.
  * Note: Do not forgot to execute: cmark_node_free(document); when you are done with the doc.
- * @return AST structure (of type cmark_node)
+ * \param content Content as string
+ * \return AST structure (of type cmark_node)
  */
 cmark_node* Parser::parseContent(const std::string& content)
 {

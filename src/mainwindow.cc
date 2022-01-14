@@ -1,10 +1,7 @@
 #include "mainwindow.h"
 
-#include "file.h"
-#include "md-parser.h"
 #include "menu.h"
 #include "project_config.h"
-#include <cmark-gfm.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <giomm/file.h>
 #include <giomm/notification.h>
@@ -12,14 +9,13 @@
 #include <giomm/themedicon.h>
 #include <glibmm/convert.h>
 #include <glibmm/fileutils.h>
-#include <glibmm/main.h>
 #include <glibmm/miscutils.h>
 #include <gtkmm/image.h>
 #include <gtkmm/listboxrow.h>
 #include <gtkmm/menuitem.h>
 #include <gtkmm/settings.h>
+#include <iostream>
 #include <nlohmann/json.hpp>
-#include <sstream>
 #include <whereami.h>
 
 MainWindow::MainWindow(const std::string& timeout)
@@ -31,8 +27,8 @@ MainWindow::MainWindow(const std::string& timeout)
       m_indentAdjustment(Gtk::Adjustment::create(0, 0, 1000, 5, 10)),
       m_drawCSSProvider(Gtk::CssProvider::create()),
       m_menu(m_accelGroup),
-      m_draw_main(*this),
-      m_draw_secondary(*this),
+      m_draw_main(middleware_),
+      m_draw_secondary(middleware_),
       m_about(*this),
       m_vbox(Gtk::ORIENTATION_VERTICAL, 0),
       m_vboxStatus(Gtk::ORIENTATION_VERTICAL),
@@ -55,7 +51,8 @@ MainWindow::MainWindow(const std::string& timeout)
       m_indentLabel("Indent"),
       m_themeLabel("Dark Theme"),
       m_iconThemeLabel("Active Theme"),
-      // Generic:
+      // Private members
+      middleware_(*this, timeout),
       appName_("LibreWeb Browser"),
       useCurrentGTKIconTheme_(false), // Use LibreWeb icon theme or the GTK icons
       iconTheme_("flat"),             // Default is flat built-in theme
@@ -66,25 +63,7 @@ MainWindow::MainWindow(const std::string& timeout)
       fontSpacing_(0),
       brightnessScale_(1.0),
       useDarkTheme_(false),
-      currentHistoryIndex_(0),
-      waitPageVisible_(false),
-      // Threading:
-      requestThread_(nullptr),
-      statusThread_(nullptr),
-      is_request_thread_done_(false),
-      keep_request_thread_running_(true),
-      is_status_thread_done_(false),
-      // IPFS related:
-      ipfsHost_("localhost"),
-      ipfsPort_(5001),
-      ipfsTimeout_(timeout),
-      ipfs_fetch_(ipfsHost_, ipfsPort_, ipfsTimeout_),
-      ipfs_status_(ipfsHost_, ipfsPort_, ipfsTimeout_),
-      ipfsNetworkStatus_("Disconnected"),
-      ipfsNumberOfPeers_(0),
-      ipfsRepoSize_(0),
-      ipfsIncomingRate_("0.0"),
-      ipfsOutcomingRate_("0.0")
+      currentHistoryIndex_(0)
 {
   set_title(appName_);
   set_default_size(1000, 800);
@@ -160,28 +139,146 @@ MainWindow::MainWindow(const std::string& timeout)
   // Grap focus to input field by default
   m_addressBar.grab_focus();
 
-  // Trigger status update once manually,
-  // timer will automatically update status later.
-  on_update_connection_status();
-
 // Show homepage if debugging is disabled
 #ifdef NDEBUG
   go_home();
 #else
   std::cout << "INFO: Running as Debug mode, opening test.md." << std::endl;
   // Load test file when developing
-  doRequest("file://../../test.md");
+  middleware_.doRequest("file://../../test.md");
 #endif
 }
 
 /**
- * Destructor
+ * \brief Called just before starting the request
  */
-MainWindow::~MainWindow()
+void MainWindow::preRequest()
 {
-  statusTimerHandler_.disconnect();
-  abortRequest();
-  abortStatus();
+  // Start spinning icon
+  m_refreshIcon.get_style_context()->add_class("spinning");
+}
+
+/**
+ * \brief Called after request is started (but still busy / in progress)
+ * \param path File path (on disk or IPFS) that needs to be processed
+ * \param isSetAddressBar If true change update the address bar with the file path
+ * \param isHistoryRequest Set to true if this is an history request call: back/forward
+ * \param isDisableEditor If true the editor will be disabled if needed
+ */
+void MainWindow::postRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor)
+{
+  if (isSetAddressBar)
+    m_addressBar.set_text(path);
+
+  if (isDisableEditor && isEditorEnabled())
+    this->disableEdit();
+
+  // Do not insert history back/forward calls into the history (again)
+  if (!isHistoryRequest)
+  {
+    if (history_.size() == 0)
+    {
+      history_.push_back(path);
+      currentHistoryIndex_ = history_.size() - 1;
+    }
+    else if (history_.size() > 0 && !path.empty() && (history_.back().compare(path) != 0))
+    {
+      history_.push_back(path);
+      currentHistoryIndex_ = history_.size() - 1;
+    }
+  }
+
+  // Enable back/forward buttons when possible
+  m_backButton.set_sensitive(currentHistoryIndex_ > 0);
+  m_menu.setBackMenuSensitive(currentHistoryIndex_ > 0);
+  m_forwardButton.set_sensitive(currentHistoryIndex_ < history_.size() - 1);
+  m_menu.setForwardMenuSensitive(currentHistoryIndex_ < history_.size() - 1);
+}
+
+/**
+ * \brief Called when request is finished.
+ */
+void MainWindow::finishedRequest()
+{
+  // Stop spinning icon
+  m_refreshIcon.get_style_context()->remove_class("spinning");
+}
+
+/**
+ * \brief Show startpage
+ */
+void MainWindow::showStartpage()
+{
+  m_draw_main.showStartPage();
+}
+
+/**
+ * \brief Set plain text
+ * \param content content string
+ */
+void MainWindow::setText(const Glib::ustring& content)
+{
+  m_draw_main.setText(content);
+}
+
+/**
+ * \brief Set cmark document
+ * \param rootNode cmark root data struct
+ */
+void MainWindow::setDocument(cmark_node* rootNode)
+{
+  m_draw_main.setDocument(rootNode);
+}
+
+/**
+ * \brief Set message with optionally additional details
+ * \param message Message string
+ * \param details Details string
+ */
+void MainWindow::setMessage(const Glib::ustring& message, const Glib::ustring& details)
+{
+  m_draw_main.setMessage(message, details);
+}
+
+/**
+ * \brief Update all status fields in status pop-over menu + status icon
+ */
+void MainWindow::updateStatusPopoverAndIcon()
+{
+  std::string networkStatus;
+  std::size_t nrOfPeers = middleware_.getIPFSNumberOfPeers();
+  // Update status icon
+  if (nrOfPeers > 0)
+  {
+    networkStatus = "Connected";
+    if (useCurrentGTKIconTheme_)
+    {
+      m_statusIcon.set_from_icon_name("network-wired-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+    }
+    else
+    {
+      m_statusIcon.set(m_statusOnlineIcon);
+    }
+  }
+  else
+  {
+    networkStatus = "Disconnected";
+    if (useCurrentGTKIconTheme_)
+    {
+      m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
+    }
+    else
+    {
+      m_statusIcon.set(m_statusOfflineIcon);
+    }
+  }
+  m_connectivityStatusLabel.set_markup("<b>" + networkStatus + "</b>");
+  m_peersStatusLabel.set_text(std::to_string(nrOfPeers));
+  m_repoSizeStatusLabel.set_text(std::to_string(middleware_.getIPFSRepoSize()) + " MB");
+  m_repoPathStatusLabel.set_text(middleware_.getIPFSRepoPath());
+  m_networkIncomingStatusLabel.set_text(middleware_.getIPFSIncomingRate());
+  m_networkOutcomingStatusLabel.set_text(middleware_.getIPFSOutcomingRate());
+  m_ipfsVersionStatusLabel.set_text(middleware_.getIPFSVersion());
 }
 
 /**
@@ -779,51 +876,10 @@ void MainWindow::initSettingsPopover()
 }
 
 /**
- * \brief Update all status fields in status pop-over menu + status icon
- */
-void MainWindow::updateStatusPopoverAndIcon()
-{
-  m_connectivityStatusLabel.set_markup("<b>" + ipfsNetworkStatus_ + "</b>");
-  m_peersStatusLabel.set_text(std::to_string(ipfsNumberOfPeers_));
-  m_repoSizeStatusLabel.set_text(std::to_string(ipfsRepoSize_) + " MB");
-  m_repoPathStatusLabel.set_text(ipfsRepoPath_);
-  m_ipfsVersionStatusLabel.set_text(ipfsVersion_);
-  m_networkIncomingStatusLabel.set_text(ipfsIncomingRate_);
-  m_networkOutcomingStatusLabel.set_text(ipfsOutcomingRate_);
-  // Update status icon
-  if (ipfsNumberOfPeers_ > 0)
-  {
-    if (useCurrentGTKIconTheme_)
-    {
-      m_statusIcon.set_from_icon_name("network-wired-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-    }
-    else
-    {
-      m_statusIcon.set(m_statusOnlineIcon);
-    }
-  }
-  else
-  {
-    if (useCurrentGTKIconTheme_)
-    {
-      m_statusIcon.set_from_icon_name("network-wired-disconnected-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_MENU));
-    }
-    else
-    {
-      m_statusIcon.set(m_statusOfflineIcon);
-    }
-  }
-}
-
-/**
  * \brief Init all signals and connect them to functions
  */
 void MainWindow::initSignals()
 {
-  // Create a timer, triggers every 4 seconds
-  statusTimerHandler_ =
-      Glib::signal_timeout().connect_seconds(sigc::mem_fun(this, &MainWindow::on_update_connection_status), 4);
-
   // Window signals
   this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::delete_window));
 
@@ -946,25 +1002,7 @@ bool MainWindow::delete_window(GdkEventAny* any_event __attribute__((unused)))
 }
 
 /**
- * \brief Timeout slot: Update the IPFS connection status every x seconds.
- * Process requests inside a seperate thread, to avoid blocking the GUI thread.
- * \return always true, when running as a GTK timeout handler
- */
-bool MainWindow::on_update_connection_status()
-{
-  // Stop any on-going status calls first, if applicable
-  abortStatus();
-
-  if (statusThread_ == nullptr)
-  {
-    statusThread_ = new std::thread(&MainWindow::processStatus, this);
-  }
-  // Keep going (never disconnect the timer)
-  return true;
-}
-
-/***
- * Cut/copy/paste/delete/select all keybindings
+ * \brief Cut/copy/paste/delete/select all keybindings
  */
 void MainWindow::cut()
 {
@@ -1118,10 +1156,8 @@ void MainWindow::selectAll()
  */
 void MainWindow::new_doc()
 {
-  // Clear content & requestPath_
-  this->currentContent_ = "";
-  this->requestPath_ = "";
-
+  // Clear content & path
+  middleware_.resetContentAndPath();
   // Enable editing mode
   this->enableEdit();
   // Change address bar
@@ -1194,10 +1230,10 @@ void MainWindow::on_open_dialog_response(int response_id, Gtk::FileChooserDialog
   {
     auto filePath = dialog->get_file()->get_path();
     // Open file, set address bar & disable editor if needed
-    doRequest("file://" + filePath);
+    middleware_.doRequest("file://" + filePath);
 
     // Set new title
-    std::string fileName = File::getFilename(filePath);
+    std::string fileName = middleware_.getFilename(filePath);
     this->set_title(fileName + " - " + appName_);
     break;
   }
@@ -1230,12 +1266,12 @@ void MainWindow::on_open_edit_dialog_response(int response_id, Gtk::FileChooserD
     auto filePath = dialog->get_file()->get_path();
     std::string path = "file://" + filePath;
     // Open file and set address bar, but do not parse the content or the disable editor
-    doRequest(path, true, false, false, false);
+    middleware_.doRequest(path, true, false, false, false);
 
     // Change address bar
     this->m_addressBar.set_text(path);
     // Set new title
-    std::string fileName = File::getFilename(filePath);
+    std::string fileName = middleware_.getFilename(filePath);
     this->set_title(fileName + " - " + appName_);
     // Set current file path for saving feature
     this->currentFileSavedPath_ = filePath;
@@ -1262,7 +1298,7 @@ void MainWindow::edit()
   if (!this->isEditorEnabled())
     this->enableEdit();
 
-  m_draw_main.setText(this->currentContent_);
+  m_draw_main.setText(middleware_.getContent());
   // Set title
   this->set_title("Untitled * - " + appName_);
 }
@@ -1282,7 +1318,7 @@ void MainWindow::save()
     {
       try
       {
-        File::write(currentFileSavedPath_, this->currentContent_);
+        middleware_.doWrite(currentFileSavedPath_);
       }
       catch (std::ios_base::failure& error)
       {
@@ -1354,7 +1390,7 @@ void MainWindow::on_save_as_dialog_response(int response_id, Gtk::FileChooserDia
     // Save current content to file path
     try
     {
-      File::write(filePath, this->currentContent_);
+      middleware_.doWrite(filePath);
       // Only if editor mode is enabled
       if (this->isEditorEnabled())
       {
@@ -1363,7 +1399,7 @@ void MainWindow::on_save_as_dialog_response(int response_id, Gtk::FileChooserDia
         // And also update the address bar with the current file path
         this->m_addressBar.set_text("file://" + filePath);
         // Set title
-        std::string fileName = File::getFilename(filePath);
+        std::string fileName = middleware_.getFilename(filePath);
         this->set_title(fileName + " - " + appName_);
       }
     }
@@ -1393,7 +1429,7 @@ void MainWindow::on_save_as_dialog_response(int response_id, Gtk::FileChooserDia
 void MainWindow::publish()
 {
   int result = Gtk::RESPONSE_YES; // By default continue
-  if (this->currentContent_.empty())
+  if (middleware_.getContent().empty())
   {
     Gtk::MessageDialog dialog(*this, "Are you sure you want to publish <b>empty</b> content?", true,
                               Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO);
@@ -1417,12 +1453,10 @@ void MainWindow::publish()
       // websites, needing to use directory structures.
     }
 
-    // TODO: We should run this within a seperate thread, to avoid blocking the main thread.
-    // Also for example, when suddently the IPFS daemon is down.
     try
     {
-      // Add content to IPFS!
-      std::string cid = ipfs_status_.add(path, this->currentContent_);
+      // Add content to IPFS
+      std::string cid = middleware_.doAdd(path);
       if (cid.empty())
       {
         throw std::runtime_error("CID hash is empty.");
@@ -1457,130 +1491,11 @@ void MainWindow::publish()
 }
 
 /**
- * Fetch document from disk or IPFS, using threading
- * \param path File path that needs to be opened (either from disk or IPFS network)
- * \param isSetAddressBar If true change update the address bar with the file path (default: true)
- * \param isHistoryRequest Set to true if this is an history request call: back/forward (default: false)
- * \param isDisableEditor If true the editor will be disabled if needed (default: true)
- * \param isParseContext If true the content received will be parsed and displayed as markdown syntax (default: true),
- * set to false if you want to editor the content
- */
-void MainWindow::doRequest(
-    const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor, bool isParseContent)
-{
-  // Stop any on-going request first, if applicable
-  abortRequest();
-
-  if (requestThread_ == nullptr)
-  {
-    // Show spinning icon
-    m_refreshIcon.get_style_context()->add_class("spinning");
-    // Start thread
-    requestThread_ = new std::thread(&MainWindow::processRequest, this, path, isParseContent);
-    postDoRequest(path, isSetAddressBar, isHistoryRequest, isDisableEditor);
-  }
-}
-
-/**
- * \brief Post-processing request actions
- * \param path File path (on disk or IPFS) that needs to be processed
- * \param isSetAddressBar If true change update the address bar with the file path
- * \param isHistoryRequest Set to true if this is an history request call: back/forward
- * \param isDisableEditor If true the editor will be disabled if needed
- */
-void MainWindow::postDoRequest(const std::string& path,
-                               bool isSetAddressBar,
-                               bool isHistoryRequest,
-                               bool isDisableEditor)
-{
-  if (isSetAddressBar)
-    m_addressBar.set_text(path);
-
-  if (isDisableEditor && isEditorEnabled())
-    this->disableEdit();
-
-  // Do not insert history back/forward calls into the history (again)
-  if (!isHistoryRequest)
-  {
-    if (history_.size() == 0)
-    {
-      history_.push_back(path);
-      currentHistoryIndex_ = history_.size() - 1;
-    }
-    else if (history_.size() > 0 && !path.empty() && (history_.back().compare(path) != 0))
-    {
-      history_.push_back(path);
-      currentHistoryIndex_ = history_.size() - 1;
-    }
-  }
-
-  // Enable back/forward buttons when possible
-  m_backButton.set_sensitive(currentHistoryIndex_ > 0);
-  m_menu.setBackMenuSensitive(currentHistoryIndex_ > 0);
-  m_forwardButton.set_sensitive(currentHistoryIndex_ < history_.size() - 1);
-  m_menu.setForwardMenuSensitive(currentHistoryIndex_ < history_.size() - 1);
-}
-
-/**
- * Abort request call and stop the thread, if applicable.
- */
-void MainWindow::abortRequest()
-{
-  if (requestThread_ && requestThread_->joinable())
-  {
-    if (is_request_thread_done_)
-    {
-      requestThread_->join();
-    }
-    else
-    {
-      // Trigger the thread to stop now.
-      // We call the abort method of the IPFS client.
-      ipfs_fetch_.abort();
-      keep_request_thread_running_ = false;
-      requestThread_->join();
-      // Reset states, allowing new threads with new API requests/calls
-      ipfs_fetch_.reset();
-      keep_request_thread_running_ = true;
-    }
-    delete requestThread_;
-    requestThread_ = nullptr;
-    is_request_thread_done_ = false; // reset
-  }
-}
-
-/**
- * Abort status calls and stop the thread, if applicable.
- */
-void MainWindow::abortStatus()
-{
-  if (statusThread_ && statusThread_->joinable())
-  {
-    if (is_status_thread_done_)
-    {
-      statusThread_->join();
-    }
-    else
-    {
-      // Trigger the thread to stop now.
-      // We call the abort method of the IPFS client.
-      ipfs_status_.abort();
-      statusThread_->join();
-      // Reset states, allowing new threads with new API status calls
-      ipfs_status_.reset();
-    }
-    delete statusThread_;
-    statusThread_ = nullptr;
-    is_status_thread_done_ = false; // reset
-  }
-}
-
-/**
  * \brief Show homepage
  */
 void MainWindow::go_home()
 {
-  doRequest("about:home", true, false, true);
+  middleware_.doRequest("about:home", true, false, true);
 }
 
 /**
@@ -1588,10 +1503,10 @@ void MainWindow::go_home()
  */
 void MainWindow::copy_client_id()
 {
-  if (!this->ipfsClientID_.empty())
+  if (!middleware_.getIPFSClientId().empty())
   {
-    get_clipboard("CLIPBOARD")->set_text(this->ipfsClientID_);
-    this->showNotification("Copied to clipboard", "Your client ID is now copied to your clipboard.");
+    get_clipboard("CLIPBOARD")->set_text(middleware_.getIPFSClientId());
+    showNotification("Copied to clipboard", "Your client ID is now copied to your clipboard.");
   }
   else
   {
@@ -1604,10 +1519,10 @@ void MainWindow::copy_client_id()
  */
 void MainWindow::copy_client_public_key()
 {
-  if (!this->ipfsClientPublicKey_.empty())
+  if (!middleware_.getIPFSClientPublicKey().empty())
   {
-    get_clipboard("CLIPBOARD")->set_text(this->ipfsClientPublicKey_);
-    this->showNotification("Copied to clipboard", "Your client public key is now copied to your clipboard.");
+    get_clipboard("CLIPBOARD")->set_text(middleware_.getIPFSClientPublicKey());
+    showNotification("Copied to clipboard", "Your client public key is now copied to your clipboard.");
   }
   else
   {
@@ -1677,7 +1592,7 @@ void MainWindow::on_replace()
  */
 void MainWindow::address_bar_activate()
 {
-  doRequest(m_addressBar.get_text(), false);
+  middleware_.doRequest(m_addressBar.get_text(), false);
   // When user actually entered the address bar, focus on the main draw
   m_draw_main.grab_focus();
 }
@@ -1733,7 +1648,7 @@ void MainWindow::back()
   if (currentHistoryIndex_ > 0)
   {
     currentHistoryIndex_--;
-    doRequest(history_.at(currentHistoryIndex_), true, true);
+    middleware_.doRequest(history_.at(currentHistoryIndex_), true, true);
   }
 }
 
@@ -1742,7 +1657,7 @@ void MainWindow::forward()
   if (currentHistoryIndex_ < history_.size() - 1)
   {
     currentHistoryIndex_++;
-    doRequest(history_.at(currentHistoryIndex_), true, true);
+    middleware_.doRequest(history_.at(currentHistoryIndex_), true, true);
   }
 }
 
@@ -1750,8 +1665,9 @@ void MainWindow::refresh()
 {
   // Only allow refresh if editor is disabled (doesn't make sense otherwise to refresh)
   if (!this->isEditorEnabled())
-    doRequest("", false, false,
-              false); /*!< Reload existing file, don't need to update the address bar, don't disable the editor */
+    middleware_.doRequest(
+        "", false, false,
+        false); /*!< Reload existing file, don't need to update the address bar, don't disable the editor */
 }
 
 /**
@@ -1863,258 +1779,10 @@ bool MainWindow::isEditorEnabled()
 }
 
 /**
- * \brief Get the file from disk or IPFS network, from the provided path,
- * parse the content, and display the document
- * \param path File path that needs to be fetched (from disk or IPFS network)
- * \param isParseContent Set to true if you want to parse and display the content as markdown syntax (from disk or IPFS
- * network), set to false if you want to edit the content
- */
-void MainWindow::processRequest(const std::string& path, bool isParseContent)
-{
-  // Reset private variables
-  this->currentContent_ = "";
-  this->waitPageVisible_ = false;
-
-  // Do not update the requestPath_ when path is empty,
-  // this is used for refreshing the page
-  if (!path.empty())
-  {
-    requestPath_ = path;
-  }
-
-  if (requestPath_.empty())
-  {
-    std::cerr << "Info: Empty request path." << std::endl;
-  }
-  // Handle homepage
-  else if (requestPath_.compare("about:home") == 0)
-  {
-    m_draw_main.showStartPage();
-    m_refreshIcon.get_style_context()->remove_class("spinning");
-  }
-  // Handle disk or IPFS file paths
-  else
-  {
-    // Check if CID
-    if (requestPath_.rfind("ipfs://", 0) == 0)
-    {
-      finalRequestPath_ = requestPath_;
-      finalRequestPath_.erase(0, 7);
-      fetchFromIPFS(isParseContent);
-    }
-    else if ((requestPath_.length() == 46) && (requestPath_.rfind("Qm", 0) == 0))
-    {
-      // CIDv0
-      finalRequestPath_ = requestPath_;
-      fetchFromIPFS(isParseContent);
-    }
-    else if (requestPath_.rfind("file://", 0) == 0)
-    {
-      finalRequestPath_ = requestPath_;
-      finalRequestPath_.erase(0, 7);
-      openFromDisk(isParseContent);
-    }
-    else
-    {
-      // IPFS as fallback / CIDv1
-      finalRequestPath_ = requestPath_;
-      fetchFromIPFS(isParseContent);
-    }
-  }
-
-  is_request_thread_done_ = true; // mark thread as done
-}
-
-/**
- * \brief Helper method for processRequest(), display markdown file from IPFS network.
- * Runs in a seperate thread.
- * \param isParseContent Set to true if you want to parse and display the content as markdown syntax (from disk or IPFS
- * network), set to false if you want to edit the content
- */
-void MainWindow::fetchFromIPFS(bool isParseContent)
-{
-  try
-  {
-    // TODO: Check file contents (first bytes?), to guess the file type.
-    // only proceed further file is UTF-8 unicode text (avoid images etc.).
-    std::stringstream contents;
-    ipfs_fetch_.fetch(finalRequestPath_, &contents);
-    this->currentContent_ = contents.str();
-    if (isParseContent)
-    {
-      // TODO: Maybe we want to abort the parser when keep_request_thread_running_ = false,
-      // depending time the parser is taking?
-      cmark_node* doc = Parser::parseContent(this->currentContent_);
-      m_draw_main.processDocument(doc);
-      cmark_node_free(doc);
-    }
-    else
-    {
-      // Directly display the plain markdown content
-      m_draw_main.setText(this->currentContent_);
-    }
-  }
-  catch (const std::runtime_error& error)
-  {
-    std::string errorMessage = std::string(error.what());
-    // Ignore error reporting when the request was aborted
-    if (errorMessage != "Request was aborted")
-    {
-      std::cerr << "ERROR: IPFS request failed, with message: " << errorMessage << std::endl;
-      if (errorMessage.starts_with("HTTP request failed with status code"))
-      {
-        std::string message;
-        // Remove text until ':\n'
-        errorMessage.erase(0, errorMessage.find(':') + 2);
-        if (!errorMessage.empty() && errorMessage != "")
-        {
-          try
-          {
-            auto content = nlohmann::json::parse(errorMessage);
-            message = "Message: " + content.value("Message", "");
-            if (message.starts_with("context deadline exceeded"))
-            {
-              message += ". Time-out is set to: " + this->ipfsTimeout_;
-            }
-            message += ".\n\n";
-          }
-          catch (const nlohmann::json::parse_error& parseError)
-          {
-            std::cerr << "ERROR: Could not parse at byte: " << parseError.byte << std::endl;
-          }
-        }
-        m_draw_main.showMessage("🎂 We're having trouble finding this site.",
-                                message +
-                                    "You could try to reload the page or try increase the time-out (see --help).");
-      }
-      else if (errorMessage.starts_with("Couldn't connect to server: Failed to connect to localhost"))
-      {
-        m_draw_main.showMessage("⌛ Please wait...",
-                                "IPFS daemon is still spinnng-up, page will automatically refresh...");
-        waitPageVisible_ = true; // Please wait page is shown (auto-refresh when network is up)
-      }
-      else
-      {
-        m_draw_main.showMessage("❌ Something went wrong", "Error message: " + std::string(error.what()));
-      }
-    }
-  }
-  // Stop spinning
-  m_refreshIcon.get_style_context()->remove_class("spinning");
-}
-
-/**
- * \brief Helper method for processRequest(), display markdown file from disk.
- * Runs in a seperate thread.
- * \param isParseContent Set to true if you want to parse and display the content as markdown syntax (from disk or IPFS
- * network), set to false if you want to edit the content
- */
-void MainWindow::openFromDisk(bool isParseContent)
-{
-  try
-  {
-    // Abort file read if keep_request_thread_running_ = false and throw runtime error, to stop futher execution
-    // eg. when you are reading a very big file from disk.
-    this->currentContent_ = File::read(finalRequestPath_);
-    // If the thread stops, don't brother to parse the file/update the GTK window
-    if (keep_request_thread_running_)
-    {
-      if (isParseContent)
-      {
-        cmark_node* doc = Parser::parseContent(this->currentContent_);
-        m_draw_main.processDocument(doc);
-        cmark_node_free(doc);
-      }
-      else
-      {
-        // directly set the plain content
-        m_draw_main.setText(this->currentContent_);
-      }
-    }
-  }
-  catch (const std::ios_base::failure& error)
-  {
-    std::cerr << "ERROR: Could not read file: " << finalRequestPath_ << ". Message: " << error.what()
-              << ".\nError code: " << error.code() << std::endl;
-    m_draw_main.showMessage("🎂 Could not read file", "Message: " + std::string(error.what()));
-  }
-  catch (const std::runtime_error& error)
-  {
-    std::cerr << "ERROR: File request failed, file: " << finalRequestPath_ << ". Message: " << error.what()
-              << std::endl;
-    m_draw_main.showMessage("🎂 File not found", "Message: " + std::string(error.what()));
-  }
-  // Stop spinning
-  m_refreshIcon.get_style_context()->remove_class("spinning");
-}
-
-/**
- * Process the IPFS status calls.
- * Runs inside a thread.
- */
-void MainWindow::processStatus()
-{
-  std::lock_guard<std::mutex> guard(status_mutex_);
-  try
-  {
-    this->ipfsNumberOfPeers_ = ipfs_status_.getNrPeers();
-    if (this->ipfsNumberOfPeers_ > 0)
-    {
-      // Auto-refresh page if needed (when 'Please wait' page was shown)
-      // if (this->waitPageVisible_)
-      //  this->refresh();
-
-      this->ipfsNetworkStatus_ = "Connected";
-      std::map<std::string, std::variant<int, std::string>> repoStats = ipfs_status_.getRepoStats();
-      this->ipfsRepoSize_ = std::get<int>(repoStats.at("total_size"));
-      this->ipfsRepoPath_ = std::get<std::string>(repoStats.at("path"));
-
-      std::map<std::string, float> rates = ipfs_status_.getBandwidthRates();
-      char buf[32];
-      this->ipfsIncomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("in") / 1000.0));
-      this->ipfsOutcomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("out") / 1000.0));
-    }
-    else
-    {
-      this->ipfsNetworkStatus_ = "Disconnected";
-      this->ipfsRepoSize_ = 0;
-      this->ipfsRepoPath_ = "";
-      this->ipfsIncomingRate_ = "0.0";
-      this->ipfsOutcomingRate_ = "0.0";
-    }
-
-    if (this->ipfsClientID_.empty())
-      this->ipfsClientID_ = ipfs_status_.getClientID();
-    if (this->ipfsClientPublicKey_.empty())
-      this->ipfsClientPublicKey_ = ipfs_status_.getClientPublicKey();
-    if (this->ipfsVersion_.empty())
-      this->ipfsVersion_ = ipfs_status_.getVersion();
-
-    // Trigger update of all status fields, in a thread-safe manner
-    Glib::signal_idle().connect_once(sigc::mem_fun(*this, &MainWindow::updateStatusPopoverAndIcon));
-  }
-  catch (const std::runtime_error& error)
-  {
-    std::string errorMessage = std::string(error.what());
-    if (errorMessage != "Request was aborted")
-    {
-      // Assume no connection or connection lost; display disconnected
-      this->ipfsNumberOfPeers_ = 0;
-      this->ipfsNetworkStatus_ = "Disconnected";
-      this->ipfsRepoSize_ = 0;
-      this->ipfsRepoPath_ = "";
-      this->ipfsIncomingRate_ = "0.0";
-      this->ipfsOutcomingRate_ = "0.0";
-      Glib::signal_idle().connect_once(sigc::mem_fun(*this, &MainWindow::updateStatusPopoverAndIcon));
-    }
-  }
-}
-
-/**
- * Retrieve image path from icon theme location
- * @param iconName Icon name (.png is added default)
- * @param typeofIcon Type of the icon is the sub-folder within the icons directory (eg. "editor", "arrows" or "basic")
- * @return full path of the icon PNG image
+ * \brief Retrieve image path from icon theme location
+ * \param iconName Icon name (.png is added default)
+ * \param typeofIcon Type of the icon is the sub-folder within the icons directory (eg. "editor", "arrows" or "basic")
+ * \return full path of the icon PNG image
  */
 std::string MainWindow::getIconImageFromTheme(const std::string& iconName, const std::string& typeofIcon)
 {
@@ -2145,7 +1813,7 @@ std::string MainWindow::getIconImageFromTheme(const std::string& iconName, const
 }
 
 /**
- * Update the CSS provider data on the main draw text view
+ * \brief Update the CSS provider data on the main draw text view
  */
 void MainWindow::updateCSS()
 {
@@ -2186,8 +1854,8 @@ void MainWindow::updateCSS()
 
 /**
  * \brief Show Gio notification
- * @param title Title of the notification
- * @param message The message displayed along with the notificiation
+ * \param title Title of the notification
+ * \param message The message displayed along with the notificiation
  */
 void MainWindow::showNotification(const Glib::ustring& title, const Glib::ustring& message)
 {
@@ -2201,30 +1869,30 @@ void MainWindow::showNotification(const Glib::ustring& title, const Glib::ustrin
 
 void MainWindow::editor_changed_text()
 {
-  // Retrieve text from text editor
-  this->currentContent_ = m_draw_main.getText();
-  // Parse the markdown contents
-  cmark_node* doc = Parser::parseContent(this->currentContent_);
+  // Retrieve text from editor and parse the markdown contents
+  middleware_.setContent(m_draw_main.getText());
+  cmark_node* doc = middleware_.parseContent();
+
   /* Can be enabled to show the markdown format in terminal:
   std::string md = Parser::renderMarkdown(doc);
   std::cout << "Markdown:\n" << md << std::endl;*/
 
   // Show the document as a preview on the right side text-view panel
-  m_draw_secondary.processDocument(doc);
+  m_draw_secondary.setDocument(doc);
   cmark_node_free(doc);
 }
 
 /**
- * Show source code dialog window with the current content
+ * \brief Show source code dialog window with the current content
  */
 void MainWindow::show_source_code_dialog()
 {
-  m_sourceCodeDialog.setText(this->currentContent_);
+  m_sourceCodeDialog.setText(middleware_.getContent());
   m_sourceCodeDialog.run();
 }
 
 /**
- * Retrieve selected heading from combobox.
+ * \brief Retrieve selected heading from combobox.
  * Send to main Draw class
  */
 void MainWindow::get_heading()

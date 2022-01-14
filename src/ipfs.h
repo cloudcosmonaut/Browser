@@ -3,6 +3,7 @@
 
 #include "ipfs/client.h"
 #include <iostream>
+#include <map>
 #include <string>
 #include <variant>
 

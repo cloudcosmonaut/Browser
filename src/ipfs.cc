@@ -76,7 +76,7 @@ std::map<std::string, float> IPFS::getBandwidthRates()
 
 /**
  * \brief Get the stats of the current Repo. Does not throw errors.
- * \return Map with repo stats (with keys: 'total_size' and 'path')
+ * \return Map with repo stats (with keys: 'repo-size' and 'path')
  */
 std::map<std::string, std::variant<int, std::string>> IPFS::getRepoStats()
 {
@@ -85,7 +85,7 @@ std::map<std::string, std::variant<int, std::string>> IPFS::getRepoStats()
   client.StatsRepo(&repo_stats);
   int repoSize = (int)repo_stats["RepoSize"] / 1000000; // Convert from bytes to MB
   std::string repoPath = repo_stats["RepoPath"];
-  repoStats.insert(std::pair<std::string, int>("total_size", repoSize));
+  repoStats.insert(std::pair<std::string, int>("repo-size", repoSize));
   repoStats.insert(std::pair<std::string, std::string>("path", repoPath));
   return repoStats;
 }

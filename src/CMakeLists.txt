@@ -79,6 +79,7 @@ set(HEADERS
     draw.h
     file.h
     ipfs.h
+    middleware.h
     mainwindow.h
     md-parser.h
     menu.h
@@ -92,6 +93,7 @@ set(SOURCES
   draw.cc
   file.cc
   ipfs.cc
+  middleware.cc
   mainwindow.cc
   md-parser.cc
   menu.cc

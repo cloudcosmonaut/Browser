@@ -7,7 +7,7 @@
 #include <gtkmm/textview.h>
 #include <pangomm/layout.h>
 
-class MainWindow;
+class Middleware;
 
 /**
  * \struct UndoRedoData
@@ -36,10 +36,10 @@ public:
     CODE_TYPE_CODE_BLOCK
   };
 
-  explicit Draw(MainWindow& mainWindow);
-  void showMessage(const Glib::ustring& message, const Glib::ustring& detailed_info = "");
+  explicit Draw(Middleware& middleware);
+  void setMessage(const Glib::ustring& message, const Glib::ustring& details = "");
   void showStartPage();
-  void processDocument(cmark_node* root_node);
+  void setDocument(cmark_node* rootNode);
   void setViewSourceMenuItem(bool isEnabled);
   void newDocument();
   Glib::ustring getText();
@@ -79,7 +79,7 @@ protected:
   void populate_popup(Gtk::Menu* menu);
 
 private:
-  MainWindow& mainWindow;
+  Middleware& middleware;
   GtkTextBuffer* buffer;
   bool addViewSourceMenuItem;
   int headingLevel;
