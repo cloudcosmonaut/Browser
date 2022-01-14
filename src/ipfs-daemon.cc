@@ -20,7 +20,7 @@ namespace n_fs = ::std::filesystem;
 
 /**
  * \brief Spawn the IPFS daemon in an async manner using Glib. If needed under Linux (under Windows, it tries to start
- * IPFS anyway). \return True if process is started, otherwise false.
+ * IPFS anyway).
  */
 void IPFSDaemon::spawn()
 {
@@ -52,7 +52,7 @@ void IPFSDaemon::spawn()
                                  Glib::SPAWN_DO_NOT_REAP_CHILD | Glib::SPAWN_SEARCH_PATH;
 
         // Start IPFS, using spawn_async,
-        // optionally we can use spawn_async_with_pipes(), to retrieve stdout & stderr to specified output
+        // optionally we could use spawn_async_with_pipes(), to retrieve stdout & stderr to specified output
         // buffers
         Glib::spawn_async(this->workingDir, argv, flags, Glib::SlotSpawnChildSetup(), &this->pid);
 
@@ -191,11 +191,12 @@ int IPFSDaemon::getExistingPID()
 }
 
 /**
- * \brief Determine if we need to kill any running IPFS process (UNIX only)
- * \return true if it needs to be terminated, otherwise false
- */
-// Currently used:
-/*
+ * Determine if we need to kill any running IPFS process (UNIX only)
+ *
+ * return - true if it needs to be terminated, otherwise false
+ *
+ * Should we even want this? We were using:
+
 bool IPFSDaemon::shouldProcessTerminated()
 {
 #ifdef __linux__

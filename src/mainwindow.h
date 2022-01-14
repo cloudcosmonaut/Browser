@@ -46,9 +46,10 @@ class MainWindow : public Gtk::Window
 public:
   static const int DEFAULT_FONT_SIZE = 10;
   explicit MainWindow(const std::string& timeout);
-  void preRequest();
-  void postRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor);
+  void preRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor);
+  void startedRequest();
   void finishedRequest();
+  void refreshRequest();
   void showStartpage();
   void setText(const Glib::ustring& content);
   void setDocument(cmark_node* rootNode);
@@ -82,7 +83,6 @@ protected:
   void show_search(bool replace);
   void back();
   void forward();
-  void refresh();
   void on_button_clicked(Glib::ustring data);
   void show_about();
   void hide_about(int response);

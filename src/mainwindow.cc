@@ -150,28 +150,22 @@ MainWindow::MainWindow(const std::string& timeout)
 }
 
 /**
- * \brief Called just before starting the request
- */
-void MainWindow::preRequest()
-{
-  // Start spinning icon
-  m_refreshIcon.get_style_context()->add_class("spinning");
-}
-
-/**
- * \brief Called after request is started (but still busy / in progress)
+ * \brief Executed before the request begins
  * \param path File path (on disk or IPFS) that needs to be processed
  * \param isSetAddressBar If true change update the address bar with the file path
  * \param isHistoryRequest Set to true if this is an history request call: back/forward
  * \param isDisableEditor If true the editor will be disabled if needed
  */
-void MainWindow::postRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor)
+void MainWindow::preRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor)
 {
+  // Set title to default name
+  set_title(appName_);
+
   if (isSetAddressBar)
     m_addressBar.set_text(path);
 
   if (isDisableEditor && isEditorEnabled())
-    this->disableEdit();
+    disableEdit();
 
   // Do not insert history back/forward calls into the history (again)
   if (!isHistoryRequest && !path.empty())
@@ -196,12 +190,32 @@ void MainWindow::postRequest(const std::string& path, bool isSetAddressBar, bool
 }
 
 /**
- * \brief Called when request is finished.
+ * \brief Caleld when request started (from thread).
+ */
+void MainWindow::startedRequest()
+{
+  // Start spinning icon
+  m_refreshIcon.get_style_context()->add_class("spinning");
+}
+
+/**
+ * \brief Called when request is finished (from thread).
  */
 void MainWindow::finishedRequest()
 {
   // Stop spinning icon
   m_refreshIcon.get_style_context()->remove_class("spinning");
+}
+
+/**
+ * \brief Refresh the current page
+ */
+void MainWindow::refreshRequest()
+{
+  // Only allow refresh if editor is disabled (doesn't make sense otherwise to refresh)
+  if (!isEditorEnabled())
+    // Reload existing file, don't need to update the address bar, don't disable the editor
+    middleware_.doRequest("", false, false, false);
 }
 
 /**
@@ -287,7 +301,7 @@ void MainWindow::updateStatusPopoverAndIcon()
 void MainWindow::loadStoredSettings()
 {
   // Set additional schema directory, when browser is not yet installed
-  if (!this->isInstalled())
+  if (!isInstalled())
   {
     // Relative to the binary path
     std::vector<std::string> relativePath{"..", "src", "gsettings"};
@@ -304,26 +318,26 @@ void MainWindow::loadStoredSettings()
     // Apply global settings
     set_default_size(m_settings->get_int("width"), m_settings->get_int("height"));
     if (m_settings->get_boolean("maximized"))
-      this->maximize();
+      maximize();
 
-    this->fontFamily_ = m_settings->get_string("font-family");
-    this->currentFontSize_ = this->defaultFontSize_ = m_settings->get_int("font-size");
-    this->m_fontButton.set_font_name(this->fontFamily_ + " " + std::to_string(this->currentFontSize_));
+    fontFamily_ = m_settings->get_string("font-family");
+    currentFontSize_ = defaultFontSize_ = m_settings->get_int("font-size");
+    m_fontButton.set_font_name(fontFamily_ + " " + std::to_string(currentFontSize_));
 
     fontSpacing_ = m_settings->get_int("spacing");
     int margins = m_settings->get_int("margins");
     int indent = m_settings->get_int("indent");
-    this->m_spacingAdjustment->set_value(fontSpacing_);
-    this->m_marginsAdjustment->set_value(margins);
-    this->m_indentAdjustment->set_value(indent);
-    this->m_draw_main.set_left_margin(margins);
-    this->m_draw_main.set_right_margin(margins);
-    this->m_draw_main.set_indent(indent);
+    m_spacingAdjustment->set_value(fontSpacing_);
+    m_marginsAdjustment->set_value(margins);
+    m_indentAdjustment->set_value(indent);
+    m_draw_main.set_left_margin(margins);
+    m_draw_main.set_right_margin(margins);
+    m_draw_main.set_indent(indent);
 
-    this->iconTheme_ = m_settings->get_string("icon-theme");
-    this->useCurrentGTKIconTheme_ = m_settings->get_boolean("icon-gtk-theme");
-    this->brightnessScale_ = m_settings->get_double("brightness");
-    this->useDarkTheme_ = m_settings->get_boolean("dark-theme");
+    iconTheme_ = m_settings->get_string("icon-theme");
+    useCurrentGTKIconTheme_ = m_settings->get_boolean("icon-gtk-theme");
+    brightnessScale_ = m_settings->get_double("brightness");
+    useDarkTheme_ = m_settings->get_boolean("dark-theme");
   }
   else
   {
@@ -332,13 +346,13 @@ void MainWindow::loadStoredSettings()
     // for adjustment controls
     int margins = 20;
     int indent = 0;
-    this->m_spacingAdjustment->set_value(0);
-    this->m_marginsAdjustment->set_value(margins);
-    this->m_indentAdjustment->set_value(indent);
+    m_spacingAdjustment->set_value(0);
+    m_marginsAdjustment->set_value(margins);
+    m_indentAdjustment->set_value(indent);
     // For drawing
-    this->m_draw_main.set_left_margin(margins);
-    this->m_draw_main.set_right_margin(margins);
-    this->m_draw_main.set_indent(indent);
+    m_draw_main.set_left_margin(margins);
+    m_draw_main.set_right_margin(margins);
+    m_draw_main.set_indent(indent);
   }
 }
 
@@ -351,40 +365,32 @@ void MainWindow::loadIcons()
   {
     // Editor buttons
     m_openIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("open_folder", "folders"), iconSize_, iconSize_));
-    m_saveIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("floppy_disk", "basic"), iconSize_, iconSize_));
-    m_publishIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("upload", "basic"), iconSize_, iconSize_));
-    m_cutIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("cut", "editor"), iconSize_, iconSize_));
-    m_copyIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("copy", "editor"), iconSize_, iconSize_));
-    m_pasteIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("clipboard", "editor"), iconSize_, iconSize_));
-    m_undoIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("undo", "editor"), iconSize_, iconSize_));
-    m_redoIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("redo", "editor"), iconSize_, iconSize_));
-    m_boldIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("bold", "editor"), iconSize_, iconSize_));
-    m_italicIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("italic", "editor"), iconSize_, iconSize_));
+        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("open_folder", "folders"), iconSize_, iconSize_));
+    m_saveIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("floppy_disk", "basic"), iconSize_, iconSize_));
+    m_publishIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("upload", "basic"), iconSize_, iconSize_));
+    m_cutIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("cut", "editor"), iconSize_, iconSize_));
+    m_copyIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("copy", "editor"), iconSize_, iconSize_));
+    m_pasteIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("clipboard", "editor"), iconSize_, iconSize_));
+    m_undoIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("undo", "editor"), iconSize_, iconSize_));
+    m_redoIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("redo", "editor"), iconSize_, iconSize_));
+    m_boldIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("bold", "editor"), iconSize_, iconSize_));
+    m_italicIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("italic", "editor"), iconSize_, iconSize_));
     m_strikethroughIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("strikethrough", "editor"), iconSize_, iconSize_));
+        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("strikethrough", "editor"), iconSize_, iconSize_));
     m_superIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("superscript", "editor"), iconSize_, iconSize_));
-    m_subIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("subscript", "editor"), iconSize_, iconSize_));
-    m_linkIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("link", "editor"), iconSize_, iconSize_));
-    m_imageIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("shapes", "editor"), iconSize_, iconSize_));
-    m_emojiIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("smile", "smiley"), iconSize_, iconSize_));
-    m_quoteIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("quote", "editor"), iconSize_, iconSize_));
-    m_codeIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("code", "editor"), iconSize_, iconSize_));
+        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("superscript", "editor"), iconSize_, iconSize_));
+    m_subIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("subscript", "editor"), iconSize_, iconSize_));
+    m_linkIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("link", "editor"), iconSize_, iconSize_));
+    m_imageIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("shapes", "editor"), iconSize_, iconSize_));
+    m_emojiIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("smile", "smiley"), iconSize_, iconSize_));
+    m_quoteIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("quote", "editor"), iconSize_, iconSize_));
+    m_codeIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("code", "editor"), iconSize_, iconSize_));
     m_bulletListIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("bullet_list", "editor"), iconSize_, iconSize_));
+        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("bullet_list", "editor"), iconSize_, iconSize_));
     m_numberedListIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("number_list", "editor"), iconSize_, iconSize_));
+        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("number_list", "editor"), iconSize_, iconSize_));
     m_hightlightIcon.set(
-        Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("highlighter", "editor"), iconSize_, iconSize_));
+        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("highlighter", "editor"), iconSize_, iconSize_));
 
     if (useCurrentGTKIconTheme_)
     {
@@ -405,29 +411,26 @@ void MainWindow::loadIcons()
     {
       // Toolbox buttons
       m_backIcon.set(
-          Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("right_arrow_1", "arrows"), iconSize_, iconSize_)
+          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("right_arrow_1", "arrows"), iconSize_, iconSize_)
               ->flip());
       m_forwardIcon.set(
-          Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("right_arrow_1", "arrows"), iconSize_, iconSize_));
-      m_refreshIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("reload_centered", "arrows"),
+          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("right_arrow_1", "arrows"), iconSize_, iconSize_));
+      m_refreshIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("reload_centered", "arrows"),
                                                       iconSize_ * 1.13, iconSize_));
-      m_homeIcon.set(Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("home", "basic"), iconSize_, iconSize_));
-      m_searchIcon.set(
-          Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("search", "basic"), iconSize_, iconSize_));
-      m_settingsIcon.set(
-          Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("menu", "basic"), iconSize_, iconSize_));
+      m_homeIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("home", "basic"), iconSize_, iconSize_));
+      m_searchIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("search", "basic"), iconSize_, iconSize_));
+      m_settingsIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("menu", "basic"), iconSize_, iconSize_));
 
       // Settings pop-over buttons
       m_zoomOutImage.set(
-          Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("zoom_out", "basic"), iconSize_, iconSize_));
-      m_zoomInImage.set(
-          Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("zoom_in", "basic"), iconSize_, iconSize_));
+          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("zoom_out", "basic"), iconSize_, iconSize_));
+      m_zoomInImage.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("zoom_in", "basic"), iconSize_, iconSize_));
       m_brightnessImage.set(
-          Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("brightness", "basic"), iconSize_, iconSize_));
-      m_statusOfflineIcon = Gdk::Pixbuf::create_from_file(
-          this->getIconImageFromTheme("network_disconnected", "network"), iconSize_, iconSize_);
-      m_statusOnlineIcon = Gdk::Pixbuf::create_from_file(this->getIconImageFromTheme("network_connected", "network"),
-                                                         iconSize_, iconSize_);
+          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("brightness", "basic"), iconSize_, iconSize_));
+      m_statusOfflineIcon =
+          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("network_disconnected", "network"), iconSize_, iconSize_);
+      m_statusOnlineIcon =
+          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("network_connected", "network"), iconSize_, iconSize_);
     }
   }
   catch (const Glib::FileError& error)
@@ -654,7 +657,7 @@ void MainWindow::initButtons()
 void MainWindow::setTheme()
 {
   auto settings = Gtk::Settings::get_default();
-  settings->property_gtk_application_prefer_dark_theme().set_value(this->useDarkTheme_);
+  settings->property_gtk_application_prefer_dark_theme().set_value(useDarkTheme_);
 }
 
 /**
@@ -740,7 +743,7 @@ void MainWindow::initStatusPopover()
   m_statusPopover.show_all_children();
 
   // Set fallback values for all status fields + status icon
-  this->updateStatusPopoverAndIcon();
+  updateStatusPopoverAndIcon();
 }
 
 /**
@@ -772,7 +775,7 @@ void MainWindow::initSettingsPopover()
   m_hboxSetingsZoom.pack_end(m_zoomInButton);
 
   // Brightness slider
-  m_brightnessAdjustment->set_value(this->brightnessScale_); // Override with current loaded brightness setting
+  m_brightnessAdjustment->set_value(brightnessScale_); // Override with current loaded brightness setting
   m_scaleSettingsBrightness.set_adjustment(m_brightnessAdjustment);
   m_scaleSettingsBrightness.add_mark(0.5, Gtk::PositionType::POS_BOTTOM, "");
   m_scaleSettingsBrightness.set_draw_value(false);
@@ -781,7 +784,7 @@ void MainWindow::initSettingsPopover()
   m_hboxSetingsBrightness.pack_end(m_scaleSettingsBrightness);
 
   // Dark theme switch
-  m_themeSwitch.set_active(this->useDarkTheme_); // Override with current dark theme preference
+  m_themeSwitch.set_active(useDarkTheme_); // Override with current dark theme preference
 
   // Spin buttons
   m_spacingSpinButton.set_adjustment(m_spacingAdjustment);
@@ -881,7 +884,7 @@ void MainWindow::initSettingsPopover()
 void MainWindow::initSignals()
 {
   // Window signals
-  this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::delete_window));
+  signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::delete_window));
 
   // Menu & toolbar signals
   m_menu.new_doc.connect(sigc::mem_fun(this, &MainWindow::new_doc)); /*!< Menu item for new document */
@@ -903,11 +906,11 @@ void MainWindow::initSignals()
   m_menu.find.connect(
       sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false)); /*!< Menu item for finding text */
   m_menu.replace.connect(
-      sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), true)); /*!< Menu item for replacing text */
-  m_menu.back.connect(sigc::mem_fun(this, &MainWindow::back));          /*!< Menu item for previous page */
-  m_menu.forward.connect(sigc::mem_fun(this, &MainWindow::forward));    /*!< Menu item for next page */
-  m_menu.reload.connect(sigc::mem_fun(this, &MainWindow::refresh));     /*!< Menu item for reloading the page */
-  m_menu.home.connect(sigc::mem_fun(this, &MainWindow::go_home));       /*!< Menu item for home page */
+      sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), true));    /*!< Menu item for replacing text */
+  m_menu.back.connect(sigc::mem_fun(this, &MainWindow::back));             /*!< Menu item for previous page */
+  m_menu.forward.connect(sigc::mem_fun(this, &MainWindow::forward));       /*!< Menu item for next page */
+  m_menu.reload.connect(sigc::mem_fun(this, &MainWindow::refreshRequest)); /*!< Menu item for reloading the page */
+  m_menu.home.connect(sigc::mem_fun(this, &MainWindow::go_home));          /*!< Menu item for home page */
   m_menu.source_code.connect(sigc::mem_fun(this, &MainWindow::show_source_code_dialog)); /*!< Source code dialog */
   m_sourceCodeDialog.signal_response().connect(
       sigc::mem_fun(m_sourceCodeDialog, &SourceCodeDialog::hide_dialog)); /*!< Close source code dialog */
@@ -920,7 +923,7 @@ void MainWindow::initSignals()
   m_backButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::back));       /*!< Button for previous page */
   m_forwardButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::forward)); /*!< Button for next page */
   m_refreshButton.signal_clicked().connect(
-      sigc::mem_fun(this, &MainWindow::refresh)); /*!< Button for reloading the page */
+      sigc::mem_fun(this, &MainWindow::refreshRequest)); /*!< Button for reloading the page */
   m_homeButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::go_home)); /*!< Button for home page */
   m_searchButton.signal_clicked().connect(
       sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false));                /*!< Button for finding text */
@@ -977,26 +980,26 @@ bool MainWindow::delete_window(GdkEventAny* any_event __attribute__((unused)))
   if (m_settings)
   {
     // Save the schema settings
-    m_settings->set_int("width", this->get_width());
-    m_settings->set_int("height", this->get_height());
-    m_settings->set_boolean("maximized", this->is_maximized());
+    m_settings->set_int("width", get_width());
+    m_settings->set_int("height", get_height());
+    m_settings->set_boolean("maximized", is_maximized());
     // Only store a divider value bigger than zero,
     // because the secondary draw window is hidden by default, resulting into a zero value.
-    if (this->m_paned.get_position() > 0)
-      m_settings->set_int("position-divider", this->m_paned.get_position());
+    if (m_paned.get_position() > 0)
+      m_settings->set_int("position-divider", m_paned.get_position());
 
     // Fullscreen will be availible with gtkmm-4.0
-    // m_settings->set_boolean("fullscreen", this->is_fullscreen());
+    // m_settings->set_boolean("fullscreen", is_fullscreen());
 
-    m_settings->set_string("font-family", this->fontFamily_);
-    m_settings->set_int("font-size", this->currentFontSize_);
-    m_settings->set_int("spacing", this->m_spacingSpinButton.get_value_as_int());
-    m_settings->set_int("margins", this->m_marginsSpinButton.get_value_as_int());
-    m_settings->set_int("indent", this->m_indentSpinButton.get_value_as_int());
-    m_settings->set_string("icon-theme", this->iconTheme_);
-    m_settings->set_boolean("icon-gtk-theme", this->useCurrentGTKIconTheme_);
-    m_settings->set_double("brightness", this->brightnessScale_);
-    m_settings->set_boolean("dark-theme", this->useDarkTheme_);
+    m_settings->set_string("font-family", fontFamily_);
+    m_settings->set_int("font-size", currentFontSize_);
+    m_settings->set_int("spacing", m_spacingSpinButton.get_value_as_int());
+    m_settings->set_int("margins", m_marginsSpinButton.get_value_as_int());
+    m_settings->set_int("indent", m_indentSpinButton.get_value_as_int());
+    m_settings->set_string("icon-theme", iconTheme_);
+    m_settings->set_boolean("icon-gtk-theme", useCurrentGTKIconTheme_);
+    m_settings->set_double("brightness", brightnessScale_);
+    m_settings->set_boolean("dark-theme", useDarkTheme_);
   }
   return false;
 }
@@ -1159,11 +1162,11 @@ void MainWindow::new_doc()
   // Clear content & path
   middleware_.resetContentAndPath();
   // Enable editing mode
-  this->enableEdit();
+  enableEdit();
   // Change address bar
-  this->m_addressBar.set_text("file://unsaved");
+  m_addressBar.set_text("file://unsaved");
   // Set new title
-  this->set_title("Untitled * - " + appName_);
+  set_title("Untitled * - " + appName_);
 }
 
 /**
@@ -1234,7 +1237,7 @@ void MainWindow::on_open_dialog_response(int response_id, Gtk::FileChooserDialog
 
     // Set new title
     std::string fileName = middleware_.getFilename(filePath);
-    this->set_title(fileName + " - " + appName_);
+    set_title(fileName + " - " + appName_);
     break;
   }
   case Gtk::ResponseType::RESPONSE_CANCEL:
@@ -1260,8 +1263,8 @@ void MainWindow::on_open_edit_dialog_response(int response_id, Gtk::FileChooserD
   case Gtk::ResponseType::RESPONSE_OK:
   {
     // Enable editor if needed
-    if (!this->isEditorEnabled())
-      this->enableEdit();
+    if (!isEditorEnabled())
+      enableEdit();
 
     auto filePath = dialog->get_file()->get_path();
     std::string path = "file://" + filePath;
@@ -1269,12 +1272,12 @@ void MainWindow::on_open_edit_dialog_response(int response_id, Gtk::FileChooserD
     middleware_.doRequest(path, true, false, false, false);
 
     // Change address bar
-    this->m_addressBar.set_text(path);
+    m_addressBar.set_text(path);
     // Set new title
     std::string fileName = middleware_.getFilename(filePath);
-    this->set_title(fileName + " - " + appName_);
+    set_title(fileName + " - " + appName_);
     // Set current file path for saving feature
-    this->currentFileSavedPath_ = filePath;
+    currentFileSavedPath_ = filePath;
     break;
   }
   case Gtk::ResponseType::RESPONSE_CANCEL:
@@ -1295,12 +1298,12 @@ void MainWindow::on_open_edit_dialog_response(int response_id, Gtk::FileChooserD
  */
 void MainWindow::edit()
 {
-  if (!this->isEditorEnabled())
-    this->enableEdit();
+  if (!isEditorEnabled())
+    enableEdit();
 
   m_draw_main.setText(middleware_.getContent());
   // Set title
-  this->set_title("Untitled * - " + appName_);
+  set_title("Untitled * - " + appName_);
 }
 
 /**
@@ -1310,11 +1313,11 @@ void MainWindow::save()
 {
   if (currentFileSavedPath_.empty())
   {
-    this->save_as();
+    save_as();
   }
   else
   {
-    if (this->isEditorEnabled())
+    if (isEditorEnabled())
     {
       try
       {
@@ -1359,7 +1362,7 @@ void MainWindow::save_as()
   dialog->add_filter(filter_any);
 
   // If user is saving as an existing file, set the current uri path
-  if (!this->currentFileSavedPath_.empty())
+  if (!currentFileSavedPath_.empty())
   {
     try
     {
@@ -1392,15 +1395,15 @@ void MainWindow::on_save_as_dialog_response(int response_id, Gtk::FileChooserDia
     {
       middleware_.doWrite(filePath);
       // Only if editor mode is enabled
-      if (this->isEditorEnabled())
+      if (isEditorEnabled())
       {
         // Set/update the current file saved path variable (used for the 'save' feature)
-        this->currentFileSavedPath_ = filePath;
+        currentFileSavedPath_ = filePath;
         // And also update the address bar with the current file path
-        this->m_addressBar.set_text("file://" + filePath);
+        m_addressBar.set_text("file://" + filePath);
         // Set title
         std::string fileName = middleware_.getFilename(filePath);
-        this->set_title(fileName + " - " + appName_);
+        set_title(fileName + " - " + appName_);
       }
     }
     catch (std::ios_base::failure& error)
@@ -1583,7 +1586,7 @@ void MainWindow::on_replace()
       buffer->insert_at_cursor(replace);
       buffer->end_user_action();
     }
-    this->on_search();
+    on_search();
   }
 }
 
@@ -1661,15 +1664,6 @@ void MainWindow::forward()
   }
 }
 
-void MainWindow::refresh()
-{
-  // Only allow refresh if editor is disabled (doesn't make sense otherwise to refresh)
-  if (!this->isEditorEnabled())
-    middleware_.doRequest(
-        "", false, false,
-        false); /*!< Reload existing file, don't need to update the address bar, don't disable the editor */
-}
-
 /**
  * \brief Determing if browser is installed from current binary path, at runtime
  * \return true if the current running process is installed (to the installed prefix path)
@@ -1705,17 +1699,17 @@ bool MainWindow::isInstalled()
 void MainWindow::enableEdit()
 {
   // Inform the Draw class that we are creating a new document
-  this->m_draw_main.newDocument();
+  m_draw_main.newDocument();
   // Show editor toolbars
-  this->m_hboxStandardEditorToolbar.show();
-  this->m_hboxFormattingEditorToolbar.show();
+  m_hboxStandardEditorToolbar.show();
+  m_hboxFormattingEditorToolbar.show();
   // Determine position of divider between the primary and secondary windows
   int location = 0;
   int positionSettings = 42;
   if (m_settings)
     positionSettings = m_settings->get_int("position-divider");
   int currentWidth, _ = 0;
-  this->get_size(currentWidth, _);
+  get_size(currentWidth, _);
   // If position from settings is still default (42) or too big,
   // let's calculate the paned divider location
   if ((positionSettings == 42) || (positionSettings >= (currentWidth - 10)))
@@ -1726,21 +1720,21 @@ void MainWindow::enableEdit()
   {
     location = positionSettings;
   }
-  this->m_paned.set_position(location);
+  m_paned.set_position(location);
 
   // Enabled secondary text view (on the right)
-  this->m_scrolledWindowSecondary.show();
+  m_scrolledWindowSecondary.show();
   // Disable "view source" menu item
-  this->m_draw_main.setViewSourceMenuItem(false);
+  m_draw_main.setViewSourceMenuItem(false);
   // Connect changed signal
-  this->textChangedSignalHandler_ =
+  textChangedSignalHandler_ =
       m_draw_main.get_buffer().get()->signal_changed().connect(sigc::mem_fun(this, &MainWindow::editor_changed_text));
   // Enable publish menu item
-  this->m_menu.setPublishMenuSensitive(true);
+  m_menu.setPublishMenuSensitive(true);
   // Disable edit menu item (you are already editing)
-  this->m_menu.setEditMenuSensitive(false);
+  m_menu.setEditMenuSensitive(false);
   // Just to be sure, disable the spinning animation
-  this->m_refreshIcon.get_style_context()->remove_class("spinning");
+  m_refreshIcon.get_style_context()->remove_class("spinning");
 }
 
 /**
@@ -1748,24 +1742,22 @@ void MainWindow::enableEdit()
  */
 void MainWindow::disableEdit()
 {
-  if (this->isEditorEnabled())
+  if (isEditorEnabled())
   {
-    this->m_hboxStandardEditorToolbar.hide();
-    this->m_hboxFormattingEditorToolbar.hide();
-    this->m_scrolledWindowSecondary.hide();
+    m_hboxStandardEditorToolbar.hide();
+    m_hboxFormattingEditorToolbar.hide();
+    m_scrolledWindowSecondary.hide();
     // Disconnect text changed signal
-    this->textChangedSignalHandler_.disconnect();
+    textChangedSignalHandler_.disconnect();
     // Show "view source" menu item again
-    this->m_draw_main.setViewSourceMenuItem(true);
-    this->m_draw_secondary.clearText();
+    m_draw_main.setViewSourceMenuItem(true);
+    m_draw_secondary.clearText();
     // Disable publish menu item
-    this->m_menu.setPublishMenuSensitive(false);
+    m_menu.setPublishMenuSensitive(false);
     // Enable edit menu item
-    this->m_menu.setEditMenuSensitive(true);
+    m_menu.setEditMenuSensitive(true);
     // Empty current file saved path
-    this->currentFileSavedPath_ = "";
-    // Restore title
-    set_title(appName_);
+    currentFileSavedPath_ = "";
   }
 }
 
@@ -1922,7 +1914,7 @@ void MainWindow::get_heading()
 void MainWindow::insert_emoji()
 {
   // Note: The "insert-emoji" signal is not exposed in Gtkmm library (at least not in gtk3)
-  g_signal_emit_by_name(this->m_draw_main.gobj(), "insert-emoji");
+  g_signal_emit_by_name(m_draw_main.gobj(), "insert-emoji");
 }
 
 void MainWindow::on_zoom_out()
@@ -1963,25 +1955,25 @@ void MainWindow::on_spacing_changed()
 
 void MainWindow::on_margins_changed()
 {
-  this->m_draw_main.set_left_margin(m_marginsSpinButton.get_value_as_int());
-  this->m_draw_main.set_right_margin(m_marginsSpinButton.get_value_as_int());
+  m_draw_main.set_left_margin(m_marginsSpinButton.get_value_as_int());
+  m_draw_main.set_right_margin(m_marginsSpinButton.get_value_as_int());
 }
 
 void MainWindow::on_indent_changed()
 {
-  this->m_draw_main.set_indent(m_indentSpinButton.get_value_as_int());
+  m_draw_main.set_indent(m_indentSpinButton.get_value_as_int());
 }
 
 void MainWindow::on_brightness_changed()
 {
-  this->brightnessScale_ = m_scaleSettingsBrightness.get_value();
+  brightnessScale_ = m_scaleSettingsBrightness.get_value();
   updateCSS();
 }
 
 void MainWindow::on_theme_changed()
 {
   // Switch between dark or light theme preference
-  this->useDarkTheme_ = m_themeSwitch.get_active();
+  useDarkTheme_ = m_themeSwitch.get_active();
   setTheme();
 }
 
@@ -1990,15 +1982,15 @@ void MainWindow::on_icon_theme_activated(Gtk::ListBoxRow* row)
   std::string themeName = static_cast<char*>(row->get_data("value"));
   if (themeName != "none")
   {
-    this->iconTheme_ = themeName;
-    this->useCurrentGTKIconTheme_ = false;
+    iconTheme_ = themeName;
+    useCurrentGTKIconTheme_ = false;
   }
   else
   {
-    this->useCurrentGTKIconTheme_ = true;
+    useCurrentGTKIconTheme_ = true;
   }
   // Reload icons
-  this->loadIcons();
+  loadIcons();
 
   // Trigger IPFS status icon
   updateStatusPopoverAndIcon();

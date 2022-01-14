@@ -17,7 +17,7 @@ class MainWindow;
 
 /**
  * \class Middleware
- * \brief Handles (IPFS) network requests and IO from disk towards the GUI
+ * \brief Handles (IPFS) network requests and File IO from disk towards the GUI
  */
 class Middleware
 {
@@ -47,6 +47,7 @@ public:
 
 private:
   MainWindow& mainWindow;
+  Glib::Dispatcher requestStarted_;
   Glib::Dispatcher requestFinished_;
   sigc::connection statusTimerHandler_;
   // Threading:

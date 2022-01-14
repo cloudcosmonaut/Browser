@@ -1018,7 +1018,7 @@ void Draw::followLink(Gtk::TextBuffer::iterator& iter)
     char* url = static_cast<char*>(tag->get_data("url"));
     if (url != 0 && (strlen(url) > 0))
     {
-      // Get the URL
+      // Got to URL
       middleware.doRequest(url);
       break;
     }

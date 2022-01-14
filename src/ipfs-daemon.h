@@ -5,8 +5,8 @@
 #include <string>
 
 /**
- * \class IPFS Daemon Process
- * \brief Helper class to start/stop IPFS deamon, all static methods
+ * \class IPFSDaemon
+ * \brief IPFS Daemon process class to start/stop IPFS daemon as a child process
  */
 class IPFSDaemon
 {

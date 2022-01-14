@@ -32,7 +32,8 @@ Middleware::Middleware(MainWindow& mainWindow, const std::string& timeout)
 {
   doIPFSStatusUpdate();
 
-  // Hook finished signal to finished request method in Main Window
+  // Hook up signals to Main Window methods
+  requestStarted_.connect(sigc::mem_fun(mainWindow, &MainWindow::startedRequest));
   requestFinished_.connect(sigc::mem_fun(mainWindow, &MainWindow::finishedRequest));
 
   // Create a timer, triggers every 4 seconds
@@ -52,10 +53,10 @@ Middleware::~Middleware()
 /**
  * Fetch document from disk or IPFS, using threading
  * \param path File path that needs to be opened (either from disk or IPFS network)
- * \param isSetAddressBar If true change update the address bar with the file path (default: true)
- * \param isHistoryRequest Set to true if this is an history request call: back/forward (default: false)
- * \param isDisableEditor If true the editor will be disabled if needed (default: true)
- * \param isParseContext If true the content received will be parsed and displayed as markdown syntax (default: true),
+ * \param isSetAddressBar If true change update the address bar with the file path
+ * \param isHistoryRequest Set to true if this is an history request call: back/forward
+ * \param isDisableEditor If true the editor will be disabled if needed
+ * \param isParseContent If true the content received will be parsed and displayed as markdown syntax (default: true),
  * set to false if you want to editor the content
  */
 void Middleware::doRequest(
@@ -66,10 +67,15 @@ void Middleware::doRequest(
 
   if (requestThread_ == nullptr)
   {
-    mainWindow.preRequest();
+    // Update main window widgets
+    mainWindow.preRequest(path, isSetAddressBar, isHistoryRequest, isDisableEditor);
     // Start thread
     requestThread_ = new std::thread(&Middleware::processRequest, this, path, isParseContent);
-    mainWindow.postRequest(path, isSetAddressBar, isHistoryRequest, isDisableEditor);
+  }
+  else
+  {
+    // TODO: throw a runtime error, so we can abort everything in the mainwindow
+    std::cerr << "ERROR: Could not start request thread. Something went wrong." << std::endl;
   }
 }
 
@@ -109,7 +115,7 @@ std::string Middleware::getFilename(const std::string& path)
  */
 void Middleware::setContent(const std::string& content)
 {
-  this->currentContent_ = content;
+  currentContent_ = content;
 }
 
 /**
@@ -118,7 +124,7 @@ void Middleware::setContent(const std::string& content)
  */
 std::string const Middleware::getContent()
 {
-  return this->currentContent_;
+  return currentContent_;
 }
 
 /**
@@ -127,7 +133,7 @@ std::string const Middleware::getContent()
  */
 cmark_node* Middleware::parseContent()
 {
-  return Parser::parseContent(this->currentContent_);
+  return Parser::parseContent(currentContent_);
 }
 
 /**
@@ -212,7 +218,9 @@ std::string const Middleware::getIPFSClientPublicKey()
   return ipfsClientPublicKey_;
 }
 
-/* Private methods below */
+/************************************************
+ * Private methods
+ ************************************************/
 
 /**
  * \brief Get the file from disk or IPFS network, from the provided path,
@@ -223,9 +231,10 @@ std::string const Middleware::getIPFSClientPublicKey()
  */
 void Middleware::processRequest(const std::string& path, bool isParseContent)
 {
+  requestStarted_.emit(); // Emit started for Main Window
   // Reset private variables
-  this->currentContent_ = "";
-  this->waitPageVisible_ = false;
+  currentContent_ = "";
+  waitPageVisible_ = false;
 
   // Do not update the requestPath_ when path is empty,
   // this is used for refreshing the page
@@ -273,8 +282,8 @@ void Middleware::processRequest(const std::string& path, bool isParseContent)
     }
   }
 
-  is_request_thread_done_ = true; // mark thread as done
   requestFinished_.emit();        // Emit finished for Main Window
+  is_request_thread_done_ = true; // mark thread as done
 }
 
 /**
@@ -327,7 +336,7 @@ void Middleware::fetchFromIPFS(bool isParseContent)
             message = "Message: " + content.value("Message", "");
             if (message.starts_with("context deadline exceeded"))
             {
-              message += ". Time-out is set to: " + this->ipfsTimeout_;
+              message += ". Time-out is set to: " + ipfsTimeout_;
             }
             message += ".\n\n";
           }
@@ -423,35 +432,36 @@ void Middleware::processIPFSStatus()
   std::lock_guard<std::mutex> guard(status_mutex_);
   try
   {
-    this->ipfsNumberOfPeers_ = ipfs_status_.getNrPeers();
-    if (this->ipfsNumberOfPeers_ > 0)
+    ipfsNumberOfPeers_ = ipfs_status_.getNrPeers();
+    if (ipfsNumberOfPeers_ > 0)
     {
       // Auto-refresh page if needed (when 'Please wait' page was shown)
-      // if (this->waitPageVisible_)
-      //  this->refresh();
+      if (waitPageVisible_)
+        Glib::signal_idle().connect_once(sigc::mem_fun(mainWindow, &MainWindow::refreshRequest));
+
       std::map<std::string, std::variant<int, std::string>> repoStats = ipfs_status_.getRepoStats();
-      this->ipfsRepoSize_ = std::get<int>(repoStats.at("repo-size"));
-      this->ipfsRepoPath_ = std::get<std::string>(repoStats.at("path"));
+      ipfsRepoSize_ = std::get<int>(repoStats.at("repo-size"));
+      ipfsRepoPath_ = std::get<std::string>(repoStats.at("path"));
 
       std::map<std::string, float> rates = ipfs_status_.getBandwidthRates();
       char buf[32];
-      this->ipfsIncomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("in") / 1000.0));
-      this->ipfsOutcomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("out") / 1000.0));
+      ipfsIncomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("in") / 1000.0));
+      ipfsOutcomingRate_ = std::string(buf, std::snprintf(buf, sizeof buf, "%.1f", rates.at("out") / 1000.0));
     }
     else
     {
-      this->ipfsRepoSize_ = 0;
-      this->ipfsRepoPath_ = "";
-      this->ipfsIncomingRate_ = "0.0";
-      this->ipfsOutcomingRate_ = "0.0";
+      ipfsRepoSize_ = 0;
+      ipfsRepoPath_ = "";
+      ipfsIncomingRate_ = "0.0";
+      ipfsOutcomingRate_ = "0.0";
     }
 
-    if (this->ipfsClientID_.empty())
-      this->ipfsClientID_ = ipfs_status_.getClientID();
-    if (this->ipfsClientPublicKey_.empty())
-      this->ipfsClientPublicKey_ = ipfs_status_.getClientPublicKey();
-    if (this->ipfsVersion_.empty())
-      this->ipfsVersion_ = ipfs_status_.getVersion();
+    if (ipfsClientID_.empty())
+      ipfsClientID_ = ipfs_status_.getClientID();
+    if (ipfsClientPublicKey_.empty())
+      ipfsClientPublicKey_ = ipfs_status_.getClientPublicKey();
+    if (ipfsVersion_.empty())
+      ipfsVersion_ = ipfs_status_.getVersion();
 
     // Trigger update of all status fields, in a thread-safe manner
     Glib::signal_idle().connect_once(sigc::mem_fun(mainWindow, &MainWindow::updateStatusPopoverAndIcon));
@@ -462,11 +472,11 @@ void Middleware::processIPFSStatus()
     if (errorMessage != "Request was aborted")
     {
       // Assume no connection or connection lost; display disconnected
-      this->ipfsNumberOfPeers_ = 0;
-      this->ipfsRepoSize_ = 0;
-      this->ipfsRepoPath_ = "";
-      this->ipfsIncomingRate_ = "0.0";
-      this->ipfsOutcomingRate_ = "0.0";
+      ipfsNumberOfPeers_ = 0;
+      ipfsRepoSize_ = 0;
+      ipfsRepoPath_ = "";
+      ipfsIncomingRate_ = "0.0";
+      ipfsOutcomingRate_ = "0.0";
       Glib::signal_idle().connect_once(sigc::mem_fun(mainWindow, &MainWindow::updateStatusPopoverAndIcon));
     }
   }
