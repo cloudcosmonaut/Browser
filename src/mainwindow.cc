@@ -31,6 +31,7 @@ MainWindow::MainWindow(const std::string& timeout)
       m_draw_secondary(middleware_),
       m_about(*this),
       m_vbox(Gtk::ORIENTATION_VERTICAL, 0),
+      m_vboxSearch(Gtk::ORIENTATION_VERTICAL),
       m_vboxStatus(Gtk::ORIENTATION_VERTICAL),
       m_vboxSettings(Gtk::ORIENTATION_VERTICAL),
       m_vboxIconTheme(Gtk::ORIENTATION_VERTICAL),
@@ -74,6 +75,7 @@ MainWindow::MainWindow(const std::string& timeout)
   loadIcons();
   initButtons();
   setTheme();
+  initSearchPopover();
   initStatusPopover();
   initSettingsPopover();
   initSignals();
@@ -94,28 +96,6 @@ MainWindow::MainWindow(const std::string& timeout)
   m_scrolledWindowSecondary.add(m_draw_secondary);
   m_scrolledWindowSecondary.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
 
-  // Bottom Search bar
-  m_search.connect_entry(m_searchEntry);
-  m_searchReplace.connect_entry(m_searchReplaceEntry);
-  m_exitBottomIcon.set_from_icon_name("window-close-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_BUTTON));
-  m_exitBottomButton.set_relief(Gtk::RELIEF_NONE);
-  m_exitBottomButton.add(m_exitBottomIcon);
-  m_exitBottomButton.signal_clicked().connect(sigc::mem_fun(m_hboxBottom, &Gtk::Box::hide));
-  m_searchEntry.set_size_request(250, -1);
-  m_searchReplaceEntry.set_size_request(250, -1);
-  m_searchEntry.set_margin_top(3);
-  m_searchEntry.set_margin_bottom(3);
-  m_searchReplaceEntry.set_margin_top(3);
-  m_searchReplaceEntry.set_margin_bottom(3);
-  m_searchMatchCase.set_margin_top(3);
-  m_searchMatchCase.set_margin_bottom(3);
-  m_hboxBottom.set_margin_start(6);
-  m_hboxBottom.set_spacing(8);
-  m_hboxBottom.pack_start(m_exitBottomButton, false, false);
-  m_hboxBottom.pack_start(m_searchEntry, false, false);
-  m_hboxBottom.pack_start(m_searchReplaceEntry, false, false);
-  m_hboxBottom.pack_start(m_searchMatchCase, false, false);
-
   m_paned.pack1(m_scrolledWindowMain, true, false);
   m_paned.pack2(m_scrolledWindowSecondary, true, true);
 
@@ -124,13 +104,11 @@ MainWindow::MainWindow(const std::string& timeout)
   m_vbox.pack_start(m_hboxStandardEditorToolbar, false, false, 6);
   m_vbox.pack_start(m_hboxFormattingEditorToolbar, false, false, 6);
   m_vbox.pack_start(m_paned, true, true, 0);
-  m_vbox.pack_end(m_hboxBottom, false, true, 6);
 
   add(m_vbox);
   show_all_children();
 
-  // Hide by default the bottom box + replace entry, editor box & secondary text view
-  m_hboxBottom.hide();
+  // Hide by default the replace entry, editor box & secondary text view
   m_searchReplaceEntry.hide();
   m_hboxStandardEditorToolbar.hide();
   m_hboxFormattingEditorToolbar.hide();
@@ -541,6 +519,7 @@ void MainWindow::initButtons()
   styleForward->add_class("circular");
   auto styleRefresh = m_refreshButton.get_style_context();
   styleRefresh->add_class("circular");
+  m_searchButton.set_popover(m_searchPopover);
   m_statusButton.set_popover(m_statusPopover);
   m_settingsButton.set_popover(m_settingsPopover);
   m_backButton.set_relief(Gtk::RELIEF_NONE);
@@ -640,6 +619,38 @@ void MainWindow::setTheme()
 {
   auto settings = Gtk::Settings::get_default();
   settings->property_gtk_application_prefer_dark_theme().set_value(useDarkTheme_);
+}
+
+void MainWindow::initSearchPopover()
+{
+  // Bottom Search bar
+  m_searchEntry.set_placeholder_text("Find");
+  m_searchReplaceEntry.set_placeholder_text("Replace");
+  m_search.connect_entry(m_searchEntry);
+  m_searchReplace.connect_entry(m_searchReplaceEntry);
+  m_exitBottomIcon.set_has_tooltip("Close");
+  m_exitBottomIcon.set_from_icon_name("window-close-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_BUTTON));
+  m_exitBottomButton.set_relief(Gtk::RELIEF_NONE);
+  m_exitBottomButton.add(m_exitBottomIcon);
+  m_exitBottomButton.signal_clicked().connect(sigc::mem_fun(m_searchPopover, &Gtk::Popover::hide));
+  m_searchEntry.set_size_request(250, -1);
+  m_searchReplaceEntry.set_size_request(250, -1);
+  m_vboxSearch.set_margin_left(8);
+  m_vboxSearch.set_margin_right(8);
+  m_vboxSearch.set_spacing(8);
+  m_hboxSearch.set_spacing(8);
+
+  m_hboxSearch.pack_start(m_searchEntry, false, false);
+  m_hboxSearch.pack_start(m_searchMatchCase, false, false);
+  m_hboxSearch.pack_end(m_exitBottomButton, false, false);
+
+  m_vboxSearch.pack_start(m_hboxSearch, false, false, 4);
+  m_vboxSearch.pack_end(m_searchReplaceEntry, false, false, 4);
+
+  m_searchPopover.set_position(Gtk::POS_BOTTOM);
+  m_searchPopover.set_size_request(300, 50);
+  m_searchPopover.add(m_vboxSearch);
+  m_searchPopover.show_all_children();
 }
 
 /**
@@ -900,9 +911,8 @@ void MainWindow::initSignals()
   m_forwardButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::forward));            /*!< Button for next page */
   m_refreshButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::refreshRequest));     /*!< Button for reloading the page */
   m_homeButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::go_home));               /*!< Button for home page */
-  m_searchButton.signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false)); /*!< Button for finding text */
-  m_searchEntry.signal_activate().connect(sigc::mem_fun(this, &MainWindow::on_search));                      /*!< Execute the text search */
-  m_searchReplaceEntry.signal_activate().connect(sigc::mem_fun(this, &MainWindow::on_replace));              /*!< Execute the text replace */
+  m_searchEntry.signal_activate().connect(sigc::mem_fun(this, &MainWindow::on_search));           /*!< Execute the text search */
+  m_searchReplaceEntry.signal_activate().connect(sigc::mem_fun(this, &MainWindow::on_replace));   /*!< Execute the text replace */
 
   // Editor buttons
   m_openButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::open_and_edit));
@@ -1570,11 +1580,11 @@ void MainWindow::address_bar_activate()
  */
 void MainWindow::show_search(bool replace)
 {
-  if (m_hboxBottom.is_visible() && m_searchReplaceEntry.is_visible())
+  if (m_searchPopover.is_visible() && m_searchReplaceEntry.is_visible())
   {
     if (replace)
     {
-      m_hboxBottom.hide();
+      m_searchPopover.hide();
       m_addressBar.grab_focus();
       m_searchReplaceEntry.hide();
     }
@@ -1583,7 +1593,7 @@ void MainWindow::show_search(bool replace)
       m_searchReplaceEntry.hide();
     }
   }
-  else if (m_hboxBottom.is_visible())
+  else if (m_searchPopover.is_visible())
   {
     if (replace)
     {
@@ -1591,14 +1601,14 @@ void MainWindow::show_search(bool replace)
     }
     else
     {
-      m_hboxBottom.hide();
+      m_searchPopover.hide();
       m_addressBar.grab_focus();
       m_searchReplaceEntry.hide();
     }
   }
   else
   {
-    m_hboxBottom.show();
+    m_searchPopover.show();
     m_searchEntry.grab_focus();
     if (replace)
     {

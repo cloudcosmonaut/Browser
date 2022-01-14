@@ -23,6 +23,7 @@
 #include <gtkmm/messagedialog.h>
 #include <gtkmm/modelbutton.h>
 #include <gtkmm/paned.h>
+#include <gtkmm/popover.h>
 #include <gtkmm/popovermenu.h>
 #include <gtkmm/scale.h>
 #include <gtkmm/scrolledwindow.h>
@@ -124,7 +125,8 @@ protected:
   Gtk::Box m_hboxBrowserToolbar;
   Gtk::Box m_hboxStandardEditorToolbar;
   Gtk::Box m_hboxFormattingEditorToolbar;
-  Gtk::Box m_hboxBottom;
+  Gtk::Box m_hboxSearch;
+  Gtk::Box m_vboxSearch;
   Gtk::Box m_vboxStatus;
   Gtk::Box m_vboxSettings;
   Gtk::Box m_hboxSetingsZoom;
@@ -152,7 +154,7 @@ protected:
   Gtk::Button m_forwardButton;
   Gtk::Button m_refreshButton;
   Gtk::Button m_homeButton;
-  Gtk::Button m_searchButton;
+  Gtk::MenuButton m_searchButton;
   Gtk::MenuButton m_statusButton;
   Gtk::MenuButton m_settingsButton;
   Gtk::Button m_openButton;
@@ -211,7 +213,8 @@ protected:
   Gtk::Image m_numberedListIcon;
   Gtk::Image m_hightlightIcon;
   Gtk::Image m_exitBottomIcon;
-  Gtk::PopoverMenu m_statusPopover;
+  Gtk::Popover m_searchPopover;
+  Gtk::Popover m_statusPopover;
   Gtk::PopoverMenu m_settingsPopover;
   Gtk::ModelButton m_copyIDButton;
   Gtk::ModelButton m_copyPublicKeyButton;
@@ -275,6 +278,7 @@ private:
   void loadIcons();
   void initButtons();
   void setTheme();
+  void initSearchPopover();
   void initStatusPopover();
   void initSettingsPopover();
   void initSignals();
