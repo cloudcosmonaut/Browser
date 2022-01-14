@@ -48,8 +48,8 @@ void IPFSDaemon::spawn()
 
         // Spawn flags
         // Disable stdout/stderr to default terminal. Don't reaped the child automatically
-        Glib::SpawnFlags flags = Glib::SPAWN_STDOUT_TO_DEV_NULL | Glib::SPAWN_STDERR_TO_DEV_NULL |
-                                 Glib::SPAWN_DO_NOT_REAP_CHILD | Glib::SPAWN_SEARCH_PATH;
+        Glib::SpawnFlags flags =
+            Glib::SPAWN_STDOUT_TO_DEV_NULL | Glib::SPAWN_STDERR_TO_DEV_NULL | Glib::SPAWN_DO_NOT_REAP_CHILD | Glib::SPAWN_SEARCH_PATH;
 
         // Start IPFS, using spawn_async,
         // optionally we could use spawn_async_with_pipes(), to retrieve stdout & stderr to specified output
@@ -59,8 +59,7 @@ void IPFSDaemon::spawn()
         if (this->childWatchHandler.connected())
           this->childWatchHandler.disconnect();
 
-        this->childWatchHandler =
-            Glib::signal_child_watch().connect(sigc::mem_fun(*this, &IPFSDaemon::child_watch_exit), this->pid);
+        this->childWatchHandler = Glib::signal_child_watch().connect(sigc::mem_fun(*this, &IPFSDaemon::child_watch_exit), this->pid);
       }
       catch (Glib::SpawnError& error)
       {

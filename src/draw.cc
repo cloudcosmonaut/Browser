@@ -735,8 +735,7 @@ void Draw::insert_bullet_list()
     {
       Gtk::TextBuffer::iterator end_current_line_iter, prev_lines_iter;
       // Get the end of the line iter
-      end_current_line_iter =
-          buffer->get_iter_at_line_offset(curLineNumber, begin_current_line_iter.get_chars_in_line());
+      end_current_line_iter = buffer->get_iter_at_line_offset(curLineNumber, begin_current_line_iter.get_chars_in_line());
       std::string currentLineText = begin_current_line_iter.get_text(end_current_line_iter);
       // Get previous line (if possible)
       prev_lines_iter = buffer->get_iter_at_line(start.get_line() - 1);
@@ -754,8 +753,7 @@ void Draw::insert_bullet_list()
           // We're still on the current line, new-line is required
           int insertCharOffset = end_current_line_iter.get_offset();
           buffer->insert(end_current_line_iter, "\n* ");
-          Gtk::TextBuffer::iterator insert_iter =
-              buffer->get_iter_at_offset(insertCharOffset + 3); // add 3 additional chars
+          Gtk::TextBuffer::iterator insert_iter = buffer->get_iter_at_offset(insertCharOffset + 3); // add 3 additional chars
           buffer->place_cursor(insert_iter);
         }
         else if (prevLineText.starts_with("* "))
@@ -830,8 +828,7 @@ void Draw::insert_numbered_list()
     {
       Gtk::TextBuffer::iterator end_current_line_iter, prev_lines_iter;
       // Get the end of the line iter
-      end_current_line_iter =
-          buffer->get_iter_at_line_offset(curLineNumber, begin_current_line_iter.get_chars_in_line());
+      end_current_line_iter = buffer->get_iter_at_line_offset(curLineNumber, begin_current_line_iter.get_chars_in_line());
       std::string currentLineText = begin_current_line_iter.get_text(end_current_line_iter);
       // Get previous line (if possible)
       prev_lines_iter = buffer->get_iter_at_line(start.get_line() - 1);
@@ -854,8 +851,8 @@ void Draw::insert_numbered_list()
             int insertCharOffset = end_current_line_iter.get_offset();
             // We're still on the current line, new-line is required
             buffer->insert(end_current_line_iter, "\n" + newNumber + ". ");
-            Gtk::TextBuffer::iterator insert_iter = buffer->get_iter_at_offset(
-                insertCharOffset + 3 + newNumber.length()); // add 3 additional chars + number
+            Gtk::TextBuffer::iterator insert_iter =
+                buffer->get_iter_at_offset(insertCharOffset + 3 + newNumber.length()); // add 3 additional chars + number
             buffer->place_cursor(insert_iter);
           }
           catch (std::invalid_argument& error)
@@ -863,8 +860,7 @@ void Draw::insert_numbered_list()
             // Fall-back
             int insertCharOffset = end_current_line_iter.get_offset();
             buffer->insert(end_current_line_iter, "\n1. ");
-            Gtk::TextBuffer::iterator insert_iter =
-                buffer->get_iter_at_offset(insertCharOffset + 3); // add 3 additional chars + number
+            Gtk::TextBuffer::iterator insert_iter = buffer->get_iter_at_offset(insertCharOffset + 3); // add 3 additional chars + number
             buffer->place_cursor(insert_iter);
             // Give warning
             std::cerr << "WARN: Couldn't convert heading to a number?" << std::endl;
@@ -988,10 +984,8 @@ void Draw::enableEdit()
   set_editable(true);
   set_cursor_visible(true);
   auto buffer = get_buffer();
-  this->beginUserActionSignalHandler =
-      buffer->signal_begin_user_action().connect(sigc::mem_fun(this, &Draw::begin_user_action), false);
-  this->endUserActionSignalHandler =
-      buffer->signal_end_user_action().connect(sigc::mem_fun(this, &Draw::end_user_action), false);
+  this->beginUserActionSignalHandler = buffer->signal_begin_user_action().connect(sigc::mem_fun(this, &Draw::begin_user_action), false);
+  this->endUserActionSignalHandler = buffer->signal_end_user_action().connect(sigc::mem_fun(this, &Draw::end_user_action), false);
   this->insertTextSignalHandler = buffer->signal_insert().connect(sigc::mem_fun(this, &Draw::on_insert), false);
   this->deleteTextSignalHandler = buffer->signal_erase().connect(sigc::mem_fun(this, &Draw::on_delete), false);
 }

@@ -117,8 +117,7 @@ private:
   void processNode(cmark_node* node, cmark_event_type ev_type);
   // Helper functions for inserting text (thread-safe)
   void encodeText(std::string& string);
-  void
-  insertText(std::string text, const Glib::ustring& url = "", CodeTypeEnum codeType = CodeTypeEnum::CODE_TYPE_NONE);
+  void insertText(std::string text, const Glib::ustring& url = "", CodeTypeEnum codeType = CodeTypeEnum::CODE_TYPE_NONE);
   void insertTagText(const Glib::ustring& text, std::vector<Glib::ustring> const& tagNames);
   void insertTagText(const Glib::ustring& text, const Glib::ustring& tagName);
   void insertMarkupText(const Glib::ustring& text);

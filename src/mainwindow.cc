@@ -181,7 +181,6 @@ void MainWindow::preRequest(const std::string& path, bool isSetAddressBar, bool 
       currentHistoryIndex_ = history_.size() - 1;
     }
   }
-
   // Enable back/forward buttons when possible
   m_backButton.set_sensitive(currentHistoryIndex_ > 0);
   m_menu.setBackMenuSensitive(currentHistoryIndex_ > 0);
@@ -364,8 +363,7 @@ void MainWindow::loadIcons()
   try
   {
     // Editor buttons
-    m_openIcon.set(
-        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("open_folder", "folders"), iconSize_, iconSize_));
+    m_openIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("open_folder", "folders"), iconSize_, iconSize_));
     m_saveIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("floppy_disk", "basic"), iconSize_, iconSize_));
     m_publishIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("upload", "basic"), iconSize_, iconSize_));
     m_cutIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("cut", "editor"), iconSize_, iconSize_));
@@ -375,22 +373,17 @@ void MainWindow::loadIcons()
     m_redoIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("redo", "editor"), iconSize_, iconSize_));
     m_boldIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("bold", "editor"), iconSize_, iconSize_));
     m_italicIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("italic", "editor"), iconSize_, iconSize_));
-    m_strikethroughIcon.set(
-        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("strikethrough", "editor"), iconSize_, iconSize_));
-    m_superIcon.set(
-        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("superscript", "editor"), iconSize_, iconSize_));
+    m_strikethroughIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("strikethrough", "editor"), iconSize_, iconSize_));
+    m_superIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("superscript", "editor"), iconSize_, iconSize_));
     m_subIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("subscript", "editor"), iconSize_, iconSize_));
     m_linkIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("link", "editor"), iconSize_, iconSize_));
     m_imageIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("shapes", "editor"), iconSize_, iconSize_));
     m_emojiIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("smile", "smiley"), iconSize_, iconSize_));
     m_quoteIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("quote", "editor"), iconSize_, iconSize_));
     m_codeIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("code", "editor"), iconSize_, iconSize_));
-    m_bulletListIcon.set(
-        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("bullet_list", "editor"), iconSize_, iconSize_));
-    m_numberedListIcon.set(
-        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("number_list", "editor"), iconSize_, iconSize_));
-    m_hightlightIcon.set(
-        Gdk::Pixbuf::create_from_file(getIconImageFromTheme("highlighter", "editor"), iconSize_, iconSize_));
+    m_bulletListIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("bullet_list", "editor"), iconSize_, iconSize_));
+    m_numberedListIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("number_list", "editor"), iconSize_, iconSize_));
+    m_hightlightIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("highlighter", "editor"), iconSize_, iconSize_));
 
     if (useCurrentGTKIconTheme_)
     {
@@ -410,38 +403,28 @@ void MainWindow::loadIcons()
     else
     {
       // Toolbox buttons
-      m_backIcon.set(
-          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("right_arrow_1", "arrows"), iconSize_, iconSize_)
-              ->flip());
-      m_forwardIcon.set(
-          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("right_arrow_1", "arrows"), iconSize_, iconSize_));
-      m_refreshIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("reload_centered", "arrows"),
-                                                      iconSize_ * 1.13, iconSize_));
+      m_backIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("right_arrow_1", "arrows"), iconSize_, iconSize_)->flip());
+      m_forwardIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("right_arrow_1", "arrows"), iconSize_, iconSize_));
+      m_refreshIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("reload_centered", "arrows"), iconSize_ * 1.13, iconSize_));
       m_homeIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("home", "basic"), iconSize_, iconSize_));
       m_searchIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("search", "basic"), iconSize_, iconSize_));
       m_settingsIcon.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("menu", "basic"), iconSize_, iconSize_));
 
       // Settings pop-over buttons
-      m_zoomOutImage.set(
-          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("zoom_out", "basic"), iconSize_, iconSize_));
+      m_zoomOutImage.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("zoom_out", "basic"), iconSize_, iconSize_));
       m_zoomInImage.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("zoom_in", "basic"), iconSize_, iconSize_));
-      m_brightnessImage.set(
-          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("brightness", "basic"), iconSize_, iconSize_));
-      m_statusOfflineIcon =
-          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("network_disconnected", "network"), iconSize_, iconSize_);
-      m_statusOnlineIcon =
-          Gdk::Pixbuf::create_from_file(getIconImageFromTheme("network_connected", "network"), iconSize_, iconSize_);
+      m_brightnessImage.set(Gdk::Pixbuf::create_from_file(getIconImageFromTheme("brightness", "basic"), iconSize_, iconSize_));
+      m_statusOfflineIcon = Gdk::Pixbuf::create_from_file(getIconImageFromTheme("network_disconnected", "network"), iconSize_, iconSize_);
+      m_statusOnlineIcon = Gdk::Pixbuf::create_from_file(getIconImageFromTheme("network_connected", "network"), iconSize_, iconSize_);
     }
   }
   catch (const Glib::FileError& error)
   {
-    std::cerr << "ERROR: Icon could not be loaded, file error: " << error.what() << ".\nContinue nevertheless..."
-              << std::endl;
+    std::cerr << "ERROR: Icon could not be loaded, file error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
   }
   catch (const Gdk::PixbufError& error)
   {
-    std::cerr << "ERROR: Icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless..."
-              << std::endl;
+    std::cerr << "ERROR: Icon could not be loaded, pixbuf error: " << error.what() << ".\nContinue nevertheless..." << std::endl;
   }
 }
 
@@ -581,9 +564,8 @@ void MainWindow::initButtons()
   // Add spinning CSS class to refresh icon
   auto cssProvider = Gtk::CssProvider::create();
   auto screen = Gdk::Screen::get_default();
-  std::string spinningCSS =
-      "@keyframes spin {  to { -gtk-icon-transform: rotate(1turn); }} .spinning { animation-name: spin;  "
-      "animation-duration: 1s;  animation-timing-function: linear;  animation-iteration-count: infinite;}";
+  std::string spinningCSS = "@keyframes spin {  to { -gtk-icon-transform: rotate(1turn); }} .spinning { animation-name: spin;  "
+                            "animation-duration: 1s;  animation-timing-function: linear;  animation-iteration-count: infinite;}";
   if (!cssProvider->load_from_data(spinningCSS))
   {
     std::cerr << "ERROR: CSS data parsing went wrong." << std::endl;
@@ -887,49 +869,40 @@ void MainWindow::initSignals()
   signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::delete_window));
 
   // Menu & toolbar signals
-  m_menu.new_doc.connect(sigc::mem_fun(this, &MainWindow::new_doc)); /*!< Menu item for new document */
-  m_menu.open.connect(sigc::mem_fun(this, &MainWindow::open));       /*!< Menu item for opening existing document */
-  m_menu.open_edit.connect(
-      sigc::mem_fun(this, &MainWindow::open_and_edit));        /*!< Menu item for opening & editing existing document */
-  m_menu.edit.connect(sigc::mem_fun(this, &MainWindow::edit)); /*!< Menu item for editing current open document */
-  m_menu.save.connect(sigc::mem_fun(this, &MainWindow::save)); /*!< Menu item for save document */
-  m_menu.save_as.connect(sigc::mem_fun(this, &MainWindow::save_as)); /*!< Menu item for save document as */
-  m_menu.publish.connect(sigc::mem_fun(this, &MainWindow::publish)); /*!< Menu item for publishing */
-  m_menu.quit.connect(sigc::mem_fun(this, &MainWindow::close));  /*!< close main window and therefor closes the app */
-  m_menu.undo.connect(sigc::mem_fun(m_draw_main, &Draw::undo));  /*!< Menu item for undo text */
-  m_menu.redo.connect(sigc::mem_fun(m_draw_main, &Draw::redo));  /*!< Menu item for redo text */
-  m_menu.cut.connect(sigc::mem_fun(this, &MainWindow::cut));     /*!< Menu item for cut text */
-  m_menu.copy.connect(sigc::mem_fun(this, &MainWindow::copy));   /*!< Menu item for copy text */
-  m_menu.paste.connect(sigc::mem_fun(this, &MainWindow::paste)); /*!< Menu item for paste text */
-  m_menu.del.connect(sigc::mem_fun(this, &MainWindow::del));     /*!< Menu item for deleting selected text */
-  m_menu.select_all.connect(sigc::mem_fun(this, &MainWindow::selectAll)); /*!< Menu item for selecting all text */
-  m_menu.find.connect(
-      sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false)); /*!< Menu item for finding text */
-  m_menu.replace.connect(
-      sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), true));    /*!< Menu item for replacing text */
-  m_menu.back.connect(sigc::mem_fun(this, &MainWindow::back));             /*!< Menu item for previous page */
-  m_menu.forward.connect(sigc::mem_fun(this, &MainWindow::forward));       /*!< Menu item for next page */
-  m_menu.reload.connect(sigc::mem_fun(this, &MainWindow::refreshRequest)); /*!< Menu item for reloading the page */
-  m_menu.home.connect(sigc::mem_fun(this, &MainWindow::go_home));          /*!< Menu item for home page */
-  m_menu.source_code.connect(sigc::mem_fun(this, &MainWindow::show_source_code_dialog)); /*!< Source code dialog */
-  m_sourceCodeDialog.signal_response().connect(
-      sigc::mem_fun(m_sourceCodeDialog, &SourceCodeDialog::hide_dialog)); /*!< Close source code dialog */
-  m_menu.about.connect(sigc::mem_fun(m_about, &About::show_about));       /*!< Display about dialog */
-  m_draw_main.source_code.connect(
-      sigc::mem_fun(this, &MainWindow::show_source_code_dialog));                /*!< Open source code dialog */
-  m_about.signal_response().connect(sigc::mem_fun(m_about, &About::hide_about)); /*!< Close about dialog */
-  m_addressBar.signal_activate().connect(
-      sigc::mem_fun(this, &MainWindow::address_bar_activate)); /*!< User pressed enter the address bar */
-  m_backButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::back));       /*!< Button for previous page */
-  m_forwardButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::forward)); /*!< Button for next page */
-  m_refreshButton.signal_clicked().connect(
-      sigc::mem_fun(this, &MainWindow::refreshRequest)); /*!< Button for reloading the page */
-  m_homeButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::go_home)); /*!< Button for home page */
-  m_searchButton.signal_clicked().connect(
-      sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false));                /*!< Button for finding text */
-  m_searchEntry.signal_activate().connect(sigc::mem_fun(this, &MainWindow::on_search)); /*!< Execute the text search */
-  m_searchReplaceEntry.signal_activate().connect(
-      sigc::mem_fun(this, &MainWindow::on_replace)); /*!< Execute the text replace */
+  m_menu.new_doc.connect(sigc::mem_fun(this, &MainWindow::new_doc));                       /*!< Menu item for new document */
+  m_menu.open.connect(sigc::mem_fun(this, &MainWindow::open));                             /*!< Menu item for opening existing document */
+  m_menu.open_edit.connect(sigc::mem_fun(this, &MainWindow::open_and_edit));               /*!< Menu item for opening & editing existing document */
+  m_menu.edit.connect(sigc::mem_fun(this, &MainWindow::edit));                             /*!< Menu item for editing current open document */
+  m_menu.save.connect(sigc::mem_fun(this, &MainWindow::save));                             /*!< Menu item for save document */
+  m_menu.save_as.connect(sigc::mem_fun(this, &MainWindow::save_as));                       /*!< Menu item for save document as */
+  m_menu.publish.connect(sigc::mem_fun(this, &MainWindow::publish));                       /*!< Menu item for publishing */
+  m_menu.quit.connect(sigc::mem_fun(this, &MainWindow::close));                            /*!< close main window and therefor closes the app */
+  m_menu.undo.connect(sigc::mem_fun(m_draw_main, &Draw::undo));                            /*!< Menu item for undo text */
+  m_menu.redo.connect(sigc::mem_fun(m_draw_main, &Draw::redo));                            /*!< Menu item for redo text */
+  m_menu.cut.connect(sigc::mem_fun(this, &MainWindow::cut));                               /*!< Menu item for cut text */
+  m_menu.copy.connect(sigc::mem_fun(this, &MainWindow::copy));                             /*!< Menu item for copy text */
+  m_menu.paste.connect(sigc::mem_fun(this, &MainWindow::paste));                           /*!< Menu item for paste text */
+  m_menu.del.connect(sigc::mem_fun(this, &MainWindow::del));                               /*!< Menu item for deleting selected text */
+  m_menu.select_all.connect(sigc::mem_fun(this, &MainWindow::selectAll));                  /*!< Menu item for selecting all text */
+  m_menu.find.connect(sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false));   /*!< Menu item for finding text */
+  m_menu.replace.connect(sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), true)); /*!< Menu item for replacing text */
+  m_menu.back.connect(sigc::mem_fun(this, &MainWindow::back));                             /*!< Menu item for previous page */
+  m_menu.forward.connect(sigc::mem_fun(this, &MainWindow::forward));                       /*!< Menu item for next page */
+  m_menu.reload.connect(sigc::mem_fun(this, &MainWindow::refreshRequest));                 /*!< Menu item for reloading the page */
+  m_menu.home.connect(sigc::mem_fun(this, &MainWindow::go_home));                          /*!< Menu item for home page */
+  m_menu.source_code.connect(sigc::mem_fun(this, &MainWindow::show_source_code_dialog));   /*!< Source code dialog */
+  m_sourceCodeDialog.signal_response().connect(sigc::mem_fun(m_sourceCodeDialog, &SourceCodeDialog::hide_dialog)); /*!< Close source code dialog */
+  m_menu.about.connect(sigc::mem_fun(m_about, &About::show_about));                                                /*!< Display about dialog */
+  m_draw_main.source_code.connect(sigc::mem_fun(this, &MainWindow::show_source_code_dialog));                      /*!< Open source code dialog */
+  m_about.signal_response().connect(sigc::mem_fun(m_about, &About::hide_about));                                   /*!< Close about dialog */
+  m_addressBar.signal_activate().connect(sigc::mem_fun(this, &MainWindow::address_bar_activate)); /*!< User pressed enter the address bar */
+  m_backButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::back));                  /*!< Button for previous page */
+  m_forwardButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::forward));            /*!< Button for next page */
+  m_refreshButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::refreshRequest));     /*!< Button for reloading the page */
+  m_homeButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::go_home));               /*!< Button for home page */
+  m_searchButton.signal_clicked().connect(sigc::bind(sigc::mem_fun(this, &MainWindow::show_search), false)); /*!< Button for finding text */
+  m_searchEntry.signal_activate().connect(sigc::mem_fun(this, &MainWindow::on_search));                      /*!< Execute the text search */
+  m_searchReplaceEntry.signal_activate().connect(sigc::mem_fun(this, &MainWindow::on_replace));              /*!< Execute the text replace */
 
   // Editor buttons
   m_openButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::open_and_edit));
@@ -1203,8 +1176,7 @@ void MainWindow::open_and_edit()
   auto dialog = new Gtk::FileChooserDialog("Open & Edit", Gtk::FILE_CHOOSER_ACTION_OPEN);
   dialog->set_transient_for(*this);
   dialog->set_modal(true);
-  dialog->signal_response().connect(
-      sigc::bind(sigc::mem_fun(*this, &MainWindow::on_open_edit_dialog_response), dialog));
+  dialog->signal_response().connect(sigc::bind(sigc::mem_fun(*this, &MainWindow::on_open_edit_dialog_response), dialog));
   dialog->add_button("_Cancel", Gtk::ResponseType::RESPONSE_CANCEL);
   dialog->add_button("_Open", Gtk::ResponseType::RESPONSE_OK);
 
@@ -1325,14 +1297,13 @@ void MainWindow::save()
       }
       catch (std::ios_base::failure& error)
       {
-        std::cerr << "ERROR: Could not write file: " << currentFileSavedPath_ << ". Message: " << error.what()
-                  << ".\nError code: " << error.code() << std::endl;
+        std::cerr << "ERROR: Could not write file: " << currentFileSavedPath_ << ". Message: " << error.what() << ".\nError code: " << error.code()
+                  << std::endl;
       }
     }
     else
     {
-      std::cerr << "ERROR: Saving while \"file saved path\" is filled and editor is disabled should not happen!?"
-                << std::endl;
+      std::cerr << "ERROR: Saving while \"file saved path\" is filled and editor is disabled should not happen!?" << std::endl;
     }
   }
 }
@@ -1370,8 +1341,7 @@ void MainWindow::save_as()
     }
     catch (Glib::Error& error)
     {
-      std::cerr << "ERROR: Incorrect filename most likely. Message: " << error.what()
-                << ". Error Code: " << error.code() << std::endl;
+      std::cerr << "ERROR: Incorrect filename most likely. Message: " << error.what() << ". Error Code: " << error.code() << std::endl;
     }
   }
   dialog->show();
@@ -1408,8 +1378,7 @@ void MainWindow::on_save_as_dialog_response(int response_id, Gtk::FileChooserDia
     }
     catch (std::ios_base::failure& error)
     {
-      std::cerr << "ERROR: Could not write file: " << filePath << ". Message: " << error.what()
-                << ".\nError code: " << error.code() << std::endl;
+      std::cerr << "ERROR: Could not write file: " << filePath << ". Message: " << error.what() << ".\nError code: " << error.code() << std::endl;
     }
     break;
   }
@@ -1434,8 +1403,7 @@ void MainWindow::publish()
   int result = Gtk::RESPONSE_YES; // By default continue
   if (middleware_.getContent().empty())
   {
-    Gtk::MessageDialog dialog(*this, "Are you sure you want to publish <b>empty</b> content?", true,
-                              Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO);
+    Gtk::MessageDialog dialog(*this, "Are you sure you want to publish <b>empty</b> content?", true, Gtk::MESSAGE_QUESTION, Gtk::BUTTONS_YES_NO);
     dialog.set_title("Are you sure?");
     dialog.set_default_response(Gtk::RESPONSE_NO);
     result = dialog.run();
@@ -1475,19 +1443,16 @@ void MainWindow::publish()
 
       m_contentPublishedDialog->set_modal(true);
       // m_contentPublishedDialog->set_hide_on_close(true); available in gtk-4.0
-      m_contentPublishedDialog->signal_response().connect(
-          sigc::hide(sigc::mem_fun(*m_contentPublishedDialog, &Gtk::Widget::hide)));
+      m_contentPublishedDialog->signal_response().connect(sigc::hide(sigc::mem_fun(*m_contentPublishedDialog, &Gtk::Widget::hide)));
       m_contentPublishedDialog->show_all();
     }
     catch (const std::runtime_error& error)
     {
-      m_contentPublishedDialog.reset(
-          new Gtk::MessageDialog(*this, "File could not be added to IPFS", false, Gtk::MESSAGE_ERROR));
+      m_contentPublishedDialog.reset(new Gtk::MessageDialog(*this, "File could not be added to IPFS", false, Gtk::MESSAGE_ERROR));
       m_contentPublishedDialog->set_secondary_text("Error message: " + std::string(error.what()));
       m_contentPublishedDialog->set_modal(true);
       // m_contentPublishedDialog->set_hide_on_close(true); available in gtk-4.0
-      m_contentPublishedDialog->signal_response().connect(
-          sigc::hide(sigc::mem_fun(*m_contentPublishedDialog, &Gtk::Widget::hide)));
+      m_contentPublishedDialog->signal_response().connect(sigc::hide(sigc::mem_fun(*m_contentPublishedDialog, &Gtk::Widget::hide)));
       m_contentPublishedDialog->show();
     }
   }
@@ -1727,8 +1692,7 @@ void MainWindow::enableEdit()
   // Disable "view source" menu item
   m_draw_main.setViewSourceMenuItem(false);
   // Connect changed signal
-  textChangedSignalHandler_ =
-      m_draw_main.get_buffer().get()->signal_changed().connect(sigc::mem_fun(this, &MainWindow::editor_changed_text));
+  textChangedSignalHandler_ = m_draw_main.get_buffer().get()->signal_changed().connect(sigc::mem_fun(this, &MainWindow::editor_changed_text));
   // Enable publish menu item
   m_menu.setPublishMenuSensitive(true);
   // Disable edit menu item (you are already editing)
@@ -1781,8 +1745,7 @@ std::string MainWindow::getIconImageFromTheme(const std::string& iconName, const
   // Try absolute path first
   for (std::string data_dir : Glib::get_system_data_dirs())
   {
-    std::vector<std::string> path_builder{data_dir,   "libreweb-browser", "images",         "icons",
-                                          iconTheme_, typeofIcon,         iconName + ".png"};
+    std::vector<std::string> path_builder{data_dir, "libreweb-browser", "images", "icons", iconTheme_, typeofIcon, iconName + ".png"};
     std::string file_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
     if (Glib::file_test(file_path, Glib::FileTest::FILE_TEST_IS_REGULAR))
     {
@@ -1832,8 +1795,8 @@ void MainWindow::updateCSS()
                                       fontFamily_ +
                                       "\";"
                                       "font-size: " +
-                                      std::to_string(currentFontSize_) + "pt; }" + "textview text { " + colorCss +
-                                      "background-color: rgba(0, 0, 0," + darknessStr +
+                                      std::to_string(currentFontSize_) + "pt; }" + "textview text { " + colorCss + "background-color: rgba(0, 0, 0," +
+                                      darknessStr +
                                       ");"
                                       "letter-spacing: " +
                                       std::to_string(fontSpacing_) + "px; }");
@@ -1942,8 +1905,7 @@ void MainWindow::on_font_set()
 {
   Pango::FontDescription fontDesc = Pango::FontDescription(m_fontButton.get_font_name());
   fontFamily_ = fontDesc.get_family();
-  currentFontSize_ = defaultFontSize_ =
-      (fontDesc.get_size_is_absolute()) ? fontDesc.get_size() : fontDesc.get_size() / PANGO_SCALE;
+  currentFontSize_ = defaultFontSize_ = (fontDesc.get_size_is_absolute()) ? fontDesc.get_size() : fontDesc.get_size() / PANGO_SCALE;
   updateCSS();
 }
 
@@ -1991,7 +1953,6 @@ void MainWindow::on_icon_theme_activated(Gtk::ListBoxRow* row)
   }
   // Reload icons
   loadIcons();
-
   // Trigger IPFS status icon
   updateStatusPopoverAndIcon();
 }

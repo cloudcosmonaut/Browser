@@ -1,10 +1,6 @@
 #include "option-group.h"
 
-OptionGroup::OptionGroup()
-    : Glib::OptionGroup("main_group", "Options", "Options"),
-      timeout("120s"),
-      disableIPFSDaemon(false),
-      version(false)
+OptionGroup::OptionGroup() : Glib::OptionGroup("main_group", "Options", "Options"), timeout("120s"), disableIPFSDaemon(false), version(false)
 {
   Glib::OptionEntry entry1;
   entry1.set_long_name("timeout");

@@ -59,8 +59,7 @@ Middleware::~Middleware()
  * \param isParseContent If true the content received will be parsed and displayed as markdown syntax (default: true),
  * set to false if you want to editor the content
  */
-void Middleware::doRequest(
-    const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor, bool isParseContent)
+void Middleware::doRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor, bool isParseContent)
 {
   // Stop any on-going request first, if applicable
   abortRequest();
@@ -350,8 +349,7 @@ void Middleware::fetchFromIPFS(bool isParseContent)
       }
       else if (errorMessage.starts_with("Couldn't connect to server: Failed to connect to localhost"))
       {
-        mainWindow.setMessage("⌛ Please wait...",
-                              "IPFS daemon is still spinnng-up, page will automatically refresh...");
+        mainWindow.setMessage("⌛ Please wait...", "IPFS daemon is still spinnng-up, page will automatically refresh...");
         waitPageVisible_ = true; // Please wait page is shown (auto-refresh when network is up)
       }
       else
@@ -393,14 +391,13 @@ void Middleware::openFromDisk(bool isParseContent)
   }
   catch (const std::ios_base::failure& error)
   {
-    std::cerr << "ERROR: Could not read file: " << finalRequestPath_ << ". Message: " << error.what()
-              << ".\nError code: " << error.code() << std::endl;
+    std::cerr << "ERROR: Could not read file: " << finalRequestPath_ << ". Message: " << error.what() << ".\nError code: " << error.code()
+              << std::endl;
     mainWindow.setMessage("🎂 Could not read file", "Message: " + std::string(error.what()));
   }
   catch (const std::runtime_error& error)
   {
-    std::cerr << "ERROR: File request failed, file: " << finalRequestPath_ << ". Message: " << error.what()
-              << std::endl;
+    std::cerr << "ERROR: File request failed, file: " << finalRequestPath_ << ". Message: " << error.what() << std::endl;
     mainWindow.setMessage("🎂 File not found", "Message: " + std::string(error.what()));
   }
 }
