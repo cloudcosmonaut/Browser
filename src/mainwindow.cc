@@ -174,14 +174,14 @@ void MainWindow::postRequest(const std::string& path, bool isSetAddressBar, bool
     this->disableEdit();
 
   // Do not insert history back/forward calls into the history (again)
-  if (!isHistoryRequest)
+  if (!isHistoryRequest && !path.empty())
   {
-    if (history_.size() == 0)
+    if (history_.empty())
     {
       history_.push_back(path);
       currentHistoryIndex_ = history_.size() - 1;
     }
-    else if (history_.size() > 0 && !path.empty() && (history_.back().compare(path) != 0))
+    else if (history_.back().compare(path) != 0)
     {
       history_.push_back(path);
       currentHistoryIndex_ = history_.size() - 1;
@@ -222,7 +222,7 @@ void MainWindow::setText(const Glib::ustring& content)
 }
 
 /**
- * \brief Set cmark document
+ * \brief Set markdown document (cmark)
  * \param rootNode cmark root data struct
  */
 void MainWindow::setDocument(cmark_node* rootNode)
