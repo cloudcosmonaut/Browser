@@ -641,7 +641,7 @@ void MainWindow::initButtons()
 }
 
 /**
- * Prefer dark or light theme
+ * \brief Prefer dark or light theme
  */
 void MainWindow::setTheme()
 {
@@ -649,18 +649,15 @@ void MainWindow::setTheme()
   settings->property_gtk_application_prefer_dark_theme().set_value(useDarkTheme_);
 }
 
+/**
+ * \brief Popover search bar
+ */
 void MainWindow::initSearchPopover()
 {
-  // Bottom Search bar
   m_searchEntry.set_placeholder_text("Find");
   m_searchReplaceEntry.set_placeholder_text("Replace");
   m_search.connect_entry(m_searchEntry);
   m_searchReplace.connect_entry(m_searchReplaceEntry);
-  m_exitBottomIcon.set_has_tooltip("Close");
-  m_exitBottomIcon.set_from_icon_name("window-close-symbolic", Gtk::IconSize(Gtk::ICON_SIZE_BUTTON));
-  m_exitBottomButton.set_relief(Gtk::RELIEF_NONE);
-  m_exitBottomButton.add(m_exitBottomIcon);
-  m_exitBottomButton.signal_clicked().connect(sigc::mem_fun(m_searchPopover, &Gtk::Popover::hide));
   m_searchEntry.set_size_request(250, -1);
   m_searchReplaceEntry.set_size_request(250, -1);
   m_vboxSearch.set_margin_left(8);
@@ -670,11 +667,8 @@ void MainWindow::initSearchPopover()
 
   m_hboxSearch.pack_start(m_searchEntry, false, false);
   m_hboxSearch.pack_start(m_searchMatchCase, false, false);
-  m_hboxSearch.pack_end(m_exitBottomButton, false, false);
-
   m_vboxSearch.pack_start(m_hboxSearch, false, false, 4);
   m_vboxSearch.pack_end(m_searchReplaceEntry, false, false, 4);
-
   m_searchPopover.set_position(Gtk::POS_BOTTOM);
   m_searchPopover.set_size_request(300, 50);
   m_searchPopover.add(m_vboxSearch);

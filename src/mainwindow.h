@@ -213,7 +213,6 @@ protected:
   Gtk::Image m_bulletListIcon;
   Gtk::Image m_numberedListIcon;
   Gtk::Image m_hightlightIcon;
-  Gtk::Image m_exitBottomIcon;
   Gtk::Popover m_searchPopover;
   Gtk::Popover m_statusPopover;
   Gtk::PopoverMenu m_settingsPopover;
@@ -246,7 +245,6 @@ protected:
   std::unique_ptr<Gtk::MessageDialog> m_contentPublishedDialog;
   Gtk::ScrolledWindow m_scrolledWindowMain;
   Gtk::ScrolledWindow m_scrolledWindowSecondary;
-  Gtk::Button m_exitBottomButton;
   Gtk::SeparatorMenuItem m_separator1;
   Gtk::SeparatorMenuItem m_separator2;
   Gtk::SeparatorMenuItem m_separator3;
