@@ -1201,7 +1201,7 @@ void MainWindow::open()
 
   auto filterTextFiles = Gtk::FileFilter::create();
   filterTextFiles->set_name("All text files");
-  filterTextFiles->add_mime_type("text/plain");
+  filterTextFiles->add_mime_type("text/*");
   dialog->add_filter(filterTextFiles);
 
   auto filterAny = Gtk::FileFilter::create();
@@ -1239,7 +1239,7 @@ void MainWindow::open_and_edit()
 
   auto filterTextFiles = Gtk::FileFilter::create();
   filterTextFiles->set_name("All text files");
-  filterTextFiles->add_mime_type("text/plain");
+  filterTextFiles->add_mime_type("text/*");
   dialog->add_filter(filterTextFiles);
 
   auto filterAny = Gtk::FileFilter::create();
@@ -1376,7 +1376,7 @@ void MainWindow::save_as()
 
   auto filterTextFiles = Gtk::FileFilter::create();
   filterTextFiles->set_name("All text files");
-  filterTextFiles->add_mime_type("text/plain");
+  filterTextFiles->add_mime_type("text/*");
   dialog->add_filter(filterTextFiles);
 
   auto filterAny = Gtk::FileFilter::create();
