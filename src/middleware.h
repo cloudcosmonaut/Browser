@@ -4,6 +4,7 @@
 #include "ipfs.h"
 #include <atomic>
 #include <glibmm/dispatcher.h>
+#include <glibmm/ustring.h>
 #include <map>
 #include <mutex>
 #include <sigc++/connection.h>
@@ -31,8 +32,8 @@ public:
                  bool isParseContent = true);
   std::string doAdd(const std::string& path);
   void doWrite(const std::string& path, bool isSetAddressAndTitle = true);
-  void setContent(const std::string& content);
-  std::string getContent();
+  void setContent(const Glib::ustring& content);
+  Glib::ustring getContent();
   cmark_node* parseContent();
   void resetContentAndPath();
   std::size_t getIPFSNumberOfPeers();
@@ -75,12 +76,13 @@ private:
   // Request & Response:
   std::string requestPath_;
   std::string finalRequestPath_;
-  std::string currentContent_;
+  Glib::ustring currentContent_;
   bool waitPageVisible_;
 
   void processRequest(const std::string& path, bool isParseContent);
   void fetchFromIPFS(bool isParseContent);
   void openFromDisk(bool isParseContent);
+  bool validateUTF8(const Glib::ustring& text);
   void doIPFSStatusUpdateOnce();
   bool doIPFSStatusUpdate();
   void processIPFSStatus();

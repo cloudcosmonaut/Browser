@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <node.h>
 #include <stdexcept>
-#include <string>
 #include <syntax_extension.h>
 
 static const int OPTIONS = CMARK_OPT_STRIKETHROUGH_DOUBLE_TILDE;
@@ -30,7 +29,7 @@ Parser& Parser::getInstance()
  * \param content Content as string
  * \return AST structure (of type cmark_node)
  */
-cmark_node* Parser::parseContent(const std::string& content)
+cmark_node* Parser::parseContent(const Glib::ustring& content)
 {
   const char* data = content.c_str();
 
@@ -53,23 +52,25 @@ cmark_node* Parser::parseContent(const std::string& content)
 }
 
 /**
- * Built-in cmark parser to HTML
+ * \brief Built-in cmark parser to HTML
+ * \return HTML as string
  */
-std::string Parser::renderHTML(cmark_node* node)
+Glib::ustring Parser::renderHTML(cmark_node* node)
 {
   char* tmp = cmark_render_html(node, OPTIONS, NULL);
-  std::string output = std::string(tmp);
+  Glib::ustring output = Glib::ustring(tmp);
   free(tmp);
   return output;
 }
 
 /**
- * Built-in cmark parser to markdown (again)
+ * \brief Built-in cmark parser to markdown (again)
+ * \return return markdown as string
  */
-std::string Parser::renderMarkdown(cmark_node* node)
+Glib::ustring Parser::renderMarkdown(cmark_node* node)
 {
   char* tmp = cmark_render_commonmark(node, OPTIONS, 600);
-  std::string output = std::string(tmp);
+  Glib::ustring output = Glib::ustring(tmp);
   free(tmp);
   return output;
 }

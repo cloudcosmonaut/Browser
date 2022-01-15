@@ -4,6 +4,7 @@
 #include "mainwindow.h"
 #include "md-parser.h"
 #include <cmark-gfm.h>
+#include <glibmm.h>
 #include <glibmm/main.h>
 
 /**
@@ -114,7 +115,7 @@ void Middleware::doWrite(const std::string& path, bool isSetAddressAndTitle)
 /**
  * \brief Set current plain-text content (not parsed)
  */
-void Middleware::setContent(const std::string& content)
+void Middleware::setContent(const Glib::ustring& content)
 {
   currentContent_ = content;
 }
@@ -123,7 +124,7 @@ void Middleware::setContent(const std::string& content)
  * \brief Get current plain content (not parsed)
  * \return content as string
  */
-std::string Middleware::getContent()
+Glib::ustring Middleware::getContent()
 {
   return currentContent_;
 }
@@ -298,23 +299,35 @@ void Middleware::fetchFromIPFS(bool isParseContent)
 {
   try
   {
-    // TODO: Check file contents (first bytes?), to guess the file type.
-    // only proceed further file is UTF-8 unicode text (avoid images etc.).
     std::stringstream contents;
     ipfs_fetch_.fetch(finalRequestPath_, &contents);
-    // Set content
-    setContent(contents.str());
-    if (isParseContent)
+    // If the thread stops, don't brother to parse the file/update the GTK window
+    if (keep_request_thread_running_)
     {
-      // TODO: Maybe we want to abort the parser when keep_request_thread_running_ = false,
-      // depending time the parser is taking?
-      cmark_node* doc = parseContent();
-      Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setDocument), doc));
-    }
-    else
-    {
-      // Directly display the plain markdown content
-      Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setText), getContent()));
+      // Retrieve content to string
+      Glib::ustring content = contents.str();
+      // Only set content if valid UTF-8
+      if (validateUTF8(content) && keep_request_thread_running_)
+      {
+        setContent(content);
+        if (isParseContent)
+        {
+          // TODO: Maybe we want to abort the parser when keep_request_thread_running_ = false,
+          // depending time the parser is taking?
+          cmark_node* doc = parseContent();
+          Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setDocument), doc));
+        }
+        else
+        {
+          // Directly display the plain markdown content
+          Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setText), getContent()));
+        }
+      }
+      else
+      {
+        Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setMessage), "😵 File will not be displayed ",
+                                                    "File is not valid UTF-8 encoded, like a markdown or text file."));
+      }
     }
   }
   catch (const std::runtime_error& error)
@@ -374,21 +387,31 @@ void Middleware::openFromDisk(bool isParseContent)
 {
   try
   {
-    // Abort file read if keep_request_thread_running_ = false and throw runtime error, to stop futher execution
+    // TODO: Abort file read if keep_request_thread_running_ = false and throw runtime error, to stop futher execution
     // eg. when you are reading a very big file from disk.
-    setContent(File::read(finalRequestPath_));
+    const Glib::ustring content = File::read(finalRequestPath_);
     // If the thread stops, don't brother to parse the file/update the GTK window
     if (keep_request_thread_running_)
     {
-      if (isParseContent)
+      // Only set content if valid UTF-8
+      if (validateUTF8(content))
       {
-        cmark_node* doc = parseContent();
-        Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setDocument), doc));
+        setContent(content);
+        if (isParseContent)
+        {
+          cmark_node* doc = parseContent();
+          Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setDocument), doc));
+        }
+        else
+        {
+          // Directly set the plain markdown content
+          Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setText), getContent()));
+        }
       }
       else
       {
-        // Directly set the plain markdown content
-        Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setText), getContent()));
+        Glib::signal_idle().connect_once(sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setMessage), "😵 File will not be displayed ",
+                                                    "File is not valid UTF-8 encoded, like a markdown file or text file."));
       }
     }
   }
@@ -405,6 +428,16 @@ void Middleware::openFromDisk(bool isParseContent)
     Glib::signal_idle().connect_once(
         sigc::bind(sigc::mem_fun(mainWindow, &MainWindow::setMessage), "🎂 File not found", "Message: " + std::string(error.what())));
   }
+}
+
+/**
+ * \brief Validate if text is valid UTF-8.
+ * \param text String that needs to be validated
+ * \return true if valid UTF-8
+ */
+bool Middleware::validateUTF8(const Glib::ustring& text)
+{
+  return text.validate();
 }
 
 /**
