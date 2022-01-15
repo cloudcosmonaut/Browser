@@ -1187,15 +1187,27 @@ void MainWindow::open()
   dialog->add_button("_Open", Gtk::ResponseType::RESPONSE_OK);
 
   // Add filters, so that only certain file types can be selected:
-  auto filter_markdown = Gtk::FileFilter::create();
-  filter_markdown->set_name("Markdown files (.md)");
-  filter_markdown->add_mime_type("text/markdown");
-  dialog->add_filter(filter_markdown);
+#ifdef __linux__
+  auto filterMarkdown = Gtk::FileFilter::create();
+  filterMarkdown->set_name("All Markdown files");
+  filterMarkdown->add_mime_type("text/markdown");
+  dialog->add_filter(filterMarkdown);
+#endif
 
-  auto filter_any = Gtk::FileFilter::create();
-  filter_any->set_name("Any files");
-  filter_any->add_pattern("*");
-  dialog->add_filter(filter_any);
+  auto filterMarkdownExt = Gtk::FileFilter::create();
+  filterMarkdownExt->set_name("All Markdown files extension (*.md)");
+  filterMarkdownExt->add_pattern("*.md");
+  dialog->add_filter(filterMarkdownExt);
+
+  auto filterTextFiles = Gtk::FileFilter::create();
+  filterTextFiles->set_name("All text files");
+  filterTextFiles->add_mime_type("text/plain");
+  dialog->add_filter(filterTextFiles);
+
+  auto filterAny = Gtk::FileFilter::create();
+  filterAny->set_name("Any files");
+  filterAny->add_pattern("*");
+  dialog->add_filter(filterAny);
 
   dialog->show();
 }
@@ -1213,15 +1225,27 @@ void MainWindow::open_and_edit()
   dialog->add_button("_Open", Gtk::ResponseType::RESPONSE_OK);
 
   // Add filters, so that only certain file types can be selected:
-  auto filter_markdown = Gtk::FileFilter::create();
-  filter_markdown->set_name("Markdown files (.md)");
-  filter_markdown->add_mime_type("text/markdown");
-  dialog->add_filter(filter_markdown);
+#ifdef __linux__
+  auto filterMarkdown = Gtk::FileFilter::create();
+  filterMarkdown->set_name("All Markdown files");
+  filterMarkdown->add_mime_type("text/markdown");
+  dialog->add_filter(filterMarkdown);
+#endif
 
-  auto filter_any = Gtk::FileFilter::create();
-  filter_any->set_name("Any files");
-  filter_any->add_pattern("*");
-  dialog->add_filter(filter_any);
+  auto filterMarkdownExt = Gtk::FileFilter::create();
+  filterMarkdownExt->set_name("All Markdown files extension (*.md)");
+  filterMarkdownExt->add_pattern("*.md");
+  dialog->add_filter(filterMarkdownExt);
+
+  auto filterTextFiles = Gtk::FileFilter::create();
+  filterTextFiles->set_name("All text files");
+  filterTextFiles->add_mime_type("text/plain");
+  dialog->add_filter(filterTextFiles);
+
+  auto filterAny = Gtk::FileFilter::create();
+  filterAny->set_name("Any files");
+  filterAny->add_pattern("*");
+  dialog->add_filter(filterAny);
 
   dialog->show();
 }
@@ -1337,6 +1361,7 @@ void MainWindow::save_as()
 {
   auto dialog = new Gtk::FileChooserDialog("Save", Gtk::FILE_CHOOSER_ACTION_SAVE);
   dialog->set_transient_for(*this);
+
   dialog->set_modal(true);
   dialog->set_do_overwrite_confirmation(true);
   dialog->signal_response().connect(sigc::bind(sigc::mem_fun(*this, &MainWindow::on_save_as_dialog_response), dialog));
@@ -1344,15 +1369,20 @@ void MainWindow::save_as()
   dialog->add_button("_Save", Gtk::ResponseType::RESPONSE_OK);
 
   // Add filters, so that only certain file types can be selected:
-  auto filter_markdown = Gtk::FileFilter::create();
-  filter_markdown->set_name("Markdown files (.md)");
-  filter_markdown->add_mime_type("text/markdown");
-  dialog->add_filter(filter_markdown);
+  auto filterMarkdownExt = Gtk::FileFilter::create();
+  filterMarkdownExt->set_name("All Markdown files");
+  filterMarkdownExt->add_pattern("*.md");
+  dialog->add_filter(filterMarkdownExt);
 
-  auto filter_any = Gtk::FileFilter::create();
-  filter_any->set_name("Any files");
-  filter_any->add_pattern("*");
-  dialog->add_filter(filter_any);
+  auto filterTextFiles = Gtk::FileFilter::create();
+  filterTextFiles->set_name("All text files");
+  filterTextFiles->add_mime_type("text/plain");
+  dialog->add_filter(filterTextFiles);
+
+  auto filterAny = Gtk::FileFilter::create();
+  filterAny->set_name("Any files");
+  filterAny->add_pattern("*");
+  dialog->add_filter(filterAny);
 
   // If user is saving as an existing file, set the current uri path
   if (!currentFileSavedPath_.empty())
