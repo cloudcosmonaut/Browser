@@ -128,19 +128,22 @@ MainWindow::MainWindow(const std::string& timeout)
 }
 
 /**
- * \brief Executed before the request begins
- * \param path File path (on disk or IPFS) that needs to be processed
- * \param isSetAddressBar If true change update the address bar with the file path
+ * \brief Called before the requests begins.
+ * \param path File path (on disk or IPFS) that needs to be processed.
+ * \param title Application title
+ * \param isSetAddressBar If true update the address bar with the file path
  * \param isHistoryRequest Set to true if this is an history request call: back/forward
  * \param isDisableEditor If true the editor will be disabled if needed
  */
-void MainWindow::preRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor)
+void MainWindow::preRequest(const std::string& path, const std::string& title, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor)
 {
-  // Set title to default name
-  set_title(appName_);
-
   if (isSetAddressBar)
     m_addressBar.set_text(path);
+
+  if (!title.empty())
+    set_title(title + " - " + appName_);
+  else
+    set_title(appName_);
 
   if (isDisableEditor && isEditorEnabled())
     disableEdit();
@@ -167,7 +170,19 @@ void MainWindow::preRequest(const std::string& path, bool isSetAddressBar, bool 
 }
 
 /**
- * \brief Caleld when request started (from thread).
+ * \brief Called after file is written to disk.
+ */
+void MainWindow::postWrite(const std::string& path, const std::string& title, bool isSetAddressAndTitle)
+{
+  if (isSetAddressAndTitle)
+  {
+    m_addressBar.set_text(path);
+    set_title(title + " - " + appName_);
+  }
+}
+
+/**
+ * \brief Called when request started (from thread).
  */
 void MainWindow::startedRequest()
 {
@@ -839,7 +854,7 @@ void MainWindow::initSettingsPopover()
   m_vboxSettings.set_margin_bottom(10);
   m_vboxSettings.set_spacing(8);
   m_vboxSettings.add(m_hboxSetingsZoom);
-  m_vboxSettings.add(m_hboxSetingsBrightness); // TODO
+  m_vboxSettings.add(m_hboxSetingsBrightness);
   m_vboxSettings.add(m_separator5);
   m_vboxSettings.add(m_settingsGrid);
   m_vboxSettings.add(m_separator6);
@@ -1229,10 +1244,6 @@ void MainWindow::on_open_dialog_response(int response_id, Gtk::FileChooserDialog
     auto filePath = dialog->get_file()->get_path();
     // Open file, set address bar & disable editor if needed
     middleware_.doRequest("file://" + filePath);
-
-    // Set new title
-    std::string fileName = middleware_.getFilename(filePath);
-    set_title(fileName + " - " + appName_);
     break;
   }
   case Gtk::ResponseType::RESPONSE_CANCEL:
@@ -1265,13 +1276,7 @@ void MainWindow::on_open_edit_dialog_response(int response_id, Gtk::FileChooserD
     std::string path = "file://" + filePath;
     // Open file and set address bar, but do not parse the content or the disable editor
     middleware_.doRequest(path, true, false, false, false);
-
-    // Change address bar
-    m_addressBar.set_text(path);
-    // Set new title
-    std::string fileName = middleware_.getFilename(filePath);
-    set_title(fileName + " - " + appName_);
-    // Set current file path for saving feature
+    // Set current file path for the 'save' feature
     currentFileSavedPath_ = filePath;
     break;
   }
@@ -1386,17 +1391,12 @@ void MainWindow::on_save_as_dialog_response(int response_id, Gtk::FileChooserDia
     // Save current content to file path
     try
     {
-      middleware_.doWrite(filePath);
+      middleware_.doWrite(filePath, isEditorEnabled()); // Only update address & title, when editor mode is enabled
       // Only if editor mode is enabled
       if (isEditorEnabled())
       {
         // Set/update the current file saved path variable (used for the 'save' feature)
         currentFileSavedPath_ = filePath;
-        // And also update the address bar with the current file path
-        m_addressBar.set_text("file://" + filePath);
-        // Set title
-        std::string fileName = middleware_.getFilename(filePath);
-        set_title(fileName + " - " + appName_);
       }
     }
     catch (std::ios_base::failure& error)

@@ -54,9 +54,9 @@ Middleware::~Middleware()
 /**
  * Fetch document from disk or IPFS, using threading
  * \param path File path that needs to be opened (either from disk or IPFS network)
- * \param isSetAddressBar If true change update the address bar with the file path
- * \param isHistoryRequest Set to true if this is an history request call: back/forward
- * \param isDisableEditor If true the editor will be disabled if needed
+ * \param isSetAddressBar If true update the address bar with the file path (default: true)
+ * \param isHistoryRequest Set to true if this is an history request call: back/forward (default: false)
+ * \param isDisableEditor If true the editor will be disabled if needed (default: true)
  * \param isParseContent If true the content received will be parsed and displayed as markdown syntax (default: true),
  * set to false if you want to editor the content
  */
@@ -67,8 +67,18 @@ void Middleware::doRequest(const std::string& path, bool isSetAddressBar, bool i
 
   if (requestThread_ == nullptr)
   {
+    std::string title;
+    if (path.empty() && requestPath_.starts_with("file://"))
+    {
+      title = File::getFilename(requestPath_); // During refresh
+    }
+    else if (path.starts_with("file://"))
+    {
+      title = File::getFilename(path);
+    }
     // Update main window widgets
-    mainWindow.preRequest(path, isSetAddressBar, isHistoryRequest, isDisableEditor);
+    mainWindow.preRequest(path, title, isSetAddressBar, isHistoryRequest, isDisableEditor);
+
     // Start thread
     requestThread_ = new std::thread(&Middleware::processRequest, this, path, isParseContent);
   }
@@ -93,20 +103,12 @@ std::string Middleware::doAdd(const std::string& path)
 /**
  * \brief Write file to disk
  * \param path file path to disk
+ * \param isSetAddressAndTitle If true update the address bar & title (default: true)
  */
-void Middleware::doWrite(const std::string& path)
+void Middleware::doWrite(const std::string& path, bool isSetAddressAndTitle)
 {
   File::write(path, getContent());
-}
-
-/**
- * \brief Get filename from path
- * \param path file path
- * \return filename
- */
-std::string Middleware::getFilename(const std::string& path)
-{
-  return File::getFilename(path);
+  mainWindow.postWrite("file://" + path, File::getFilename(path), isSetAddressAndTitle);
 }
 
 /**
@@ -223,7 +225,8 @@ std::string Middleware::getIPFSClientPublicKey()
 
 /**
  * \brief Get the file from disk or IPFS network, from the provided path,
- * parse the content, and display the document
+ * parse the content, and display the document.
+ * Call this method with empty path, will use the previous requestPath_ (thus refresh).
  * \param path File path that needs to be fetched (from disk or IPFS network)
  * \param isParseContent Set to true if you want to parse and display the content as markdown syntax (from disk or IPFS
  * network), set to false if you want to edit the content
@@ -255,19 +258,19 @@ void Middleware::processRequest(const std::string& path, bool isParseContent)
   else
   {
     // Check if CID
-    if (requestPath_.rfind("ipfs://", 0) == 0)
+    if (requestPath_.starts_with("ipfs://"))
     {
       finalRequestPath_ = requestPath_;
       finalRequestPath_.erase(0, 7);
       fetchFromIPFS(isParseContent);
     }
-    else if ((requestPath_.length() == 46) && (requestPath_.rfind("Qm", 0) == 0))
+    else if ((requestPath_.length() == 46) && requestPath_.starts_with("Qm"))
     {
       // CIDv0
       finalRequestPath_ = requestPath_;
       fetchFromIPFS(isParseContent);
     }
-    else if (requestPath_.rfind("file://", 0) == 0)
+    else if (requestPath_.starts_with("file://"))
     {
       finalRequestPath_ = requestPath_;
       finalRequestPath_.erase(0, 7);

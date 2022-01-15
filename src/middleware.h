@@ -30,8 +30,7 @@ public:
                  bool isDisableEditor = true,
                  bool isParseContent = true);
   std::string doAdd(const std::string& path);
-  void doWrite(const std::string& path);
-  std::string getFilename(const std::string& path);
+  void doWrite(const std::string& path, bool isSetAddressAndTitle = true);
   void setContent(const std::string& content);
   std::string getContent();
   cmark_node* parseContent();

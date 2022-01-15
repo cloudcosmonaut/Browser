@@ -47,7 +47,8 @@ class MainWindow : public Gtk::Window
 public:
   static const int DEFAULT_FONT_SIZE = 10;
   explicit MainWindow(const std::string& timeout);
-  void preRequest(const std::string& path, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor);
+  void preRequest(const std::string& path, const std::string& title, bool isSetAddressBar, bool isHistoryRequest, bool isDisableEditor);
+  void postWrite(const std::string& path, const std::string& title, bool isSetAddressAndTitle);
   void startedRequest();
   void finishedRequest();
   void refreshRequest();
