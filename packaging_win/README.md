@@ -1,19 +1,38 @@
-# Windows miscialious files
+# Windows Packaging 
 
-The following additional files are required for packaging to Windows. Of-course together with the libreweb-browser.exe binary.
+The following additional files are required for packaging to the Windows platform.
 
-## PThread
+## GTK Windows 10 Theme
 
-* quserex.dll - The QueueUserAPCEx package, providing alertable (pre-emptive) asyncronous threads cancelation (**Source:** [gcc.gnu.org/pub/pthreads-win32](https://gcc.gnu.org/pub/pthreads-win32/QueueUserAPCEx/user/)). Which we most likely do **NOT** want to use iso libcurl. We should avoid using `pthread_cancel`.
+We ship the Windows binary with the Windows 10 theme. Giving LibreWeb a very native look under Windows.
+For that we depend on 3rd partt GTK theme.
 
-## GTK
+* [Windows 10 theme](https://github.com/B00merang-Project/Windows-10)
+* [Windows 10 icon set](https://github.com/B00merang-Artwork/Windows-10/)
 
-* gdbus.exe - Required for creating a gdbus daemon under Windows (**Source:** MXE cross-build)
-* gspawn-win64-helper.exe - Required for starting processes under Windows (**Source:** MXE cross-build)
-* gspawn-win64-console.exe - Required for starting processes under Windows (**Source:** MXE cross-build)
+Those Windows 10 theme/icon files are stored inside the respectively `share/themes` and `share/icons` directories.
 
-## GDB
+## Native GTK Theme Icons
 
-* gdb.exe - For debugging the binary
+Icons themes:
 
+* Adwaita (**Source:** `/usr/share/icons/Adwaita` Linux Mint 20.x distro)
+* hicolor - Used as fallback (**Source:** `/usr/share/icons/hicolor` Linux Mint 20.x distro)
+
+Those native icon themes are stored in the `share/icons` directory.
+
+## Windows GTK Binary files
+
+The following GTK binary files should be shipped together with the `libreweb-browser.exe` binary.
+
+The files should be placed in the `bin` directory.
+
+* gdbus.exe / dbus-daemon.exe - Creating a gdbus daemon under Windows (**Source:** MXE cross-build)
+* gspawn-win64-helper.exe - Starting processes under Windows (**Source:** MXE cross-build)
+* gspawn-win64-console.exe - Starting processes under Windows (**Source:** MXE cross-build)
+* And more...
+
+And for debugging purpose:
+
+* gdb.exe - For debugging the binary (**source:** MinGW)
 
