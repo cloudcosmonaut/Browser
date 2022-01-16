@@ -1,4 +1,4 @@
-# Example: https://github.com/MariaDB/server/tree/10.5/cmake
+# Example: https://github.com/MariaDB/server/tree/10.8/cmake
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "LibreWeb Browser - Decentralized Web-Browser")
 set(CPACK_PACKAGE_VENDOR "Melroy van den Berg")
 set(CPACK_PACKAGE_CONTACT "Melroy van den Berg <info@libreweb.org>")
@@ -42,3 +42,4 @@ set(CPACK_DEBIAN_PACKAGE_SUGGESTS "")
 
 # include CPack model once all variables are set
 include(CPack)
+
