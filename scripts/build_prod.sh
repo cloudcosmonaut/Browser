@@ -14,5 +14,5 @@ echo "INFO: Start building...";
 cmake -G Ninja -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_BUILD_TYPE=Release ..
 ninja && 
 echo "INFO: Start packaging to tgz, deb and rpm...";
-cpack -G "TGZ;DEB;RPM"
+cpack -C Release -G "TGZ;DEB;RPM"
 
