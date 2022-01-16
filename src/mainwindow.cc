@@ -1790,6 +1790,19 @@ bool MainWindow::isEditorEnabled()
  */
 std::string MainWindow::getIconImageFromTheme(const std::string& iconName, const std::string& typeofIcon)
 {
+#ifdef _WIN32
+  std::vector<std::string> path_builder{"..", "images", "icons", iconTheme_, typeofIcon, iconName + ".png"};
+  std::string file_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
+  if (Glib::file_test(file_path, Glib::FileTest::FILE_TEST_IS_REGULAR))
+  {
+    return file_path;
+  }
+  else
+  {
+    return "";
+  }
+#endif
+#ifdef __linux__
   // Try absolute path first
   for (std::string data_dir : Glib::get_system_data_dirs())
   {
@@ -1813,6 +1826,7 @@ std::string MainWindow::getIconImageFromTheme(const std::string& iconName, const
   {
     return "";
   }
+#endif
 }
 
 /**
