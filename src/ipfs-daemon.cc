@@ -126,32 +126,20 @@ std::string IPFSDaemon::locateIPFSBinary()
 #ifdef _WIN32
   binaryName += ".exe";
 #endif
-#ifdef __linux__
-  // Use data directory first, used when LibreWeb is installed (Linux or Windows)
-  for (std::string data_dir : Glib::get_system_data_dirs())
-  {
-    std::vector<std::string> path_builder{data_dir, "libreweb", "go-ipfs", binaryName};
-    std::string ipfs_binary_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
-    if (Glib::file_test(ipfs_binary_path, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
-    {
-      return ipfs_binary_path;
-    }
-  }
-#endif
+  // Use the current bin directory, to locate the go-ipfs binary (for both Linux and Windows)
   std::string currentPath = n_fs::current_path().string();
-  // When working directory is the current folder (for Windows)
-  std::string ipfs_binary_path1 = Glib::build_filename(currentPath, binaryName);
-  
+  std::string ipfs_binary_path = Glib::build_filename(currentPath, binaryName);
+
   // When working directory is the build/bin folder (relative path), during the build (when package is not installed
   // yet)
-  std::string ipfs_binary_path2 = Glib::build_filename(currentPath, "../..", "go-ipfs", binaryName);
-  if (Glib::file_test(ipfs_binary_path1, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
+  std::string ipfs_binary_path_dev = Glib::build_filename(currentPath, "../..", "go-ipfs", binaryName);
+  if (Glib::file_test(ipfs_binary_path, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
   {
-    return ipfs_binary_path1;
+    return ipfs_binary_path;
   }
-  else if (Glib::file_test(ipfs_binary_path2, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
+  else if (Glib::file_test(ipfs_binary_path_dev, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
   {
-    return ipfs_binary_path2;
+    return ipfs_binary_path_dev;
   }
   else
   {
