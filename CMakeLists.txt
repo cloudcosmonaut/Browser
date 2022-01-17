@@ -30,7 +30,7 @@ add_subdirectory (src)
 
 # Additional install files
 install(FILES misc/libreweb-browser.desktop DESTINATION share/applications)
-install(PROGRAMS go-ipfs/ipfs DESTINATION share/libreweb-browser/go-ipfs)
-install(DIRECTORY images DESTINATION share/libreweb-browser)
+install(PROGRAMS go-ipfs/ipfs DESTINATION share/libreweb/go-ipfs)
+install(DIRECTORY images DESTINATION share/libreweb)
 install(FILES images/icons/libreweb-browser.png DESTINATION share/icons/hicolor/48x48/apps)
 install(FILES images/icons/libreweb-browser.svg DESTINATION share/icons/hicolor/scalable/apps)

@@ -136,13 +136,14 @@ Next, check for memory leaks using `valgrind` by executing:
 
 ### Cross-compiling Build Dependencies
 
-For the cross-compiling towards **Windows** (under GNU/Linux), you need at least:
+For the [cross-compiling](https://en.wikipedia.org/wiki/Cross_compiler) towards **Windows** (while under GNU/Linux), you need at least:
 
-* [MXE Gtkmm3 / Curl Binary packages](mxe.cc) (static build using Meson build with GCC10, see below for more info)
+* [MXE Gtkmm3 / Curl Binary packages](mxe.cc) (static build using Meson build with GCC11, see below for more info)
 * CMake (Package: `cmake`)
 * Ninja (Package: `ninja-build`)
+* Nullsoft Scriptable Install System (Package: `nsis`)
 
-For more information and the latest GTK3 Windows MXE download, please [visit my other GitLab project](https://gitlab.melroy.org/melroy/gtk-3-bundle-for-windows).
+For more information and the latest pre-build GTK3 Windows download, please my other [GTK 3 bundle repo](https://gitlab.melroy.org/melroy/gtk-3-bundle-for-windows).
 
 **Note:** We're currently busy trying to upgrade the [whole GTK stack](https://github.com/danger89/mxe/tree/update_gtk).
 
@@ -152,6 +153,8 @@ We used the following build command to get the Windows dependencies and MXE cros
 make gtkmm3 curl -j 16 MXE_TARGETS='x86_64-w64-mingw32.static' MXE_PLUGIN_DIRS='plugins/gcc10'
 ```
 
+*NOTE:* Soon we need gcc11, but GTK3 upstream needs to create a new release that fixes the GCC11 builds.
+
 Add the following line to the end of the `~/.bashrc` file:
 
 ```bash
@@ -160,9 +163,17 @@ export PATH="/opt/mxe/usr/bin:$PATH"
 
 #### Cross-compile Build
 
-Be sure you meet all the requirements above. 
+Please, be sure you meet all the requirements above. So your MXE environment should be ready in: `/opt/mxe/usr`.
 
-Start the cross-compiling build towards Windows 64-bit (using GNU/Linux as host), execute:
+To start the *cross-compile* build towards Windows 64-bit (using GNU/Linux as host) you can use the commands below.
+
+Build a Windows development release:
+
+```sh
+./scripts/build_win.sh
+```
+
+Build a production release + packaging with [NSIS](https://sourceforge.net/projects/nsis/), execute the following:
 
 ```sh
 ./scripts/build_win_prod.sh

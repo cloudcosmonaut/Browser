@@ -130,7 +130,7 @@ std::string IPFSDaemon::locateIPFSBinary()
   // Try data directory first, when Linux package is installed
   for (std::string data_dir : Glib::get_system_data_dirs())
   {
-    std::vector<std::string> path_builder{data_dir, "libreweb-browser", "go-ipfs", binaryName};
+    std::vector<std::string> path_builder{data_dir, "libreweb", "go-ipfs", binaryName};
     std::string ipfs_binary_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
     if (Glib::file_test(ipfs_binary_path, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
     {

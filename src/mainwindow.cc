@@ -1806,7 +1806,7 @@ std::string MainWindow::getIconImageFromTheme(const std::string& iconName, const
   // Try absolute path first
   for (std::string data_dir : Glib::get_system_data_dirs())
   {
-    std::vector<std::string> path_builder{data_dir, "libreweb-browser", "images", "icons", iconTheme_, typeofIcon, iconName + ".png"};
+    std::vector<std::string> path_builder{data_dir, "libreweb", "images", "icons", iconTheme_, typeofIcon, iconName + ".png"};
     std::string file_path = Glib::build_path(G_DIR_SEPARATOR_S, path_builder);
     if (Glib::file_test(file_path, Glib::FileTest::FILE_TEST_IS_REGULAR))
     {
