@@ -72,7 +72,7 @@ void IPFSDaemon::spawn()
     }
     else
     {
-      std::cerr << "ERROR: IPFS Daemon is not found. IPFS will not work!" << std::endl;
+      std::cerr << "ERROR: IPFS Daemon is not found. IPFS will most likely not work!" << std::endl;
     }
   }
 }
@@ -127,7 +127,7 @@ std::string IPFSDaemon::locateIPFSBinary()
   binaryName += ".exe";
 #endif
 #ifdef __linux__
-  // Try data directory first, when Linux package is installed
+  // Use data directory first, used when LibreWeb is installed (Linux or Windows)
   for (std::string data_dir : Glib::get_system_data_dirs())
   {
     std::vector<std::string> path_builder{data_dir, "libreweb", "go-ipfs", binaryName};
@@ -141,6 +141,7 @@ std::string IPFSDaemon::locateIPFSBinary()
   std::string currentPath = n_fs::current_path().string();
   // When working directory is the current folder (for Windows)
   std::string ipfs_binary_path1 = Glib::build_filename(currentPath, binaryName);
+  
   // When working directory is the build/bin folder (relative path), during the build (when package is not installed
   // yet)
   std::string ipfs_binary_path2 = Glib::build_filename(currentPath, "../..", "go-ipfs", binaryName);

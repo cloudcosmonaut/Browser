@@ -20,10 +20,10 @@ doxygen:
     paths:
       - build/docs/html/
 
-build:
+linux_build:
   stage: build
   script: 
-    - ./scripts/build_prod.sh
+    - ./scripts/build-lnx-prod.sh
   artifacts:
     name: "Packages"
     expire_in: 1 week
@@ -34,11 +34,11 @@ build:
 
 static_code_analysis:
   stage: build
-  script: ./scripts/cpp_check.sh
+  script: ./scripts/cpp-check.sh
 
 code_style_guidelines:
   stage: build
-  script: ./scripts/check_format.sh
+  script: ./scripts/check-format.sh
 
 #unit_test:
 #  stage: test
