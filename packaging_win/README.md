@@ -17,9 +17,11 @@ Those Windows 10 theme/icon files are stored inside the respectively `share/them
 Icons themes:
 
 * Adwaita (**Source:** `/usr/share/icons/Adwaita` Linux Mint 20.x distro)
-* hicolor - Used as fallback (**Source:** `/usr/share/icons/hicolor` Linux Mint 20.x distro)
+* hicolor - Used as fallback theme (**Source:** `/usr/share/icons/hicolor` Linux Mint 20.x distro)
+ * Important: Do not forget to remove all the apps folder contents/icons. This lead to extra size and maybe installation issues due to symbolic links.
+   Therefor run the `./scripts/clean-up-hicolor-icons.sh` script. Which removes all `apps` directories.
 
-Those native icon themes are stored in the `share/icons` directory.
+Those all the icon themes are stored in the `share/icons` directory.
 
 ## Windows GTK Binary files
 
