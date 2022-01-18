@@ -1,6 +1,7 @@
 # LibreWeb Browser
 
-LibreWeb is an **open-source decentralized web browser**, leveraging IPFS. What would you do different; if you could **reinvent** The Internet in 21st century? With all the knowledge and new technologies available today. I was inspired by Douglas Engelbart, Tim Berners-Lee and Ted Nelson as well as projects like IPFS, Jekyll, ARPANET and more.
+LibreWeb is an **open-source decentralized web browser**, leveraging IPFS. What would you do different; if you could **reinvent** The Internet in 21st century?  
+With all the knowledge and new technologies available today. I was inspired by Douglas Engelbart, Tim Berners-Lee and Ted Nelson as well as projects like IPFS, Jekyll, ARPANET and more.
 
 [![Pipeline](https://gitlab.melroy.org/libreweb/browser/badges/master/pipeline.svg)](https://gitlab.melroy.org/libreweb/browser/-/pipelines/latest)
 [![Telegram](https://img.shields.io/badge/chat-on%20telegram-brightgreen)](https://t.me/libreweb)
