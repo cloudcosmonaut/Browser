@@ -179,6 +179,8 @@ Build a production release + packaging with [NSIS](https://sourceforge.net/proje
 ./scripts/build_win_prod.sh
 ```
 
+See also: [Windows readme](Windows.md) file.
+
 ### Research
 
 For [research document](https://gitlab.melroy.org/libreweb/research_lab/-/blob/master/research.md) plus findings including explanation (like [diagrams](https://gitlab.melroy.org/libreweb/research_lab/-/blob/master/diagrams.md)) see the:

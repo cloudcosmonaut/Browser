@@ -1,6 +1,6 @@
 # Windows Packaging 
 
-The following additional files are required for packaging to the Windows platform.
+The additional files in `packaging_win` are required for packaging to the Windows platform.
 
 ## GTK Windows 10 Theme
 
