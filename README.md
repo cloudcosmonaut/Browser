@@ -1,14 +1,13 @@
 # LibreWeb Browser
 
+LibreWeb is an **open-source decentralized web browser**, leveraging IPFS. What would you do different; if you could **reinvent** The Internet in 21st century? With all the knowledge and new technologies available today. I was inspired by Douglas Engelbart, Tim Berners-Lee and Ted Nelson as well as projects like IPFS, Jekyll, ARPANET and more.
+
+[![Pipeline](https://gitlab.melroy.org/libreweb/browser/badges/master/pipeline.svg)](https://gitlab.melroy.org/libreweb/browser/-/pipelines/latest)
 [![Telegram](https://img.shields.io/badge/chat-on%20telegram-brightgreen)](https://t.me/libreweb)
 [![Matrix](https://img.shields.io/badge/chat-on%20matrix-brightgreen)](https://matrix.to/#/#libreweb:melroy.org)
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-brightgreen)](https://gitter.im/LibreWeb/Browser)
-
-Decentralized Web-Browser; a revolution of the WWW.
-
-What would you do different; if you could **reinvent** The Internet in 21st century? With all the knowledge and new technologies available today.
-
-I was inspired by Douglas Engelbart, Tim Berners-Lee and Ted Nelson as well as projects like IPFS, Jekyll, ARPANET, and more.
+[![Roadmap](https://img.shields.io/badge/Roadmap-yellow)](https://gitlab.melroy.org/libreweb/browser/-/milestones)
+[![Release](https://img.shields.io/badge/Release-latest-orange)](https://gitlab.melroy.org/libreweb/browser/-/releases)
 
 *Note:* This project is still work in progress. However, we have a working [alpha version available](https://gitlab.melroy.org/libreweb/browser/-/releases).
 
