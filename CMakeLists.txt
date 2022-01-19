@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.16.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-include(git_version)
+include(GitVersion)
 
 project (libreweb-browser
   VERSION ${GIT_TAG_VERSION}
@@ -15,7 +15,7 @@ message(STATUS "PROJECT_VERSION: ${PROJECT_VERSION}")
 # Production build
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
   # Include CPack packaging settings
-  include(packaging)
+  include(Packaging)
 endif()
 
 # Disable CTest testcases & install in cpp-ipfs-http-client

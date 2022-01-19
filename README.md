@@ -161,6 +161,7 @@ Add the following line to the end of the `~/.bashrc` file:
 export PATH="/opt/mxe/usr/bin:$PATH"
 ```
 
+
 #### Cross-compile Build
 
 Please, be sure you meet all the requirements above. So your MXE environment should be ready in: `/opt/mxe/usr`.
@@ -178,6 +179,8 @@ Build a production release + packaging with [NSIS](https://sourceforge.net/proje
 ```sh
 ./scripts/build_win_prod.sh
 ```
+
+*Note:* For packaging that requires root add `/opt/mxe/usr/bin` to the secure_path using: `sudo visudo`.
 
 See also: [Windows readme](Windows.md) file.
 

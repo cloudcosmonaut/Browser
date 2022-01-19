@@ -1679,6 +1679,7 @@ void MainWindow::forward()
 
 /**
  * \brief Determing if browser is installed from current binary path, at runtime
+ * TODO: What will be the result under Windows?
  * \return true if the current running process is installed (to the installed prefix path)
  */
 bool MainWindow::isInstalled()

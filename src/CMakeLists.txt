@@ -1,3 +1,5 @@
+include(${CMAKE_SOURCE_DIR}/cmake/GSettings.cmake)
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -38,41 +40,6 @@ endif()
 # Generate Project version header file
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/project_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/project_config.h)
 
- # Find the GLib path for schema installation
- execute_process(
-    COMMAND
-        ${PKG_CONFIG_EXECUTABLE}
-        glib-2.0
-        --variable prefix
-    OUTPUT_VARIABLE
-        _glib_prefix
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-set(GSETTINGS_DIR "${_glib_prefix}/share/glib-2.0/schemas/" CACHE INTERNAL "")
-
-# Fetch path for schema compiler from pkg-config
-execute_process(
-    COMMAND
-        ${PKG_CONFIG_EXECUTABLE}
-        gio-2.0
-        --variable
-        glib_compile_schemas
-    OUTPUT_VARIABLE
-        _glib_compile_schemas
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-# Set glib schema compiler command
-set(glib_schema_compiler ${_glib_compile_schemas} CACHE INTERNAL "")
-
-# Schema files
-set(MY_SCHEMA_FILE org.libreweb.browser.gschema.xml)
-set(WINDOWS_SCHEMA_FILES 
-    org.gtk.Settings.ColorChooser.gschema.xml
-    org.gtk.Settings.Debug.gschema.xml
-    org.gtk.Settings.EmojiChooser.gschema.xml
-    org.gtk.Settings.FileChooser.gschema.xml
-)
-
 # Source code
 set(HEADERS
     about.h
@@ -103,37 +70,53 @@ set(SOURCES
   ${HEADERS}
 )
 
-add_executable(${PROJECT_TARGET} ${SOURCES})
-
-# Copy gschema.xml file to build directory
-set(SCHEMA_DIR ${CMAKE_CURRENT_BINARY_DIR}/gsettings)
-
-# Copy my own libreweb schema file to the build directory
-add_custom_command(
-    TARGET ${PROJECT_TARGET} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-            "${CMAKE_CURRENT_SOURCE_DIR}/schemas/${MY_SCHEMA_FILE}"
-            "${SCHEMA_DIR}/${MY_SCHEMA_FILE}"
-)
-
-# Copy remaining schema files for Windows only to the build directory
+# Install and recompile glib gsettings schema
+add_schema("org.libreweb.browser.gschema.xml" GSCHEMA_RING)
+# Windows Schema files
 if(WIN32)
-foreach(FILENAME ${WINDOWS_SCHEMA_FILES})
-    add_custom_command(
-        TARGET ${PROJECT_TARGET} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-            "${CMAKE_CURRENT_SOURCE_DIR}/schemas/${FILENAME}"
-            "${SCHEMA_DIR}/${FILENAME}"
+    set(WINDOWS_SCHEMA_FILES
+        org.gtk.Settings.ColorChooser.gschema.xml
+        org.gtk.Settings.Debug.gschema.xml
+        org.gtk.Settings.EmojiChooser.gschema.xml
+        org.gtk.Settings.FileChooser.gschema.xml
     )
-endforeach(FILENAME)
+    message(STATUS "Add Windows Schema files")
+    foreach(SCHEMA_FILE ${WINDOWS_SCHEMA_FILES})
+        add_schema(${SCHEMA_FILE} GSCHEMA_RING)
+    endforeach(SCHEMA_FILE)
 endif()
 
+add_executable(${PROJECT_TARGET} ${GSCHEMA_RING} ${SOURCES})
+
+## Copy gschema.xml file to build directory
+#set(SCHEMA_DIR ${CMAKE_CURRENT_BINARY_DIR}/gsettings)
+
+## Copy my own libreweb schema file to the build directory
+#add_custom_command(
+#    TARGET ${PROJECT_TARGET} POST_BUILD
+#    COMMAND ${CMAKE_COMMAND} -E copy
+#            "${CMAKE_CURRENT_SOURCE_DIR}/schemas/${MY_SCHEMA_FILE}"
+#            "${SCHEMA_DIR}/${MY_SCHEMA_FILE}"
+#)
+
+## Copy remaining schema files for Windows only to the build directory
+#if(WIN32)
+#foreach(FILENAME ${WINDOWS_SCHEMA_FILES})
+#    add_custom_command(
+#        TARGET ${PROJECT_TARGET} POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy
+#            "${CMAKE_CURRENT_SOURCE_DIR}/schemas/${FILENAME}"
+#            "${SCHEMA_DIR}/${FILENAME}"
+#    )
+#endforeach(FILENAME)
+#endif()
+
 # Compile the schema files
-add_custom_command(
-    TARGET ${PROJECT_TARGET} POST_BUILD
-    COMMAND ${glib_schema_compiler} ${SCHEMA_DIR}
-    COMMENT "Compiling schemas in folder: ${SCHEMA_DIR}"
-)
+#add_custom_command(
+#    TARGET ${PROJECT_TARGET} POST_BUILD
+#    COMMAND ${glib_schema_compiler} ${SCHEMA_DIR}
+#    COMMENT "Compiling schemas in folder: ${SCHEMA_DIR}"
+#)
 
 ## Definitions just in case
 # Define _WIN32 for Windows platforms
@@ -182,7 +165,3 @@ target_compile_options(${PROJECT_TARGET} PRIVATE ${GTKMM_CFLAGS_OTHER})
 
 # Install browser binary
 install(TARGETS ${PROJECT_TARGET} RUNTIME DESTINATION bin)
-
-# Install & compile GTK schema file
-install(FILES ${SCHEMA_FILE} DESTINATION ${GSETTINGS_DIR})
-install(CODE "execute_process (COMMAND ${glib_schema_compiler} ${GSETTINGS_DIR})")

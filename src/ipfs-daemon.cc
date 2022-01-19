@@ -6,6 +6,7 @@
 #include <glibmm/shell.h>
 #include <iostream>
 #include <unistd.h>
+#include <whereami.h>
 
 #ifdef LEGACY_CXX
 #include <experimental/filesystem>
@@ -123,16 +124,35 @@ int IPFSDaemon::getPID() const
 std::string IPFSDaemon::locateIPFSBinary()
 {
   std::string binaryName = "ipfs";
+  std::string currentExecutablePath;
 #ifdef _WIN32
   binaryName += ".exe";
 #endif
-  // Use the current bin directory, to locate the go-ipfs binary (for both Linux and Windows)
-  std::string currentPath = n_fs::current_path().string();
-  std::string ipfs_binary_path = Glib::build_filename(currentPath, binaryName);
+  // Use the current executable directory (bin folder), to locate the go-ipfs binary (for both Linux and Windows)
+  char* path = NULL;
+  int length;
+  length = wai_getExecutablePath(NULL, 0, NULL);
+  if (length > 0)
+  {
+    path = (char*)malloc(length + 1);
+    if (!path)
+    {
+      std::cerr << "ERROR: Couldn't create path." << std::endl;
+    }
+    else
+    {
+      wai_getExecutablePath(path, length, NULL);
+      path[length] = '\0';
+      currentExecutablePath = std::string(path);
+      free(path);
+      ;
+    }
+  }
+  std::string ipfs_binary_path = Glib::build_filename(currentExecutablePath, binaryName);
 
   // When working directory is the build/bin folder (relative path), during the build (when package is not installed
   // yet)
-  std::string ipfs_binary_path_dev = Glib::build_filename(currentPath, "../..", "go-ipfs", binaryName);
+  std::string ipfs_binary_path_dev = Glib::build_filename(n_fs::current_path().string(), "..", "..", "go-ipfs", binaryName);
   if (Glib::file_test(ipfs_binary_path, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
   {
     return ipfs_binary_path;
