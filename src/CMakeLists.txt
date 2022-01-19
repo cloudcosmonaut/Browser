@@ -4,9 +4,12 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+if(WIN32)
+  set(WINDOWS_FLAGS -mwindows)
+endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${WINDOWS_FLAGS} -O3 -DNDEBUG")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -87,36 +90,6 @@ if(WIN32)
 endif()
 
 add_executable(${PROJECT_TARGET} ${GSCHEMA_RING} ${SOURCES})
-
-## Copy gschema.xml file to build directory
-#set(SCHEMA_DIR ${CMAKE_CURRENT_BINARY_DIR}/gsettings)
-
-## Copy my own libreweb schema file to the build directory
-#add_custom_command(
-#    TARGET ${PROJECT_TARGET} POST_BUILD
-#    COMMAND ${CMAKE_COMMAND} -E copy
-#            "${CMAKE_CURRENT_SOURCE_DIR}/schemas/${MY_SCHEMA_FILE}"
-#            "${SCHEMA_DIR}/${MY_SCHEMA_FILE}"
-#)
-
-## Copy remaining schema files for Windows only to the build directory
-#if(WIN32)
-#foreach(FILENAME ${WINDOWS_SCHEMA_FILES})
-#    add_custom_command(
-#        TARGET ${PROJECT_TARGET} POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy
-#            "${CMAKE_CURRENT_SOURCE_DIR}/schemas/${FILENAME}"
-#            "${SCHEMA_DIR}/${FILENAME}"
-#    )
-#endforeach(FILENAME)
-#endif()
-
-# Compile the schema files
-#add_custom_command(
-#    TARGET ${PROJECT_TARGET} POST_BUILD
-#    COMMAND ${glib_schema_compiler} ${SCHEMA_DIR}
-#    COMMENT "Compiling schemas in folder: ${SCHEMA_DIR}"
-#)
 
 ## Definitions just in case
 # Define _WIN32 for Windows platforms
