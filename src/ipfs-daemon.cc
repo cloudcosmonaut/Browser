@@ -48,19 +48,19 @@ void IPFSDaemon::spawn()
         argv.push_back("--migrate");
 
         // Spawn flags
-        // Disable stdout/stderr to default terminal. Don't reaped the child automatically
+        // Send stdout & stderr to /dev/null. Don't reaped the child automatically
         Glib::SpawnFlags flags =
             Glib::SPAWN_STDOUT_TO_DEV_NULL | Glib::SPAWN_STDERR_TO_DEV_NULL | Glib::SPAWN_DO_NOT_REAP_CHILD | Glib::SPAWN_SEARCH_PATH;
 
-        // Start IPFS, using spawn_async,
-        // optionally we could use spawn_async_with_pipes(), to retrieve stdout & stderr to specified output
-        // buffers
-        Glib::spawn_async(this->workingDir, argv, flags, Glib::SlotSpawnChildSetup(), &this->pid);
+        // Start IPFS using spawn_async_with_pipes,
+        // so we also retrieve stdout & stderr.
+        // spawn_async() is also fine
+        Glib::spawn_async(workingDir, argv, flags, Glib::SlotSpawnChildSetup(), &pid);
 
-        if (this->childWatchHandler.connected())
-          this->childWatchHandler.disconnect();
+        if (childWatchConnectionHandler.connected())
+          childWatchConnectionHandler.disconnect();
 
-        this->childWatchHandler = Glib::signal_child_watch().connect(sigc::mem_fun(*this, &IPFSDaemon::child_watch_exit), this->pid);
+        childWatchConnectionHandler = Glib::signal_child_watch().connect(sigc::mem_fun(*this, &IPFSDaemon::child_watch_exit), pid);
       }
       catch (Glib::SpawnError& error)
       {
@@ -83,8 +83,9 @@ void IPFSDaemon::spawn()
  */
 void IPFSDaemon::stop()
 {
-  if (this->pid != 0)
-    Glib::spawn_close_pid(this->pid);
+  if (pid != 0)
+    Glib::spawn_close_pid(pid);
+  childWatchConnectionHandler.disconnect();
 }
 
 /**
@@ -95,9 +96,8 @@ void IPFSDaemon::stop()
  */
 void IPFSDaemon::child_watch_exit(Glib::Pid pid, int childStatus)
 {
-  std::cout << "WARN: IPFS Daemon exited, with status code: " << childStatus << std::endl;
+  std::cout << "WARN: IPFS Daemon exited, PID: " << pid << ", with status code: " << childStatus << std::endl;
   Glib::spawn_close_pid(pid);
-
   // Emit exit signal with status code
   exited.emit(childStatus);
 }
@@ -108,7 +108,7 @@ void IPFSDaemon::child_watch_exit(Glib::Pid pid, int childStatus)
  */
 int IPFSDaemon::getPID() const
 {
-  if (this->pid == 0)
+  if (pid == 0)
     return 0;
 #ifdef _WIN32
   return GetProcessId(pid);
@@ -209,7 +209,7 @@ bool IPFSDaemon::shouldProcessTerminated()
 #ifdef __linux__
     char pathbuf[1024];
     memset(pathbuf, 0, sizeof(pathbuf));
-    std::string path = "/proc/" + std::to_string(this->pid) + "/exe";
+    std::string path = "/proc/" + std::to_string(pid) + "/exe";
     if (readlink(path.c_str(), pathbuf, sizeof(pathbuf) - 1) > 0)
     {
         char beginPath[] = "/usr/share/libreweb-browser";

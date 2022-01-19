@@ -91,16 +91,17 @@ Clone the source-code with SSH (do not forget `--recurse-submodules`):
 git clone --recurse-submodules -j5 git@gitlab.melroy.org:libreweb/browser.git
 ```
 
-Start the build, which is using CMake and Ninja build system, using the wrapper script:
+Start the Linux build, which is using CMake and Ninja build system, using the wrapper script:
 
 ```sh
-./scripts/build.sh
+./scripts/build-lnx.sh
 ```
 
 Optionally, use the VSCode `CMake Tools` extension to start the build or build with debug targets.
 
+Build a release target, including packaging under GNU/Linux, using: `./scripts/build-lnx-prod.sh`
 
-Build a release target, including packaging under GNU/Linux, using: `./scripts/build_prod.sh`
+*Note:* Root access is required for Linux packaging; add `/opt/mxe/usr/bin` to the secure_path using: `sudo visudo`.
 
 ### C++ Coding Style Guidelines
 
@@ -111,10 +112,10 @@ We use our [own Clang LLVM C++ Programming Style Format](.clang-format), using [
 To automatically comply to our style format execute following script (inplace edits are performed for you):
 
 ```sh
-./scripts/fix_format.sh
+./scripts/fix-format.sh
 ```
 
-Check only for errors, run: `./scripts/check_format.sh`
+Check only for errors, run: `./scripts/check-format.sh`
 
 #### Core Guidelines
 
@@ -161,7 +162,6 @@ Add the following line to the end of the `~/.bashrc` file:
 export PATH="/opt/mxe/usr/bin:$PATH"
 ```
 
-
 #### Cross-compile Build
 
 Please, be sure you meet all the requirements above. So your MXE environment should be ready in: `/opt/mxe/usr`.
@@ -171,16 +171,14 @@ To start the *cross-compile* build towards Windows 64-bit (using GNU/Linux as ho
 Build a Windows development release:
 
 ```sh
-./scripts/build_win.sh
+./scripts/build-win.sh
 ```
 
 Build a production release + packaging with [NSIS](https://sourceforge.net/projects/nsis/), execute the following:
 
 ```sh
-./scripts/build_win_prod.sh
+./scripts/build-win-prod.sh
 ```
-
-*Note:* For packaging that requires root add `/opt/mxe/usr/bin` to the secure_path using: `sudo visudo`.
 
 See also: [Windows readme](Windows.md) file.
 
