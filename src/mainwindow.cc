@@ -1678,8 +1678,7 @@ void MainWindow::forward()
 }
 
 /**
- * \brief Determing if browser is installed from current binary path, at runtime
- * TODO: What will be the result under Windows?
+ * \brief Determing if browser is installed to the installation directory at runtime
  * \return true if the current running process is installed (to the installed prefix path)
  */
 bool MainWindow::isInstalled()
@@ -1692,14 +1691,21 @@ bool MainWindow::isInstalled()
     path = (char*)malloc(length + 1);
     if (!path)
     {
-      std::cerr << "ERROR: Couldn't create path." << std::endl;
+      std::cerr << "ERROR: Couldn't create executable path." << std::endl;
     }
     else
     {
+      bool isInstalled = true;
       wai_getExecutablePath(path, length, NULL);
       path[length] = '\0';
+#ifdef _WIN32
+      // Does the executable path starts with C:\Program?
+      const char* windowsPrefix = "C:\\Program";
+      isInstalled = (strncmp(path, windowsPrefix, strlen(windowsPrefix)) == 0);
+#else
       // Does the executable path starts with /usr/local?
-      bool isInstalled = (strncmp(path, INSTALL_PREFIX, strlen(INSTALL_PREFIX)) == 0);
+      isInstalled = (strncmp(path, INSTALL_PREFIX, strlen(INSTALL_PREFIX)) == 0);
+#endif
       free(path);
       return isInstalled;
     }

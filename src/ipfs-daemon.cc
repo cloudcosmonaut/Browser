@@ -123,36 +123,35 @@ int IPFSDaemon::getPID() const
  */
 std::string IPFSDaemon::locateIPFSBinary()
 {
-  std::string binaryName = "ipfs";
+  std::string ipfsBinaryName = "ipfs";
   std::string currentExecutablePath;
 #ifdef _WIN32
-  binaryName += ".exe";
+  ipfsBinaryName += ".exe";
 #endif
   // Use the current executable directory (bin folder), to locate the go-ipfs binary (for both Linux and Windows)
   char* path = NULL;
-  int length;
-  length = wai_getExecutablePath(NULL, 0, NULL);
+  int length, dirnameLength;
+  length = wai_getExecutablePath(NULL, 0, &dirnameLength);
   if (length > 0)
   {
     path = (char*)malloc(length + 1);
     if (!path)
     {
-      std::cerr << "ERROR: Couldn't create path." << std::endl;
+      std::cerr << "ERROR: Couldn't create executable path." << std::endl;
     }
     else
     {
-      wai_getExecutablePath(path, length, NULL);
-      path[length] = '\0';
+      wai_getExecutablePath(path, length, &dirnameLength);
+      path[dirnameLength] = '\0';
       currentExecutablePath = std::string(path);
       free(path);
-      ;
     }
   }
-  std::string ipfs_binary_path = Glib::build_filename(currentExecutablePath, binaryName);
+  std::string ipfs_binary_path = Glib::build_filename(currentExecutablePath, ipfsBinaryName);
 
   // When working directory is the build/bin folder (relative path), during the build (when package is not installed
   // yet)
-  std::string ipfs_binary_path_dev = Glib::build_filename(n_fs::current_path().string(), "..", "..", "go-ipfs", binaryName);
+  std::string ipfs_binary_path_dev = Glib::build_filename(n_fs::current_path().string(), "..", "..", "go-ipfs", ipfsBinaryName);
   if (Glib::file_test(ipfs_binary_path, Glib::FileTest::FILE_TEST_IS_EXECUTABLE))
   {
     return ipfs_binary_path;
