@@ -6,6 +6,7 @@ if(GIT_FOUND)
         OUTPUT_VARIABLE GIT_TAG
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+    message(STATUS "GIT_TAG: ${GIT_TAG}")
     if("${GIT_TAG}" MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
         set(GIT_TAG_VERSION "${GIT_TAG}")
     else()

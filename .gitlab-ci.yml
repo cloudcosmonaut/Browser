@@ -15,6 +15,7 @@ doxygen:
   script:
     - ./scripts/build-docs.sh
   artifacts:
+    name: "Doxygen"
     paths:
       - build_docs/docs/html/
 
