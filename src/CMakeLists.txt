@@ -1,8 +1,7 @@
 include(${CMAKE_SOURCE_DIR}/cmake/GSettings.cmake)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+set(PROJECT_TARGET libreweb-browser)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 if(WIN32)
   set(WINDOWS_FLAGS -mwindows)
@@ -17,31 +16,16 @@ if(NOT CYGWIN)
   set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(PROJECT_TARGET libreweb-browser)
-
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-
 # Find required dependencies
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
 
-# Add JSON Parser via CMake Fetch Content feature
-include(FetchContent)
-
-FetchContent_Declare(json
-  GIT_REPOSITORY https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent
-  GIT_TAG v3.9.1)
-
-FetchContent_GetProperties(json)
-if(NOT json_POPULATED)
-  FetchContent_Populate(json)
-  add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
-endif()
-
 # Generate Project version header file
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/project_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/project_config.h)
+
+# In order to find project_config.h
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # Source code
 set(HEADERS

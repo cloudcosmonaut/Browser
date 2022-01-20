@@ -125,6 +125,8 @@ We also tend to follow the [C++ Core Guidelines](http://isocpp.github.io/CppCore
 
 See latest [Developer Documentation](https://gitlab.melroy.org/libreweb/browser/-/jobs/artifacts/master/file/build/docs/html/index.html?job=doxygen).
 
+Doxygen is build by default. You can disable the doxygen build, if you want, using: `cmake -DDOXYGEN:BOOL=FALSE ..`
+
 ### Memory Leaks
 
 First **build** the (GNU/Linux) target with *debug symbols*. Build target file should be present: `./build/bin/libreweb-browser`.

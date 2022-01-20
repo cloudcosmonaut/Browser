@@ -6,7 +6,7 @@ rm -rf build_prod_win
 mkdir build_prod_win
 cd build_prod_win
 
-x86_64-w64-mingw32.static-cmake -G Ninja -DCMAKE_BUILD_TYPE=Release .. &&
+x86_64-w64-mingw32.static-cmake -G Ninja -DDOXYGEN:BOOL=FALSE -DCMAKE_BUILD_TYPE=Release .. &&
 ninja && 
 echo "INFO: Start NSIS packaging for Windows...";
 cpack -C Release -G NSIS

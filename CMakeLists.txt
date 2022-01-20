@@ -1,16 +1,23 @@
 cmake_minimum_required (VERSION 3.16.0)
 
+option(DOXYGEN "Build Doxygen documentation" ON)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(GitVersion)
 
-project (libreweb-browser
+project("LibreWeb Browser"
   VERSION ${GIT_TAG_VERSION}
   DESCRIPTION "LibreWeb Browser - Decentralized Web-Browser"
   LANGUAGES C CXX)
 
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "PROJECT_VERSION: ${PROJECT_VERSION}")
+
+# Build docs
+if(DOXYGEN)
+  include(Doxygen)
+endif()
 
 # Production build
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")

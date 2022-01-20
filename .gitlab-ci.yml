@@ -12,13 +12,11 @@ variables:
 
 doxygen:
   stage: build
-  before_script:
-    - mkdir -p build/docs
   script:
-    - doxygen misc/Doxyfile
+    - ./scripts/build-docs.sh
   artifacts:
     paths:
-      - build/docs/html/
+      - build_docs/docs/html/
 
 linux_build:
   stage: build
@@ -26,7 +24,7 @@ linux_build:
     - ./scripts/build-lnx-prod.sh
   artifacts:
     name: "Packages"
-    expire_in: 1 week
+    expire_in: 4 weeks
     paths:
     - build_prod/libreweb-browser-*.deb
     - build_prod/libreweb-browser-*.rpm

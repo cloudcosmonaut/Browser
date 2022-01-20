@@ -1,9 +1,17 @@
-find_package(Doxygen REQUIRED)
-set(DOXYGEN_CONFIG ${CMAKE_CURRENT_BINARY_DIR}/../doxygen.conf)
+find_package(Doxygen
+             REQUIRED dot
+             OPTIONAL_COMPONENTS mscgen dia)
+set(DOXYFILE_IN ${CMAKE_SOURCE_DIR}/misc/Doxyfile.in)
+set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
-# note the option ALL which allows to build the docs together with the application
-add_custom_target(Doxygen ALL
-  COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_CONFIG}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  COMMENT "Generating API documentation with Doxygen"
-  VERBATIM)
+# Build (configure) doxyfile
+configure_file(${DOXYFILE_IN} ${DOXYFILE} @ONLY)
+
+# The depends ALL option build the docs together with the app
+add_custom_target(doc ALL
+  COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Generating documentation with Doxygen"
+  VERBATIM
+)
+
