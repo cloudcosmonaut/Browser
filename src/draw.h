@@ -5,6 +5,7 @@
 #include <gdkmm/cursor.h>
 #include <gtkmm/menu.h>
 #include <gtkmm/textview.h>
+#include <gtkmm/tooltip.h>
 #include <pangomm/layout.h>
 
 class Middleware;
@@ -76,6 +77,7 @@ protected:
   // Signals
   void event_after(GdkEvent* ev);
   bool motion_notify_event(GdkEventMotion* motion_event);
+  bool query_tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip);
   void populate_popup(Gtk::Menu* menu);
 
 private:
@@ -115,7 +117,7 @@ private:
   void disableEdit();
   void followLink(Gtk::TextBuffer::iterator& iter);
   void processNode(cmark_node* node, cmark_event_type ev_type);
-  void encodeText(std::string& string);
+  void encodeText(std::string& string) const;
   void insertText(std::string text, const Glib::ustring& url = "", CodeTypeEnum codeType = CodeTypeEnum::CODE_TYPE_NONE);
   void insertTagText(const Glib::ustring& text, std::vector<Glib::ustring> const& tagNames);
   void insertTagText(const Glib::ustring& text, const Glib::ustring& tagName);
@@ -124,7 +126,7 @@ private:
   void truncateText(int charsTruncated);
   void clear();
   void changeCursor(int x, int y);
-  static Glib::ustring const intToRoman(int num);
+  static Glib::ustring intToRoman(int num);
 };
 
 #endif

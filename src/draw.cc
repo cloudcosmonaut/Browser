@@ -42,6 +42,7 @@ Draw::Draw(Middleware& middleware)
   set_pixels_below_lines(2);
   set_pixels_inside_wrap(2);
   set_wrap_mode(Gtk::WrapMode::WRAP_WORD_CHAR);
+  set_has_tooltip();
 
   // Set cursors
   auto display = get_display();
@@ -55,10 +56,12 @@ Draw::Draw(Middleware& middleware)
   // Connect Signals
   signal_event_after().connect(sigc::mem_fun(this, &Draw::event_after));
   signal_motion_notify_event().connect(sigc::mem_fun(this, &Draw::motion_notify_event));
+  signal_query_tooltip().connect(sigc::mem_fun(this, &Draw::query_tooltip));
   signal_populate_popup().connect(sigc::mem_fun(this, &Draw::populate_popup));
 }
 
 /**
+ * \brief Adding tags.
  * See also: https://gitlab.gnome.org/GNOME/gtkmm/-/blob/master/demos/gtk-demo/example_textview.cc#L100
  */
 void Draw::addTags()
@@ -123,7 +126,7 @@ void Draw::addTags()
 }
 
 /**
- * Links can be activated by clicking or touching the screen.
+ * \brief Links can be activated by clicking or touching the screen.
  */
 void Draw::event_after(GdkEvent* ev)
 {
@@ -158,7 +161,7 @@ void Draw::event_after(GdkEvent* ev)
 }
 
 /**
- * Update the cursor whenever there is a link
+ * \brief Update the cursor whenever there is a link
  */
 bool Draw::motion_notify_event(GdkEventMotion* motion_event)
 {
@@ -168,8 +171,49 @@ bool Draw::motion_notify_event(GdkEventMotion* motion_event)
   return false;
 }
 
+/***
+ * \brief Show tooltip when mouse-hover over URL
+ */
+bool Draw::query_tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr<Gtk::Tooltip>& tooltip)
+{
+  Gtk::TextIter iter;
+  if (keyboard_tooltip)
+  {
+    auto buffer = get_buffer();
+    int offset = buffer->property_cursor_position().get_value();
+    iter = buffer->get_iter_at_offset(offset);
+  }
+  else
+  {
+    int mouseX, mouseY;
+    window_to_buffer_coords(Gtk::TextWindowType::TEXT_WINDOW_WIDGET, x, y, mouseX, mouseY);
+    get_iter_at_location(iter, mouseX, mouseY);
+  }
+  bool found;
+  auto tags = iter.get_tags();
+  for (auto const& tag : tags)
+  {
+    char* url = static_cast<char*>(tag->get_data("url"));
+    if (url != 0 && (strlen(url) > 0))
+    {
+      // Show link as tooltip
+      tooltip->set_markup(url);
+      found = true;
+      break;
+    }
+  }
+  if (found)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
 /**
- * Adapt right-click menu in textview
+ * \brief Adapt right-click menu in textview
  */
 void Draw::populate_popup(Gtk::Menu* menu)
 {
@@ -240,14 +284,16 @@ void Draw::showStartPage()
   this->clear();
 
   this->headingLevel = 1;
-  this->insertText("🚀🌍 Welcome to the Decentralized Web (DWeb)");
+  this->insertText("Welcome to LibreWeb 🌍🚀");
   this->headingLevel = 0;
-  this->insertMarkupText("\n\n");
-  this->insertText(
-      "You can surf the web as intended via LibreWeb, by using IPFS as a decentralized solution. This is also the fastest browser in the world.\n\n\
-The content is fully written in markdown format, allowing you to easily publish your own site, blog article or e-book.\n\
-This browser has even a built-in editor. Check it out in the menu: File->New Document!\n\n");
-  this->insertText("See an example page hosted on IPFS: ");
+  this->insertText("\n\n");
+  this->insertMarkupText("Welcome to the decentralized web (also known as web 3.0). Thanks for using LibreWeb!👍\n\n"
+                         "LibreWeb is a free &amp; open-source decentralized web browser. With LibreWeb can surf the world-wide-web as originally "
+                         "intended, by leveraging IPFS as a decentralized file storage. LibreWeb is also the fastest browser in the world.\n\n"
+                         "The content can be fully written in <i>markdown format</i>, allowing you to easily publish your own site, blog article or "
+                         "e-book. And markdown makes surfing the web very safe.\n"
+                         "This browser has even a <b>built-in editor</b>. Check it out in the menu: <tt>File->New Document</tt>!");
+  this->insertText("\n\nSee an example page hosted on IPFS: ");
   this->insertLink("Click here for the example page", "ipfs://QmQQQyYm8GcLBEE7H3NMQWfkyfU5yHiT5i1J98gbfDGRuX");
 }
 
@@ -1311,7 +1357,7 @@ void Draw::processNode(cmark_node* node, cmark_event_type ev_type)
  * Encode text string (eg. ampersand-character)
  * @param[in/out] string
  */
-void Draw::encodeText(std::string& string)
+void Draw::encodeText(std::string& string) const
 {
   std::string buffer;
   buffer.reserve(string.size() + 5);
@@ -1331,13 +1377,14 @@ void Draw::encodeText(std::string& string)
 }
 
 /**
- * Insert markup text
+ * Insert markup text (markup only works if you first parsed the text, otherwise use the insertMarkupText method)
  */
 void Draw::insertText(std::string text, const Glib::ustring& url, CodeTypeEnum codeType)
 {
   std::vector<Glib::ustring> tagNames;
 
   // Use by reference to replace the string
+  // TODO: For normal text, you want to bring back the '&amp;' to '&' symbol again
   this->encodeText(text);
 
   if (isStrikethrough)
@@ -1515,7 +1562,7 @@ void Draw::changeCursor(int x, int y)
 
   get_iter_at_location(iter, x, y);
   auto tags = iter.get_tags();
-  for (auto& tag : tags)
+  for (auto const& tag : tags)
   {
     char* url = static_cast<char*>(tag->get_data("url"));
     if (url != 0 && (strlen(url) > 0))
@@ -1540,7 +1587,7 @@ void Draw::changeCursor(int x, int y)
 /**
  * Convert number to roman numerals
  */
-Glib::ustring const Draw::intToRoman(int num)
+Glib::ustring Draw::intToRoman(int num)
 {
   static const int values[] = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
   static const Glib::ustring numerals[] = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
