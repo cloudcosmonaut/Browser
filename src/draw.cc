@@ -189,7 +189,7 @@ bool Draw::query_tooltip(int x, int y, bool keyboard_tooltip, const Glib::RefPtr
     window_to_buffer_coords(Gtk::TextWindowType::TEXT_WINDOW_WIDGET, x, y, mouseX, mouseY);
     get_iter_at_location(iter, mouseX, mouseY);
   }
-  bool found;
+  bool found = false;
   auto tags = iter.get_tags();
   for (auto const& tag : tags)
   {
