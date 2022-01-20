@@ -1,7 +1,7 @@
 find_package(Git QUIET REQUIRED)
 if(GIT_FOUND)
     # Get last tag from git
-    execute_process(COMMAND ${GIT_EXECUTABLE} describe --abbrev=0 --tags
+    execute_process(COMMAND ${GIT_EXECUTABLE} describe --always --abbrev=0 --tags
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_VARIABLE GIT_TAG
         OUTPUT_STRIP_TRAILING_WHITESPACE)

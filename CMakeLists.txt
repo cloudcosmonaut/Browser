@@ -6,7 +6,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(GitVersion)
 
-project("LibreWeb Browser"
+project(libreweb-browser
   VERSION ${GIT_TAG_VERSION}
   DESCRIPTION "LibreWeb Browser - Decentralized Web-Browser"
   LANGUAGES C CXX)
