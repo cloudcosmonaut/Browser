@@ -24,7 +24,7 @@ set(CPACK_NSIS_MENU_LINKS
   "${CPACK_PACKAGE_HOMEPAGE_URL}" "LibreWeb Homepage"
   "https://gitlab.melroy.org/libreweb/browser" "LibreWeb Source code"
 )
-#set(CPACK_NSIS_INSTALLED_ICON_NAME "bin/libreweb-browser.exe")
+#set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\libreweb-browser.exe")
 set(CPACK_NSIS_MODIFY_PATH ON)
 set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
 
