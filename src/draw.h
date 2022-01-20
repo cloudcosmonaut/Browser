@@ -42,7 +42,7 @@ public:
   void setDocument(cmark_node* rootNode);
   void setViewSourceMenuItem(bool isEnabled);
   void newDocument();
-  Glib::ustring getText();
+  Glib::ustring getText() const;
   void setText(const Glib::ustring& text);
   void clearText();
   void undo();

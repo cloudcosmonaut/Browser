@@ -303,7 +303,7 @@ void Draw::newDocument()
 /**
  * \brief Retrieve the current text buffer
  */
-Glib::ustring Draw::getText()
+Glib::ustring Draw::getText() const
 {
   return get_buffer().get()->get_text();
 }

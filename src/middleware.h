@@ -33,17 +33,17 @@ public:
   std::string doAdd(const std::string& path);
   void doWrite(const std::string& path, bool isSetAddressAndTitle = true);
   void setContent(const Glib::ustring& content);
-  Glib::ustring getContent();
-  cmark_node* parseContent();
+  Glib::ustring getContent() const;
+  cmark_node* parseContent() const;
   void resetContentAndPath();
-  std::size_t getIPFSNumberOfPeers();
-  int getIPFSRepoSize();
-  std::string getIPFSRepoPath();
-  std::string getIPFSIncomingRate();
-  std::string getIPFSOutcomingRate();
-  std::string getIPFSVersion();
-  std::string getIPFSClientId();
-  std::string getIPFSClientPublicKey();
+  std::size_t getIPFSNumberOfPeers() const;
+  int getIPFSRepoSize() const;
+  std::string getIPFSRepoPath() const;
+  std::string getIPFSIncomingRate() const;
+  std::string getIPFSOutcomingRate() const;
+  std::string getIPFSVersion() const;
+  std::string getIPFSClientId() const;
+  std::string getIPFSClientPublicKey() const;
 
 private:
   MainWindow& mainWindow;
@@ -82,7 +82,7 @@ private:
   void processRequest(const std::string& path, bool isParseContent);
   void fetchFromIPFS(bool isParseContent);
   void openFromDisk(bool isParseContent);
-  bool validateUTF8(const Glib::ustring& text);
+  bool validateUTF8(const Glib::ustring& text) const;
   void doIPFSStatusUpdateOnce();
   bool doIPFSStatusUpdate();
   void processIPFSStatus();

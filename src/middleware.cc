@@ -124,7 +124,7 @@ void Middleware::setContent(const Glib::ustring& content)
  * \brief Get current plain content (not parsed)
  * \return content as string
  */
-Glib::ustring Middleware::getContent()
+Glib::ustring Middleware::getContent() const
 {
   return currentContent_;
 }
@@ -133,7 +133,7 @@ Glib::ustring Middleware::getContent()
  * \brief Current content parser middleware
  * \return AST structure (of type cmark_node)
  */
-cmark_node* Middleware::parseContent()
+cmark_node* Middleware::parseContent() const
 {
   return Parser::parseContent(currentContent_);
 }
@@ -152,7 +152,7 @@ void Middleware::resetContentAndPath()
  * \brief Get IPFS number of peers
  * \return number of peers (size_t)
  */
-std::size_t Middleware::getIPFSNumberOfPeers()
+std::size_t Middleware::getIPFSNumberOfPeers() const
 {
   return ipfsNumberOfPeers_;
 }
@@ -161,7 +161,7 @@ std::size_t Middleware::getIPFSNumberOfPeers()
  * \brief Get IPFS repository size
  * \return repo size (int)
  */
-int Middleware::getIPFSRepoSize()
+int Middleware::getIPFSRepoSize() const
 {
   return ipfsRepoSize_;
 }
@@ -170,7 +170,7 @@ int Middleware::getIPFSRepoSize()
  * \brief Get IPFS repository path
  * \return repo path (string)
  */
-std::string Middleware::getIPFSRepoPath()
+std::string Middleware::getIPFSRepoPath() const
 {
   return ipfsRepoPath_;
 }
@@ -179,7 +179,7 @@ std::string Middleware::getIPFSRepoPath()
  * \brief Get IPFS Incoming rate
  * \return incoming rate (string)
  */
-std::string Middleware::getIPFSIncomingRate()
+std::string Middleware::getIPFSIncomingRate() const
 {
   return ipfsIncomingRate_;
 }
@@ -188,7 +188,7 @@ std::string Middleware::getIPFSIncomingRate()
  * \brief Get IPFS Outgoing rate
  * \return outgoing rate (string)
  */
-std::string Middleware::getIPFSOutcomingRate()
+std::string Middleware::getIPFSOutcomingRate() const
 {
   return ipfsOutcomingRate_;
 }
@@ -197,7 +197,7 @@ std::string Middleware::getIPFSOutcomingRate()
  * \brief Get IPFS version
  * \return version (string)
  */
-std::string Middleware::getIPFSVersion()
+std::string Middleware::getIPFSVersion() const
 {
   return ipfsVersion_;
 }
@@ -206,7 +206,7 @@ std::string Middleware::getIPFSVersion()
  * \brief Get IPFS Client ID
  * \return client ID (string)
  */
-std::string Middleware::getIPFSClientId()
+std::string Middleware::getIPFSClientId() const
 {
   return ipfsClientID_;
 }
@@ -215,7 +215,7 @@ std::string Middleware::getIPFSClientId()
  * \brief Get IPFS Client Public key
  * \return public key (string)
  */
-std::string Middleware::getIPFSClientPublicKey()
+std::string Middleware::getIPFSClientPublicKey() const
 {
   return ipfsClientPublicKey_;
 }
@@ -435,7 +435,7 @@ void Middleware::openFromDisk(bool isParseContent)
  * \param text String that needs to be validated
  * \return true if valid UTF-8
  */
-bool Middleware::validateUTF8(const Glib::ustring& text)
+bool Middleware::validateUTF8(const Glib::ustring& text) const
 {
   return text.validate();
 }
