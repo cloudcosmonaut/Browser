@@ -25,7 +25,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
   include(Packaging)
 endif()
 
-#set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 99)
 #set(CMAKE_C_STANDARD_REQUIRED YES)
 #set(CMAKE_C_EXTENSIONS NO)
 
