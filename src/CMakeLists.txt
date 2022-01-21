@@ -59,8 +59,10 @@ set(SOURCES
 
 # Install and recompile glib gsettings schema
 add_schema("org.libreweb.browser.gschema.xml" GSCHEMA_RING)
-# Windows Schema files
+
+# Only for Windows
 if(WIN32)
+    # Windows Schema files
     set(WINDOWS_SCHEMA_FILES
         org.gtk.Settings.ColorChooser.gschema.xml
         org.gtk.Settings.Debug.gschema.xml
@@ -71,9 +73,21 @@ if(WIN32)
     foreach(SCHEMA_FILE ${WINDOWS_SCHEMA_FILES})
         add_schema(${SCHEMA_FILE} GSCHEMA_RING)
     endforeach(SCHEMA_FILE)
+
+    # Text format Windows resource file for Resource Compiler (rc)
+    set(WINDOWS_RES_IN ${CMAKE_SOURCE_DIR}/misc/libreweb.rc.in)
+    set(WINDOWS_RES ${CMAKE_CURRENT_BINARY_DIR}/libreweb.rc)
+    configure_file(${WINDOWS_RES_IN} ${WINDOWS_RES} @ONLY)
+	# Set a default rc compiler if it was not defined yet
+	if(NOT CMAKE_RC_COMPILER)
+		set(CMAKE_RC_COMPILER windres)
+	endif()
+	enable_language(RC)
+	set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> -Ocoff -o <OBJECT> <SOURCE>")
+	set_source_files_properties(${WINDOWS_RES} PROPERTIES LANGUAGE RC)
 endif()
 
-add_executable(${PROJECT_TARGET} ${GSCHEMA_RING} ${SOURCES})
+add_executable(${PROJECT_TARGET} ${GSCHEMA_RING} ${WINDOWS_RES} ${SOURCES})
 
 ## Definitions just in case
 # Define _WIN32 for Windows platforms
