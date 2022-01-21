@@ -13,7 +13,7 @@ set(CPACK_DEBIAN_PACKAGE_SECTION "web")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Internet")
 set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-v${CPACK_PACKAGE_VERSION}") # Without '-Linux' or '-Win' suffix
 # Windows specific options - GUI Installer (NSIS generator)
-set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/images/icons/libreweb-browser.png")
+set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/images/browser_logo_small.bmp")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "LibreWeb")
 set(CPACK_NSIS_CONTACT "${CPACK_PACKAGE_CONTACT}")
 set(CPACK_NSIS_HELP_LINK "https://docs.libreweb.org/how-tos/")
