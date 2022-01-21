@@ -74,15 +74,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmark-gfm_version.h.in
 
 include (GenerateExportHeader)
 
-include("../CheckFileOffsetBits.cmake")
-CHECK_FILE_OFFSET_BITS()
-
-# Check integrity of node structure when compiled as debug:
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DCMARK_DEBUG_NODES -DDEBUG")
-set(CMAKE_LINKER_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG}")
-
-set(CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_RELEASE} -pg")
-set(CMAKE_LINKER_PROFILE "${CMAKE_LINKER_FLAGS_RELEASE} -pg")
+# -fvisibility=hidden
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 # Feature tests
 include(CheckIncludeFile)

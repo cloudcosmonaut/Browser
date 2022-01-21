@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 2.8)
 # Rename the libary to our needs
 set(LIBRARY "LibCommonMarkerExtensions")
 # Extend the sources with our LibreWeb extensions
@@ -30,7 +29,6 @@ include_directories(. ${CMAKE_CURRENT_BINARY_DIR})
 
 set(CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_RELEASE} -pg")
 set(CMAKE_LINKER_PROFILE "${CMAKE_LINKER_FLAGS_RELEASE} -pg")
-add_compiler_export_flags()
 
 add_library(${LIBRARY} ${LIBRARY_SOURCES})
 target_include_directories(${LIBRARY} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
