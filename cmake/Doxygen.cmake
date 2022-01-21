@@ -14,4 +14,3 @@ add_custom_target(doc ALL
   COMMENT "Generating documentation with Doxygen"
   VERBATIM
 )
-

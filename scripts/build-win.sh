@@ -16,4 +16,3 @@ else
   cd build_win
 fi
 ninja
-

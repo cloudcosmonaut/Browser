@@ -10,4 +10,3 @@ x86_64-w64-mingw32.static-cmake -G Ninja -DDOXYGEN:BOOL=FALSE -DCMAKE_BUILD_TYPE
 ninja && 
 echo "INFO: Start NSIS packaging for Windows...";
 cpack -C Release -G NSIS
-

@@ -1,6 +1,10 @@
+#!/usr/bin/env bash
+# By: Melroy van den Berg
+#
+# Only build the documentation (used in CI/CD)
+
 mkdir build_docs
 cd build_docs
-# Only build docs (for CI/CD)
 echo "INFO: Build Doxygen...";
 cmake -G Ninja ..
 ninja doc

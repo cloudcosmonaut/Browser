@@ -1,8 +1,8 @@
 #!/bin/bash
 # By: Melroy van den Berg
-#
-# Provide the IPFS version below
+# Description: Automatically download and unzip the IPFS CLI binaries for Linux & Windows
 
+## Provide the IPFS version below ##
 IPFS_VERSION=0.11.0
 
 ##############################

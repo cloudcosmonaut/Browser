@@ -11,12 +11,13 @@ set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_TARGET}-${CPACK_PACKAGE_VERSION}")
 set(CPACK_DEBIAN_PACKAGE_SECTION "web")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Internet")
-set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-v${CPACK_PACKAGE_VERSION}") # Without '-Linux' suffix
-# Windows specific options (used by NSIS generator)
-set(CPACK_NSIS_CONTACT "info@libreweb.org")
+set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-v${CPACK_PACKAGE_VERSION}") # Without '-Linux' or '-Win' suffix
+# Windows specific options - GUI Installer (NSIS generator)
+set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/images/icons/libreweb-browser.png")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "LibreWeb")
+set(CPACK_NSIS_CONTACT "${CPACK_PACKAGE_CONTACT}")
 set(CPACK_NSIS_HELP_LINK "https://docs.libreweb.org/how-tos/")
 set(CPACK_NSIS_URL_INFO_ABOUT "https://libreweb.org")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "LibreWeb")
 set(CPACK_NSIS_DISPLAY_NAME "LibreWeb Browser")
 set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} v${CPACK_PACKAGE_VERSION}")
 set(CPACK_PACKAGE_EXECUTABLES "libreweb-browser;LibreWeb Browser")
@@ -24,9 +25,10 @@ set(CPACK_NSIS_MENU_LINKS
   "${CPACK_PACKAGE_HOMEPAGE_URL}" "LibreWeb Homepage"
   "https://gitlab.melroy.org/libreweb/browser" "LibreWeb Source code"
 )
-#set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\libreweb-browser.exe")
+set(CPACK_NSIS_INSTALLED_ICON_NAME "bin\\\\libreweb-browser.exe") # Import: double backlash
+set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/images/icons/libreweb-browser.ico")
+set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}/images/icons/libreweb-browser.ico")
 set(CPACK_NSIS_MODIFY_PATH ON)
-set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
 
 # Detect Linux Distro for RPM files
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux" AND EXISTS "/etc/os-release")

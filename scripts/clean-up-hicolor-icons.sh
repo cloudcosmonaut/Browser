@@ -1,6 +1,3 @@
 #!/usr/bin/env bash
-
-# Remove all apps folders
+# Description: Remove all 'apps' folders from hicolor
 find ./packaging_win/share/icons/hicolor/ -type d -name "*apps" -prune -exec rm -rf {} +
-
-
