@@ -16,4 +16,4 @@ else
   cd build_test
 fi
 # Build & run unit tests
-ninja && cd tst && ctest --output-on-failure
+ninja && cd tst && GTEST_COLOR=1 ctest --verbose --output-on-failure

@@ -79,8 +79,8 @@ endif()
 
 # Get include list the cmark binary directory for the generated config.h, .._version.h & .._export.h files
 # Get include list the cmark extensions binary directory for the generated ..._export.h file
-get_property(CMAKE_BINARY_DIR GLOBAL PROPERTY COMMONMARKER_BINARY_DIR)
-get_property(CMAKE_EXTENSIONS_BINARY_DIR GLOBAL PROPERTY COMMONMARKER_EXTENSIONS_BINARY_DIR)
+get_property(CMARK_BINARY_DIR GLOBAL PROPERTY COMMONMARKER_BINARY_DIR)
+get_property(CMARK_EXTENSIONS_BINARY_DIR GLOBAL PROPERTY COMMONMARKER_EXTENSIONS_BINARY_DIR)
 
 if(NOT UNITTEST)
     # LibreWeb binary
@@ -109,8 +109,8 @@ if(NOT UNITTEST)
     endif()
 
     target_include_directories(${PROJECT_TARGET} PRIVATE
-        ${CMAKE_BINARY_DIR}
-        ${CMAKE_EXTENSIONS_BINARY_DIR}
+        ${CMARK_BINARY_DIR}
+        ${CMARK_EXTENSIONS_BINARY_DIR}
         ${GTKMM_INCLUDE_DIRS}
     )
     target_link_directories(${PROJECT_TARGET} PRIVATE ${GTKMM_LIBRARY_DIRS})
@@ -129,26 +129,30 @@ if(NOT UNITTEST)
     # Install browser binary
     install(TARGETS ${PROJECT_TARGET} RUNTIME DESTINATION bin)
 else()
-    # Build a library for unit testing
-    add_library(${PROJECT_TARGET_LIB} STATIC ${SOURCES})
+    # Build libraries for unit testing
+    add_library(${PROJECT_TARGET_LIB}-file STATIC file.h file.cc)
+    add_library(${PROJECT_TARGET_LIB}-ipfs STATIC ipfs.h ipfs.cc)
+    add_library(${PROJECT_TARGET_LIB}-draw STATIC draw.h draw.cc)
+    add_library(${PROJECT_TARGET_LIB}-parser STATIC md-parser.h md-parser.cc)
 
-    # Below the same include/link directories and compiler options for
-    # the target libary, used for unit testing only.
-    target_include_directories(${PROJECT_TARGET_LIB} PRIVATE
-        ${CMAKE_BINARY_DIR}
-        ${CMAKE_EXTENSIONS_BINARY_DIR}
+    # Only link/include external libs we really need for the unittest libaries
+    target_include_directories(${PROJECT_TARGET_LIB}-draw PRIVATE
+        ${CMARK_BINARY_DIR}
         ${GTKMM_INCLUDE_DIRS}
     )
-    target_link_directories(${PROJECT_TARGET_LIB} PRIVATE ${GTKMM_LIBRARY_DIRS})
-    target_link_libraries(${PROJECT_TARGET_LIB} PRIVATE
+    target_link_libraries(${PROJECT_TARGET_LIB}-draw PRIVATE
+        LibCommonMarker
+        ${GTKMM_LIBRARIES}
+    )
+    target_compile_options(${PROJECT_TARGET_LIB}-draw PRIVATE ${GTKMM_CFLAGS_OTHER})
+    target_include_directories(${PROJECT_TARGET_LIB}-parser PRIVATE
+        ${CMARK_BINARY_DIR}
+        ${CMARK_EXTENSIONS_BINARY_DIR}
+        ${GTKMM_INCLUDE_DIRS}
+    )
+    target_link_directories(${PROJECT_TARGET_LIB}-parser PRIVATE ${GTKMM_LIBRARY_DIRS})
+    target_link_libraries(${PROJECT_TARGET_LIB}-parser PRIVATE
         LibCommonMarker
         LibCommonMarkerExtensions
-        ipfs-http-client
-        whereami
-        Threads::Threads
-        ${CXX_FILESYSTEM_LIBRARIES}
-        ${GTKMM_LIBRARIES}
-        nlohmann_json::nlohmann_json
     )
-    target_compile_options(${PROJECT_TARGET_LIB} PRIVATE ${GTKMM_CFLAGS_OTHER})
 endif()

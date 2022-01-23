@@ -1,7 +1,6 @@
 #include "draw.h"
 #include "middleware.h"
 #include "node.h"
-#include "strikethrough.h"
 #include "syntax_extension.h"
 #include <cmark-gfm.h>
 #include <gdkmm/window.h>
