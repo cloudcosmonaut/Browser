@@ -136,6 +136,7 @@ else()
     add_library(${PROJECT_TARGET_LIB}-parser STATIC md-parser.h md-parser.cc)
 
     # Only link/include external libs we really need for the unittest libaries
+    target_link_libraries(${PROJECT_TARGET_LIB}-ipfs PRIVATE ipfs-http-client)
     target_include_directories(${PROJECT_TARGET_LIB}-draw PRIVATE
         ${CMARK_BINARY_DIR}
         ${GTKMM_INCLUDE_DIRS}

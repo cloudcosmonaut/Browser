@@ -5,6 +5,11 @@ namespace
 
   TEST(LibreWebTest, TestParserA)
   {
+    // Given
+
+    // When
+
+    // Then
   }
 
 } // namespace

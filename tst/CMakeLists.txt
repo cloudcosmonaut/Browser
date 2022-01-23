@@ -26,7 +26,7 @@ add_test(NAME file_test COMMAND file)
 
 add_executable(ipfs ipfs_test.cc)
 target_include_directories(ipfs PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(ipfs PRIVATE libreweb-browser-lib-ipfs gtest_main)
+target_link_libraries(ipfs PRIVATE libreweb-browser-lib-ipfs ipfs-http-client gtest_main)
 add_test(NAME ipfs_test COMMAND ipfs)
 
 add_executable(parser parser_test.cc)

@@ -6,7 +6,6 @@ namespace
   TEST(LibreWebTest, TestIPFSA)
   {
     // Given
-    IPFS ipfs();
 
     // When
 
