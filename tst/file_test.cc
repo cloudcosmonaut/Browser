@@ -3,7 +3,6 @@
 #include <string>
 namespace
 {
-
   TEST(LibreWebTest, TestGetFilename)
   {
     // Given

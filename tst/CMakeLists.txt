@@ -31,5 +31,5 @@ add_test(NAME ipfs_test COMMAND ipfs)
 
 add_executable(parser parser_test.cc)
 target_include_directories(parser PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMARK_BINARY_DIR}  ${GTKMM_INCLUDE_DIRS})
-target_link_libraries(parser PRIVATE libreweb-browser-lib-parser LibCommonMarker LibCommonMarkerExtensions gtest_main)
+target_link_libraries(parser PRIVATE libreweb-browser-lib-parser ${GTKMM_LIBRARIES} LibCommonMarker LibCommonMarkerExtensions gtest_main)
 add_test(NAME parser_test COMMAND parser)
