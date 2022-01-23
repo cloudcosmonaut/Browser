@@ -17,7 +17,6 @@ namespace
     cmark_node_free(doc);
   }
 
-
   TEST(LibreWebTest, TestHTMLParser)
   {
     // Given
@@ -31,7 +30,5 @@ namespace
     // Then
     ASSERT_EQ(html, expectedHtml);
   }
-
-  
 
 } // namespace
