@@ -16,7 +16,7 @@ enable_testing()
 
 add_executable(draw draw_test.cc)
 target_include_directories(draw PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMARK_BINARY_DIR} ${GTKMM_INCLUDE_DIRS})
-target_link_libraries(draw PRIVATE libreweb-browser-lib-draw ${GTKMM_LIBRARIES} LibCommonMarker gtest_main)
+target_link_libraries(draw PRIVATE libreweb-browser-lib-draw ipfs-http-client ${GTKMM_LIBRARIES} LibCommonMarker gtest_main)
 add_test(NAME draw_test COMMAND draw)
 
 add_executable(file file_test.cc)

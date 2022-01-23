@@ -143,6 +143,7 @@ else()
     )
     target_link_libraries(${PROJECT_TARGET_LIB}-draw PRIVATE
         LibCommonMarker
+        ipfs-http-client
         ${GTKMM_LIBRARIES}
     )
     target_compile_options(${PROJECT_TARGET_LIB}-draw PRIVATE ${GTKMM_CFLAGS_OTHER})
