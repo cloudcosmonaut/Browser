@@ -99,9 +99,23 @@ Start the Linux build, which is using CMake and Ninja build system, using the wr
 
 Optionally, use the VSCode `CMake Tools` extension to start the build or build with debug targets.
 
-Build a release target, including packaging under GNU/Linux, using: `./scripts/build-lnx-prod.sh`
+#### Linux Packaging
 
-*Note:* Root access is required for Linux packaging; add `/opt/mxe/usr/bin` to the secure_path using: `sudo visudo`.
+*Note:* (Linux) Packages are already [available under releases](https://gitlab.melroy.org/libreweb/browser/-/releases).
+
+To build a release target yourself including packaging under GNU/Linux, use: `./scripts/build-lnx-prod.sh`
+
+Root access is required when building Linux packages; add `/opt/mxe/usr/bin` to the secure_path using: `sudo visudo`.
+
+### Unit testing
+
+To execute the **unit tests** you can configure with `cmake -DUNITTEST:BOOL=TRUE` and build. Execute: `ctest` command in the `tst` target directory.
+
+Or just use script:
+
+```sh
+./scripts/build-run-tests.sh
+```
 
 ### C++ Coding Style Guidelines
 

@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.16.0)
 
 option(DOXYGEN "Build Doxygen documentation" ON)
+option(UNITTEST "Build unit tests")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -13,6 +14,9 @@ project(libreweb-browser
 
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "PROJECT_VERSION: ${PROJECT_VERSION}")
+if(UNITTEST)
+  message(STATUS "Building the unit tests")
+endif()
 
 # Build docs using Doxygen
 if(DOXYGEN)
@@ -54,6 +58,10 @@ add_subdirectory (lib/commonmarker/extensions)
 add_subdirectory (lib/ipfs-http-client)
 add_subdirectory (lib/whereami)
 add_subdirectory (src)
+
+if(UNITTEST)
+  add_subdirectory(tst)
+endif()
 
 # Additional install files
 if(WIN32)
