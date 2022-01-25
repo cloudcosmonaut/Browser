@@ -76,3 +76,4 @@ Thumbs.db
 # Build folders
 build/
 build*/
+go-ipfs/
