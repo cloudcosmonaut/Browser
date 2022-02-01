@@ -4,3 +4,6 @@
 [submodule "lib/ipfs-http-client"]
 	path = lib/ipfs-http-client
 	url = https://github.com/vasild/cpp-ipfs-http-client.git
+[submodule "lib/whereami"]
+	path = lib/whereami
+	url = https://github.com/gpakosz/whereami
