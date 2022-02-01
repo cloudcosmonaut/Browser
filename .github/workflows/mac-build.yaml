@@ -1,0 +1,50 @@
+name: Mac build workflow
+
+on:
+  push:
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Install dependencies
+        run: |
+          brew install \
+            cmake \
+            curl \
+            doxygen \
+            graphviz \
+            gtkmm3 \
+            ninja
+
+      - name: Get IPFS
+        run: |
+          ./scripts/get-ipfs.sh
+
+      - name: Add `features.h`
+        run: |
+          cat >> src/features.h << EOF
+          #pragma once
+          /*** @file features.h*
+          * @brief Synonym for `<sys/cdefs.h>` for source compatibility with glibc.
+          * */
+
+          #include <sys/cdefs.h>
+          EOF
+
+      - name: Build
+        run: |
+          mkdir build
+          cd build
+          cmake -G Xcode -DDOXYGEN:BOOL=FALSE ../
+          xcodebuild \
+            -project "libreweb-browser.xcodeproj" \
+            -scheme libreweb-browser \
+            -configuration Debug
