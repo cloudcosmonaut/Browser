@@ -1,0 +1,24 @@
+name: Mac build workflow
+
+on:
+  push:
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-10.15
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Install dependencies
+        run: |
+          brew install cppcheck ninja cmake clang-format gtk+ gtkmm3 curl-openssl doxygen
+          brew tap LouisBrunner/valgrind
+          brew install --HEAD LouisBrunner/valgrind/valgrind
+
+      - run: |
+          ./scripts/get-ipfs.sh
